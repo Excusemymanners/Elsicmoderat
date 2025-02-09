@@ -1,0 +1,171 @@
+/* 
+ * Last modified: 2025-02-09 18:26:48 UTC
+ * Author: Excusemymanners
+ */
+
+/* Stiluri generale pentru toate dispozitivele */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+    transition: all 0.3s ease; /* Adăugat tranziție smooth */
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeIn 0.5s ease-in; /* Adăugat animație la încărcare */
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3px;
+    background-color: #007bff;
+    border-radius: 2px;
+}
+
+/* Stiluri pentru componente */
+.auth-form, 
+.admin-content nav, 
+.solution-management form, 
+.solution-item {
+    background-color: #fff;
+    border-radius: 12px; /* Mărit border radius */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 25px; /* Mărit padding */
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-form:hover, 
+.solution-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.auth-input, 
+.auth-button, 
+.solution-management form input, 
+.solution-management form button {
+    width: 100%;
+    padding: 12px; /* Mărit padding */
+    margin-bottom: 15px;
+    border: 2px solid #ddd; /* Mărit grosimea bordurii */
+    border-radius: 8px; /* Mărit border radius */
+    transition: all 0.3s ease;
+}
+
+.auth-input:focus,
+.solution-management form input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.auth-button, 
+.solution-management form button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.auth-button:hover, 
+.solution-management form button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 86, 179, 0.2);
+}
+
+.error-message {
+    color: #dc3545;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left: 4px solid #dc3545;
+}
+
+.admin-content nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.admin-content nav ul li {
+    margin: 12px 0;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.admin-content nav ul li:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* Stiluri pentru ecrane mai mici de 768px (telefoane) */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    .solution-management form, 
+    .solution-item {
+        padding: 20px;
+    }
+
+    .solution-management form input, 
+    .solution-management form button {
+        width: 100%;
+        margin-bottom: 12px;
+    }
+}
+
+/* Stiluri pentru ecrane mai mari de 768px (tablete, laptopuri, calculatoare) */
+@media (min-width: 769px) {
+    .solution-management form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .solution-management form input {
+        flex: 1 1 200px;
+        margin-bottom: 0;
+    }
+
+    .solution-management form button {
+        flex: 1 1 120px;
+        margin-bottom: 0;
+    }
+}
+
+/* Adăugat animații */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

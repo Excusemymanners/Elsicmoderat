@@ -1,0 +1,104 @@
+/* CustomerManagement.css */
+.customer-management {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.customer-form, .search-container {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.customer-form input, .search-container input {
+    flex: 1 1 200px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.customer-form button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.customer-form button:hover {
+    background-color: #45a049;
+}
+
+.customers-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.customers-list th, .customers-list td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.customers-list th {
+    background-color: #f2f2f2;
+}
+
+.customers-list tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.customers-list tr:hover {
+    background-color: #ddd;
+}
+
+.customers-list button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    background-color: #008CBA;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.customers-list button:hover {
+    background-color: #007bb5;
+}
+
+@media (max-width: 768px) {
+    .customers-list table, .customers-list thead, .customers-list tbody, .customers-list th, .customers-list td, .customers-list tr {
+        display: block;
+    }
+    .customers-list thead tr {
+        display: none;
+    }
+    .customers-list td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+    .customers-list td:before {
+        position: absolute;
+        top: 0;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+    }
+    .customers-list td:nth-of-type(1):before { content: "Nume"; }
+    .customers-list td:nth-of-type(2):before { content: "Adresă"; }
+    .customers-list td:nth-of-type(3):before { content: "Telefon"; }
+    .customers-list td:nth-of-type(4):before { content: "Email"; }
+    .customers-list td:nth-of-type(5):before { content: "Unitate de lucru"; }
+    .customers-list td:nth-of-type(6):before { content: "Locație"; }
+    .customers-list td:nth-of-type(7):before { content: "Suprafață"; }
+    .customers-list td:nth-of-type(8):before { content: "Acțiuni"; }
+}
