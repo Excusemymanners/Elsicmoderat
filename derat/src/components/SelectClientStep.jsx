@@ -49,7 +49,7 @@ const SelectClientStep = () => {
 
   return (
     <div className="customer-management">
-      <h2>Select Customer</h2>
+      <h2>Selecteaza Client</h2>
       <div className="search-container">
         <input
           type="text"
@@ -79,8 +79,8 @@ const SelectClientStep = () => {
                   <td>{customer.name}</td>
                   <td>{customer.email}</td>
                   <td>{customer.phone}</td>
+                  <td>{customer.contract_number}</td>
                   <td>{customer.location}</td>
-                  <td>{customer.surface}</td>
                   <td>
                     <input
                       type="radio"

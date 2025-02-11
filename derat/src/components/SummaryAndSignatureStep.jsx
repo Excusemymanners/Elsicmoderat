@@ -46,7 +46,7 @@ const SummaryAndSignatureStep = () => {
       const templateUrl = '/assets/template.pdf';
       const pdfBytes = await fillTemplate(templateUrl, updatedFormData);
 
-      console.log('PDF Bytes Length:', pdfBytes.length);
+      console.log('PDF Base64 Length:', pdfBytes.length);
 
       const clientEmail = formData.customer.email;
       await sendEmail(pdfBytes, clientEmail);
@@ -131,12 +131,14 @@ const SummaryAndSignatureStep = () => {
       </div>
       <div className="signature">
         <h3>Semnătura Angajatului</h3>
-        <SignatureCanvas
-          ref={sigCanvas}
-          canvasProps={{ width: 500, height: 200, className: 'sigCanvas' }}
-          onEnd={() => setEmployeeSignature(sigCanvas.current.toDataURL())}
-        />
-        <button onClick={handleClear}>Șterge Semnătura</button>
+        <div className="sigCanvas-container">
+          <SignatureCanvas
+            ref={sigCanvas}
+            canvasProps={{ className: 'sigCanvas' }}
+            onEnd={() => setEmployeeSignature(sigCanvas.current.toDataURL())}
+          />
+        </div>
+        <button className="clear-signature-button" onClick={handleClear}>Șterge Semnătura</button>
       </div>
       <div className="navigation-buttons">
         <button onClick={handleBack}>Înapoi</button>

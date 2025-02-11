@@ -14,7 +14,7 @@ const SelectOperationStep = () => {
   const navigate = useNavigate();
 
   const operations = [
-    { value: 'Dezinfectare', label: 'Dezinfectare' },
+    { value: 'Dezinfectare', label: 'Dezinsectare' },
     { value: 'Dezinsectare', label: 'Dezinsectare' },
     { value: 'Deratizare', label: 'Deratizare' },
   ];
@@ -96,7 +96,7 @@ const SelectOperationStep = () => {
 
   return (
     <div className="select-operation-step">
-      <h2>Select Operations and Solutions</h2>
+      <h2>Selecteaza operatia si solutia</h2>
       <div className="operations-checkboxes">
         {operations.map(operation => (
           <div key={operation.value} className="checkbox-container">
@@ -125,7 +125,7 @@ const SelectOperationStep = () => {
             placeholder={`Select solutions for ${operation}...`}
           />
           <div className="quantity-display">
-            <label>Quantity Needed:</label>
+            <label>Cantitate necesara: </label>
             <span>{quantities[operation] || 0}</span>
             {selectedSolutions[operation] && selectedSolutions[operation].length > 0 && (
               <span> {selectedSolutions[operation][0].unit_of_measure}</span>

@@ -59,7 +59,7 @@ const EmployeeNameStep = () => {
 
   return (
     <div>
-      <h3>Step 1: Select or Search Employee</h3>
+      <h3>Pasul 1 : Alegeti Personalul</h3>
       <input
         type="text"
         placeholder="Search employee..."
@@ -71,8 +71,8 @@ const EmployeeNameStep = () => {
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Action</th>
+                <th>Nume</th>
+                <th>Actiune</th>
               </tr>
             </thead>
             <tbody>

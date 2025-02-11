@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import supabase from '../../supabaseClient'; // Asigură-te că calea este corectă
-import './CustomerManagement.css'; // Asigură-te că fișierul CSS există în calea corectă
+import './CustomerManagement.css'; // Importă fișierul CSS pentru stilizare
 
 const CustomerManagement = () => {
     const [customers, setCustomers] = useState([]);

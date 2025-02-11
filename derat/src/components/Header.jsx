@@ -6,7 +6,6 @@ const Header = ({ isAuthenticated, isAdmin, handleLogout, handleToggle }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Extindem condiția pentru a include și ruta /admin/gestionare-angajati
     const showBackButton = [
         '/admin/gestionare-clienti',
         '/admin/gestionare-solutii',
@@ -14,7 +13,7 @@ const Header = ({ isAuthenticated, isAdmin, handleLogout, handleToggle }) => {
     ].includes(location.pathname);
 
     const onLogout = () => {
-        handleLogout(navigate); // Transmite navigate ca parametru
+        handleLogout(navigate);
     };
 
     return (

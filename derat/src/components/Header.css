@@ -5,7 +5,12 @@
     padding: 10px 20px;
     background-color: #f0f0f0;
     border-bottom: 1px solid #ccc;
-    height: 50px; /* Ajustează înălțimea headerului dacă este necesar */
+    height: 50px;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1000;
 }
 
 .header-content {
@@ -17,11 +22,13 @@
 
 .header h1 {
     margin: 0;
+    flex: 1;
 }
 
 .header-buttons {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .header button {
@@ -30,6 +37,7 @@
     color: white;
     border: none;
     cursor: pointer;
+    border-radius: 4px;
 }
 
 .header button:hover {

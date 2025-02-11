@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
-import './ClientRepresentativeStep.css'; // Asigură-te că acest fișier CSS există
+import './ClientRepresentativeStep.css';
 
 const ClientRepresentativeStep = () => {
-  const { formData, updateFormData } = useEmployeeForm(); // Folosește contextul
+  const { formData, updateFormData } = useEmployeeForm();
   const [representative, setRepresentative] = useState(formData.clientRepresentative || '');
   const sigCanvas = useRef(null);
   const navigate = useNavigate();
@@ -19,11 +19,11 @@ const ClientRepresentativeStep = () => {
     const clientSignature = sigCanvas.current.toDataURL();
 
     updateFormData({ clientRepresentative: representative, clientSignature });
-    navigate('/employee/step5'); // Navighează la pasul de sumare și semnătură
+    navigate('/employee/step5');
   };
 
   const handleBack = () => {
-    navigate('/employee/step3'); // Revine la SelectOperationStep
+    navigate('/employee/step3');
   };
 
   const handleClear = () => {
@@ -44,11 +44,13 @@ const ClientRepresentativeStep = () => {
       />
       <div className="signature">
         <h3>Client Signature</h3>
-        <SignatureCanvas 
-          ref={sigCanvas} 
-          canvasProps={{ width: 500, height: 200, className: 'sigCanvas' }} 
-        />
-        <button onClick={handleClear}>Clear Signature</button>
+        <div className="sigCanvas-container">
+          <SignatureCanvas 
+            ref={sigCanvas} 
+            canvasProps={{ className: 'sigCanvas' }} 
+          />
+        </div>
+        <button className="clear-signature-button" onClick={handleClear}>Clear Signature</button>
       </div>
       <div className="navigation-buttons">
         <button onClick={handleBack}>Back</button>

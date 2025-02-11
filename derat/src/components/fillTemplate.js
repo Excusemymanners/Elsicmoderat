@@ -106,7 +106,7 @@ export const fillTemplate = async (templateUrl, formData) => {
     const solutionXPosition = 180;
     const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
     const concentrationXPosition = quantityXPosition + 145; // Position concentrations to the right of quantities
-    const lotXPosition = concentrationXPosition + 60; // Position lot to the right of concentrations
+    const lotXPosition = concentrationXPosition + 70; // Position lot to the right of concentrations
 
     // Iterate over selected solutions and add them to the PDF
     Object.keys(formData.solutions).forEach(operation => {

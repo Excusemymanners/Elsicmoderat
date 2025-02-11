@@ -1,185 +1,185 @@
 /* Base container styles */
 .employee-management {
-  padding: 15px;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-/* Header styles */
-.employee-management h2 {
-  color: #333;
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-}
-
-/* Action buttons container */
-.action-buttons {
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.action-buttons button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-  width: 100%;
-  max-width: 200px;
-}
-
-.action-buttons button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-/* Form styles */
-.employee-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.employee-form input {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.employee-form button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.employee-form button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-/* Search container styles */
-.search-container {
-  margin-bottom: 20px;
-}
-
-.search-container input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
-  box-sizing: border-box;
-}
-
-/* Table styles */
-.employees-list {
-  overflow-x: auto;
-  margin-top: 20px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 300px;
-}
-
-th, td {
-  padding: 12px 8px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-  font-size: 0.9rem;
-}
-
-th {
-  background-color: #f8f9fa;
-  font-weight: bold;
-}
-
-/* Button styles in table */
-td button {
-  margin: 2px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-td button:first-child {
-  background-color: #ffc107;
-  color: #000;
-}
-
-td button:last-child {
-  background-color: #dc3545;
-  color: white;
-}
-
-/* Loading state */
-.employees-list p {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-}
-
-/* Media queries for larger screens */
-@media screen and (min-width: 768px) {
-  .employee-management {
-    padding: 20px;
-    max-width: 1200px;
+    padding: 15px;
+    max-width: 100%;
+    margin: 0 auto;
   }
-
-  .employee-form {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
+  
+  /* Header styles */
+  .employee-management h2 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
   }
-
-  .employee-form input {
-    width: calc(50% - 10px);
+  
+  /* Action buttons container */
+  .action-buttons {
+    margin-bottom: 20px;
+    text-align: center;
   }
-
-  .employee-form button {
-    width: 100%;
-  }
-
-  th, td {
+  
+  .action-buttons button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
     font-size: 1rem;
-    padding: 15px 10px;
+    cursor: pointer;
+    width: 100%;
+    max-width: 200px;
   }
-
+  
+  .action-buttons button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  /* Form styles */
+  .employee-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .employee-form input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .employee-form button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  .employee-form button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  /* Search container styles */
+  .search-container {
+    margin-bottom: 20px;
+  }
+  
+  .search-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  
+  /* Table styles */
+  .employees-list {
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 300px;
+  }
+  
+  th, td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+  }
+  
+  th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+  }
+  
+  /* Button styles in table */
   td button {
-    padding: 8px 16px;
-    margin: 0 5px;
+    margin: 2px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
   }
-}
-
-/* Hover effects (only on non-touch devices) */
-@media (hover: hover) {
-  .action-buttons button:hover {
-    background-color: #0056b3;
+  
+  td button:first-child {
+    background-color: #ffc107;
+    color: #000;
   }
-
-  .employee-form button:hover {
-    background-color: #218838;
+  
+  td button:last-child {
+    background-color: #dc3545;
+    color: white;
   }
-
-  td button:first-child:hover {
-    background-color: #e0a800;
+  
+  /* Loading state */
+  .employees-list p {
+    text-align: center;
+    padding: 20px;
+    color: #666;
   }
-
-  td button:last-child:hover {
-    background-color: #c82333;
+  
+  /* Media queries for larger screens */
+  @media screen and (min-width: 768px) {
+    .employee-management {
+      padding: 20px;
+      max-width: 1200px;
+    }
+  
+    .employee-form {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+  
+    .employee-form input {
+      width: calc(50% - 10px);
+    }
+  
+    .employee-form button {
+      width: 100%;
+    }
+  
+    th, td {
+      font-size: 1rem;
+      padding: 15px 10px;
+    }
+  
+    td button {
+      padding: 8px 16px;
+      margin: 0 5px;
+    }
   }
-}
+  
+  /* Hover effects (only on non-touch devices) */
+  @media (hover: hover) {
+    .action-buttons button:hover {
+      background-color: #0056b3;
+    }
+  
+    .employee-form button:hover {
+      background-color: #218838;
+    }
+  
+    td button:first-child:hover {
+      background-color: #e0a800;
+    }
+  
+    td button:last-child:hover {
+      background-color: #c82333;
+    }
+  }

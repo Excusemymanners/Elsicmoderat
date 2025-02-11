@@ -4,7 +4,7 @@ import './EmployeeManagement.css'; // Asigură-te că fișierul CSS există în 
 
 const EmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
-  const [newEmployee, setNewEmployee] = useState({ name: '', id_series_number: '' });
+  const [newEmployee, setNewEmployee] = useState({ name: '', id_series: '' });
   const [editingEmployee, setEditingEmployee] = useState(null); // Stare pentru angajatul în curs de editare
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(true);
@@ -49,7 +49,7 @@ const EmployeeManagement = () => {
     if (error) {
       console.error('Error adding/updating employee:', error);
     } else {
-      setNewEmployee({ name: '', id_series_number: '' });
+      setNewEmployee({ name: '', id_series: '' });
       setEditingEmployee(null);
       await fetchEmployees(); // Reîmprospătează lista de angajați după adăugare/actualizare
     }
@@ -82,7 +82,7 @@ const EmployeeManagement = () => {
 
   const filteredEmployees = employees.filter(employee =>
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.id_series_number.toLowerCase().includes(searchTerm.toLowerCase())
+    employee.id_series.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -106,9 +106,9 @@ const EmployeeManagement = () => {
           />
           <input
             type="text"
-            placeholder="Seria și numărul de buletin"
-            value={newEmployee.id_series_number}
-            onChange={(e) => setNewEmployee({ ...newEmployee, id_series_number: e.target.value })}
+            placeholder="Seria de buletin"
+            value={newEmployee.id_series}
+            onChange={(e) => setNewEmployee({ ...newEmployee, id_series: e.target.value })}
             required
           />
           <button type="submit" disabled={loading}>
@@ -134,7 +134,7 @@ const EmployeeManagement = () => {
             <thead>
               <tr>
                 <th>Nume</th>
-                
+                <th>Seria de buletin</th>
                 <th>Acțiuni</th>
               </tr>
             </thead>
@@ -142,7 +142,7 @@ const EmployeeManagement = () => {
               {filteredEmployees.map(employee => (
                 <tr key={employee.id}>
                   <td>{employee.name}</td>
-                  <td>{employee.id_series_number}</td>
+                  <td>{employee.id_series}</td>
                   <td>
                     <button onClick={() => handleEditEmployee(employee)}>
                       Editează

@@ -4,7 +4,7 @@ import AdminView from './AdminView';
 import EmployeeView from './EmployeeView';
 import CustomerManagement from './CustomerManagement';
 import SolutionManagement from './SolutionManagement';
-import EmployeeManagement from './Employeemanagement';
+import EmployeeManagement from './EmployeeManagement';
 import AdminChoice from './AdminChoice';
 import Header from './Header';
 import { AuthProvider, useAuth } from './AuthContext';

@@ -1,0 +1,18 @@
+{
+    "version": 2,
+    "public": true,
+    "builds": [
+     
+      {
+        "src": "derat/package.json",
+        "use": "@vercel/static-build"
+      }
+    ],
+    "routes": [
+   
+      {
+        "src": "/(.*)",
+        "dest": "derat/$1"
+      }
+    ]
+  }
