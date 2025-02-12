@@ -1,150 +1,231 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
-import { fillTemplate } from './fillTemplate';
+import { PDFDocument, rgb } from 'pdf-lib';
 import { sendEmail } from './sendEmail';
-import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 
 const SummaryAndSignatureStep = () => {
-  const { formData } = useEmployeeForm();
-  const navigate = useNavigate();
+  const { formData, updateFormData } = useEmployeeForm();
   const sigCanvas = useRef(null);
-  const [receptionNumber, setReceptionNumber] = useState(null);
-  const [employeeSignature, setEmployeeSignature] = useState(null);
+  const navigate = useNavigate();
+  const [employeeSignature, setEmployeeSignature] = useState('');
 
-  useEffect(() => {
-    const loadReceptionNumber = async () => {
-      const number = await fetchReceptionNumber();
-      setReceptionNumber(number);
-    };
-    loadReceptionNumber();
-  }, []);
-
-  useEffect(() => {
-    console.log('formData:', formData);
-  }, [formData]);
-
-  const handleSend = async () => {
-    try {
-      const signature = sigCanvas.current.toDataURL();
-      setEmployeeSignature(signature);
-
-      const now = new Date();
-      const date = now.toLocaleDateString();
-      const time = now.toLocaleTimeString();
-
-      const updatedFormData = {
-        ...formData,
-        employeeSignature: signature,
-        receptionNumber,
-        date,
-        time,
-      };
-
-      const templateUrl = '/assets/template.pdf';
-      const pdfBytes = await fillTemplate(templateUrl, updatedFormData);
-
-      console.log('PDF Base64 Length:', pdfBytes.length);
-
-      const clientEmail = formData.customer.email;
-      await sendEmail(pdfBytes, clientEmail);
-
-      await incrementReceptionNumber();
-
-      navigate('/employee/confirmation');
-    } catch (error) {
-      console.error('Eroare la completarea template-ului:', error);
+  const handleFinish = async () => {
+    if (!employeeSignature) {
+      alert('Please provide your signature.');
+      return;
     }
+
+    const finalData = {
+      ...formData,
+      employeeSignature
+    };
+
+    await generateAndSendPDF(finalData);
+    navigate('/employee/completed');
   };
 
   const handleBack = () => {
-    navigate('/employee/step5');
+    navigate('/employee/step4');
   };
 
   const handleClear = () => {
     sigCanvas.current.clear();
-    setEmployeeSignature(null);
+    setEmployeeSignature('');
   };
 
-  if (!formData.customer) {
-    return (
-      <div className="summary-signature-step">
-        <h2>Eroare: Datele clientului lipsesc</h2>
-        <button onClick={handleBack}>Înapoi</button>
-      </div>
-    );
-  }
+  const handleSignatureEnd = () => {
+    setEmployeeSignature(sigCanvas.current.toDataURL());
+  };
 
-  const isSendDisabled =
-    !receptionNumber ||
-    !formData.customer ||
-    Object.keys(formData.solutions).length === 0 ||
-    formData.operations.length === 0 ||
-    !employeeSignature;
+  const generateAndSendPDF = async (data) => {
+    const templateUrl = `${window.location.origin}/assets/template.pdf`;
+    const existingPdfBytes = await fetch(templateUrl).then(res => res.arrayBuffer());
+
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+
+    const { width, height } = firstPage.getSize();
+
+    firstPage.drawText(`Name: ${data.employeeName}`, {
+      x: 20,
+      y: height - 50,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`ID Series: ${data.employeeIDSeries}`, {
+      x: 20,
+      y: height - 70,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`ID Number: ${data.employeeIDNumber}`, {
+      x: 20,
+      y: height - 90,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+
+    firstPage.drawText(`Client Name: ${data.customer.name}`, {
+      x: 20,
+      y: height - 110,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`Email: ${data.customer.email}`, {
+      x: 20,
+      y: height - 130,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`Phone: ${data.customer.phone}`, {
+      x: 20,
+      y: height - 150,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`Contract Number: ${data.customer.contract_number}`, {
+      x: 20,
+      y: height - 170,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`Location: ${data.customer.location}`, {
+      x: 20,
+      y: height - 190,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    firstPage.drawText(`Surface: ${data.customer.surface}`, {
+      x: 20,
+      y: height - 210,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+
+    let yOffset = height - 230;
+    data.operations.forEach((operation, index) => {
+      firstPage.drawText(`Operation: ${operation}`, {
+        x: 20,
+        y: yOffset,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+      yOffset -= 20;
+      firstPage.drawText(`Solutions: ${data.solutions[operation]?.map(sol => sol.label).join(', ')}`, {
+        x: 20,
+        y: yOffset,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+      yOffset -= 20;
+      firstPage.drawText(`Quantity: ${data.quantities[operation]}`, {
+        x: 20,
+        y: yOffset,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+      yOffset -= 20;
+    });
+
+    firstPage.drawText(`Representative Name: ${data.clientRepresentative}`, {
+      x: 20,
+      y: yOffset,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    yOffset -= 40;
+
+    const clientSigImage = await pdfDoc.embedPng(data.clientSignature);
+    firstPage.drawImage(clientSigImage, {
+      x: 20,
+      y: yOffset,
+      width: 100,
+      height: 50,
+    });
+    yOffset -= 60;
+
+    firstPage.drawText('Employee Signature:', {
+      x: 20,
+      y: yOffset,
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
+    yOffset -= 40;
+
+    const empSigImage = await pdfDoc.embedPng(data.employeeSignature);
+    firstPage.drawImage(empSigImage, {
+      x: 20,
+      y: yOffset,
+      width: 100,
+      height: 50,
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+
+    await sendEmail(
+      formData.customer.email, // Trimite emailul clientului
+      'Summary PDF',
+      '<p>Attached is the summary PDF.</p>',
+      [
+        {
+          filename: 'summary.pdf',
+          content: pdfBase64,
+          type: 'application/pdf',
+          disposition: 'attachment',
+        },
+      ]
+    );
+  };
 
   return (
-    <div className="summary-signature-step">
-      <h2>Sumar și Semnătură</h2>
-      <div className="summary">
-        <p>
-          <strong>Client:</strong> {formData.customer.name}
-        </p>
-        <p>
-          <strong>Suprafață:</strong> {formData.customer.surface} mp
-        </p>
-        <div>
-          <strong>Soluții:</strong>
-          <ul>
-            {Object.entries(formData.solutions).map(([operation, solutions]) =>
-              solutions.map((solution, index) => (
-                <li key={`${operation}-${solution.value}`}>{solution.label}</li>
-              ))
-            )}
-          </ul>
-        </div>
-        <div>
-          <strong>Operațiuni:</strong>
-          <ul>
-            {Array.isArray(formData.operations) &&
-              formData.operations.map((operation, index) => (
-                <li key={index}>{operation}</li>
-              ))}
-          </ul>
-        </div>
-        <p>
-          <strong>Email:</strong> {formData.customer.email}
-        </p>
-        <p>
-          <strong>Număr Recepție:</strong> {receptionNumber}
-        </p>
-        <p>
-          <strong>Reprezentant Client:</strong> {formData.clientRepresentative}
-        </p>
-        <p>
-          <strong>Data:</strong> {new Date().toLocaleDateString()}
-        </p>
-        <p>
-          <strong>Ora:</strong> {new Date().toLocaleTimeString()}
-        </p>
+    <div className="summary-step">
+      <h2>Summary</h2>
+      <div className="summary-details">
+        <h3>Employee Details</h3>
+        <p>Name: {formData.employeeName}</p>
+        <p>ID Series: {formData.employeeIDSeries}</p>
+        <p>ID Number: {formData.employeeIDNumber}</p>
+
+        <h3>Client Details</h3>
+        <p>Name: {formData.customer.name}</p>
+        <p>Email: {formData.customer.email}</p>
+        <p>Phone: {formData.customer.phone}</p>
+        <p>Contract Number: {formData.customer.contract_number}</p>
+        <p>Location: {formData.customer.location}</p>
+        <p>Surface: {formData.customer.surface}</p>
+
+        <h3>Operations</h3>
+        {formData.operations.map((operation, index) => (
+          <div key={index}>
+            <p>Operation: {operation}</p>
+            <p>Solutions: {formData.solutions[operation]?.map(sol => sol.label).join(', ')}</p>
+            <p>Quantity: {formData.quantities[operation]}</p>
+          </div>
+        ))}
+
+        <h3>Client Representative</h3>
+        <p>Representative Name: {formData.clientRepresentative}</p>
+        <img src={formData.clientSignature} alt="Client Signature" className="signature-image"/>
       </div>
+
       <div className="signature">
-        <h3>Semnătura Angajatului</h3>
-        <div className="sigCanvas-container">
-          <SignatureCanvas
-            ref={sigCanvas}
-            canvasProps={{ className: 'sigCanvas' }}
-            onEnd={() => setEmployeeSignature(sigCanvas.current.toDataURL())}
-          />
-        </div>
-        <button className="clear-signature-button" onClick={handleClear}>Șterge Semnătura</button>
+        <h3>Your Signature</h3>
+        <SignatureCanvas 
+          ref={sigCanvas} 
+          onEnd={handleSignatureEnd}
+          canvasProps={{ className: 'sigCanvas' }} 
+        />
+        <button className="clear-signature-button" onClick={handleClear}>Clear Signature</button>
       </div>
+
       <div className="navigation-buttons">
-        <button onClick={handleBack}>Înapoi</button>
-        <button onClick={handleSend} disabled={isSendDisabled}>
-          Trimite
-        </button>
+        <button onClick={handleBack}>Back</button>
+        <button onClick={handleFinish}>Finish</button>
       </div>
     </div>
   );
