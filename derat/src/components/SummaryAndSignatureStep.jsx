@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import { PDFDocument, rgb } from 'pdf-lib';
-import { sendEmail } from './sendEmail';
 import './SummaryAndSignatureStep.css';
 
 const SummaryAndSignatureStep = () => {
@@ -165,21 +164,40 @@ const SummaryAndSignatureStep = () => {
     });
 
     const pdfBytes = await pdfDoc.save();
-    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
 
-    await sendEmail(
-      formData.customer.email, // Trimite emailul clientului
-      'Summary PDF',
-      '<p>Attached is the summary PDF.</p>',
-      [
-        {
-          filename: 'summary.pdf',
-          content: pdfBase64,
-          type: 'application/pdf',
-          disposition: 'attachment',
+    let customerEmail = formData.customer.email;
+
+    try {
+      const response = await fetch('http://localhost:5000/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ]
-    );
+        body: JSON.stringify({
+          pdfBytes,
+          customerEmail
+        })
+      });
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+      
+      console.log('Email sent successfully');
+      return data;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+
+    // const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    // const link = document.createElement('a');
+    // link.href = URL.createObjectURL(blob);
+    // link.download = "dog.pdf";
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
   };
 
   return (
