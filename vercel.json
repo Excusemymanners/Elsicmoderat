@@ -6,7 +6,8 @@
       {
         "src": "derat/package.json",
         "use": "@vercel/static-build"
-      }
+      },
+      { "src": "derat/api/*.js", "use": "@vercel/node" }
     ],
     "routes": [
    

@@ -4,11 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "generate-settings": "node generate-settings.js",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "vite --host",
     "start:backend": "node server.js",
-    "build": "concurrently \"vite build\" \"node server.js\"",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
