@@ -168,7 +168,7 @@ const SummaryAndSignatureStep = () => {
     let customerEmail = formData.customer.email;
 
     try {
-      const response = await fetch('/api/send-email', {
+      const response = await fetch('/derat/api/send-email.js', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
