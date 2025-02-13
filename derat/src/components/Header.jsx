@@ -9,7 +9,8 @@ const Header = ({ isAuthenticated, isAdmin, handleLogout, handleToggle }) => {
     const showBackButton = [
         '/admin/gestionare-clienti',
         '/admin/gestionare-solutii',
-        '/admin/gestionare-angajati'
+        '/admin/gestionare-angajati',
+        '/admin/gestionare-lucrari'
     ].includes(location.pathname);
 
     const onLogout = () => {

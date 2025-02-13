@@ -1,0 +1,18 @@
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+}
+
+/* Adăugați și acest stil pentru mesajul "Nu există lucrări" */
+.lucrari-list > p {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin: 1rem 0;
+}
