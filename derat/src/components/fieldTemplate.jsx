@@ -42,13 +42,24 @@ export const fillTemplate = async (templateUrl, formData) => {
 
     console.log('Form Data in fillTemplate:', formData);
 
-    // Draw the information in the PDF at specified positions
-    drawText(` ${formData.receptionNumber}`, 505, height - 112);
-    drawText(` ${formData.date}`, 400, height - 135);
-    drawText(`${formData.time}`, 475, height - 135);
-    drawText(` ${formData.customer.name}`, 200, height - 180);
-    drawText(` ${formData.customer.contract_number}`, 525, height - 180);
-    drawText(` ${formData.customer.location}`, 250, height - 202);
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '.');
+    const formattedTime = now.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+    
+    drawText(`${formData.receptionNumber}`, 505, height - 112);
+    drawText(`${formattedDate}`, 400, height - 135);
+    drawText(`${formattedTime}`, 475, height - 135);
+    drawText(`${formData.customer.name}`, 200, height - 180);
+    drawText(`${formData.customer.contract_number}`, 525, height - 180);
+    drawText(`${formData.customer.location}`, 250, height - 202);
     drawText(`${formData.customer.surface} mp`, 220, height - 225);
 
     drawText(` ${formData.clientRepresentative}`, 140, height - 520);
