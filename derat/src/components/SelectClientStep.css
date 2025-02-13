@@ -1,134 +1,199 @@
 .customer-management {
-    padding: 20px;
-    max-width: 1200px; /* Mărit pentru a acomoda mai multe coloane */
-    margin: 0 auto;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.customer-management h2 {
+  color: #1a1a1a;
+  text-align: left;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.search-container {
+  margin-bottom: 1.5rem;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #f8fafc;
+  transition: all 0.3s ease;
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+}
+
+.customers-list {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 900px;
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+}
+
+th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #4a5568;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+tbody tr:hover {
+  background-color: #f7fafc;
+}
+
+/* Stiluri pentru butonul de select */
+.select-button {
+  background-color: #646cff;
+  color: white;
+  border: none;
+  padding: 0.6em 1.2em;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.select-button:hover:not(.selected-button) {
+  background-color: #535bf2;
+  transform: translateY(-1px);
+}
+
+.selected-button {
+  background-color: #22c55e !important;
+  color: white !important;
+  cursor: default;
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  gap: 1rem;
+}
+
+.navigation-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  font-weight: 500;
+}
+
+.navigation-buttons button:first-child {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.navigation-buttons button:first-child:hover {
+  background-color: #e2e8f0;
+}
+
+.navigation-buttons button:last-child {
+  background-color: #646cff;
+  color: white;
+}
+
+.navigation-buttons button:last-child:hover:not(:disabled) {
+  background-color: #535bf2;
+  transform: translateY(-1px);
+}
+
+.navigation-buttons button:disabled {
+  background-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Loading state */
+.customers-list p {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+/* Responsive design */
+@media screen and (max-width: 768px) {
+  .customer-management {
+      padding: 1rem;
+      margin: 0.5rem;
   }
-  
-  .customer-management h2 {
-    color: #333;
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 1.8rem;
-  }
-  
-  .search-container {
-    margin-bottom: 20px;
-  }
-  
-  .search-container input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-    box-sizing: border-box;
-  }
-  
-  .search-container input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-  
-  .customers-list {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
-  }
-  
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px; /* Ajustat pentru noile coloane */
-  }
-  
-  th, td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-    font-size: 0.9rem;
-  }
-  
-  th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: #495057;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-  
-  td {
-    vertical-align: middle;
-  }
-  
-  tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-  
-  input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    margin: 0 auto;
-    display: block;
-  }
-  
+
   .navigation-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-    padding: 10px;
-  }
-  
-  .navigation-buttons button {
-    padding: 12px 25px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    min-width: 120px;
-  }
-  
-  .navigation-buttons button:first-child {
-    background-color: #6c757d;
-    color: white;
-  }
-  
-  .navigation-buttons button:last-child {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .navigation-buttons button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-  
-  /* Responsive design pentru mobile */
-  @media screen and (max-width: 768px) {
-    .customer-management {
-      padding: 10px;
-    }
-  
-    .navigation-buttons {
       flex-direction: column;
-      gap: 10px;
-    }
-  
-    .navigation-buttons button {
-      width: 100%;
-    }
-  
-    th, td {
-      padding: 8px;
-      font-size: 0.85rem;
-    }
-  
-    .search-container input {
-      font-size: 16px;
-    }
   }
+
+  .navigation-buttons button {
+      width: 100%;
+  }
+
+  th, td {
+      padding: 0.75rem;
+      font-size: 0.9rem;
+  }
+
+  .search-container input {
+      font-size: 16px;
+      padding: 0.875rem;
+  }
+
+  .select-button {
+      padding: 0.5rem 1rem;
+      min-width: 80px;
+      font-size: 0.9rem;
+  }
+}
+
+/* Custom scrollbar */
+.customers-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.customers-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.customers-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.customers-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

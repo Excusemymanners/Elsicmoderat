@@ -1,26 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import supabase from '../../supabaseClient'; // Asigură-te că calea este corectă
+import supabase from '../../supabaseClient';
 import './SolutionManagement.css';
 
 const SolutionManagement = () => {
+    // State-uri
     const [solutions, setSolutions] = useState([]);
     const [newSolution, setNewSolution] = useState({
         name: '',
         lot: '',
         concentration: '',
-        stock: '', // Valoarea pe care o introduci pentru stoc
+        stock: '',
         initial_stock: '',
         total_quantity: '',
         remaining_quantity: '',
-        quantity_per_sqm: '', // Adăugăm noul câmp
-        unit_of_measure: 'ml' // Adăugăm unitatea de măsură (ml sau g)
+        quantity_per_sqm: '',
+        unit_of_measure: 'ml'
     });
     const [editingSolution, setEditingSolution] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(true);
     const [loading, setLoading] = useState(false);
 
-    // Funcție pentru a încărca soluțiile din baza de date
+    // Funcții
     const fetchSolutions = async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -38,16 +39,18 @@ const SolutionManagement = () => {
         fetchSolutions();
     }, []);
 
+    const handleToggleForm = () => {
+        setShowForm(!showForm);
+    };
+
     const handleAddSolution = async (e) => {
         e.preventDefault();
         setLoading(true);
         let result;
 
-        // Convertim valorile la numere
         const stock = parseFloat(newSolution.stock);
         const quantityPerSqm = parseFloat(newSolution.quantity_per_sqm);
 
-        // Verificăm dacă valorile sunt numere valide
         if (isNaN(stock) || isNaN(quantityPerSqm)) {
             console.error('Invalid numeric values for stock or quantity per sqm');
             setLoading(false);
@@ -56,20 +59,18 @@ const SolutionManagement = () => {
 
         const solutionToSave = {
             ...newSolution,
-            initial_stock: stock, // Setăm initial_stock la valoarea de stock
-            total_quantity: stock, // Setăm total_quantity la valoarea de stock
-            remaining_quantity: stock, // Setăm remaining_quantity la valoarea de stock
-            quantity_per_sqm: quantityPerSqm // Convertim la număr
+            initial_stock: stock,
+            total_quantity: stock,
+            remaining_quantity: stock,
+            quantity_per_sqm: quantityPerSqm
         };
 
         if (editingSolution) {
-            // Actualizare soluție existentă
             result = await supabase
                 .from('solutions')
                 .update(solutionToSave)
                 .eq('id', editingSolution);
         } else {
-            // Adăugare soluție nouă
             result = await supabase
                 .from('solutions')
                 .insert([solutionToSave]);
@@ -79,9 +80,19 @@ const SolutionManagement = () => {
         if (error) {
             console.error('Error adding/updating solution:', error);
         } else {
-            setNewSolution({ name: '', lot: '', concentration: '', stock: '', initial_stock: '', total_quantity: '', remaining_quantity: '', quantity_per_sqm: '', unit_of_measure: 'ml' });
+            setNewSolution({
+                name: '',
+                lot: '',
+                concentration: '',
+                stock: '',
+                initial_stock: '',
+                total_quantity: '',
+                remaining_quantity: '',
+                quantity_per_sqm: '',
+                unit_of_measure: 'ml'
+            });
             setEditingSolution(null);
-            await fetchSolutions(); // Reîmprospătează lista de soluții după adăugare/actualizare
+            await fetchSolutions();
         }
         setLoading(false);
     };
@@ -95,7 +106,7 @@ const SolutionManagement = () => {
         if (error) {
             console.error('Error deleting solution:', error);
         } else {
-            await fetchSolutions(); // Reîmprospătează lista de soluții după ștergere
+            await fetchSolutions();
         }
         setLoading(false);
     };
@@ -106,8 +117,8 @@ const SolutionManagement = () => {
         setShowForm(true);
     };
 
-    const handleToggleForm = () => {
-        setShowForm(!showForm);
+    const calculateRemainingPercentage = (initialStock, remainingQuantity) => {
+        return ((remainingQuantity / initialStock) * 100).toFixed(2);
     };
 
     const filteredSolutions = solutions.filter(solution =>
@@ -115,38 +126,11 @@ const SolutionManagement = () => {
         solution.lot.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const calculateRemainingPercentage = (initialStock, remainingQuantity) => {
-        return ((remainingQuantity / initialStock) * 100).toFixed(2);
-    };
-
-    const getProgressBarColor = (percentage) => {
-        if (percentage > 50) {
-            return 'green';
-        } else if (percentage > 20) {
-            return 'yellow';
-        } else {
-            return 'red';
-        }
-    };
-
-    // Funcție pentru a schimba textul butonului pe baza valorii introduse
-    const getButtonText = () => {
-        const unit = newSolution.unit_of_measure;
-        return editingSolution !== null ? `Actualizează Soluție (${newSolution.stock} ${unit})` : `Adaugă Soluție (${newSolution.stock} ${unit})`;
-    };
-
-    // Funcție pentru a schimba placeholder-ul cantității pe baza unității de măsură selectate
-    const getQuantityPlaceholder = () => {
-        return newSolution.unit_of_measure === 'ml' ? 'Cantitate stoc (ml)' : 'Cantitate stoc (g)';
-    };
-
-    // Funcție pentru a schimba eticheta câmpului de cantitate pe metru pătrat
-    const getQuantityPerSqmLabel = () => {
-        return newSolution.unit_of_measure === 'ml' ? 'Cantitate pe metru pătrat (ml)' : 'Cantitate pe metru pătrat (g)';
-    };
-
+    // Render
     return (
         <div className="solution-management">
+            
+
             <h2>Gestionare Soluții</h2>
 
             <div className="action-buttons">
@@ -178,21 +162,16 @@ const SolutionManagement = () => {
                         onChange={(e) => setNewSolution({ ...newSolution, concentration: e.target.value })}
                         required
                     />
-                    <div className="stock-input-container">
-                        <input
-                            type="text"
-                            placeholder={getQuantityPlaceholder()}
-                            value={newSolution.stock}
-                            onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
-                            required
-                        />
-                        <button type="submit" disabled={loading}>
-                            {getButtonText()}
-                        </button>
-                    </div>
                     <input
                         type="text"
-                        placeholder={getQuantityPerSqmLabel()}
+                        placeholder={`Cantitate stoc (${newSolution.unit_of_measure})`}
+                        value={newSolution.stock}
+                        onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder={`Cantitate pe metru pătrat (${newSolution.unit_of_measure})`}
                         value={newSolution.quantity_per_sqm}
                         onChange={(e) => setNewSolution({ ...newSolution, quantity_per_sqm: e.target.value })}
                         required
@@ -205,6 +184,9 @@ const SolutionManagement = () => {
                         <option value="ml">Mililitri (ml)</option>
                         <option value="g">Grame (g)</option>
                     </select>
+                    <button type="submit" disabled={loading}>
+                        {editingSolution !== null ? 'Actualizează Soluție' : 'Adaugă Soluție'}
+                    </button>
                 </form>
             ) : (
                 <div className="search-container">
@@ -237,8 +219,6 @@ const SolutionManagement = () => {
                         <tbody>
                             {filteredSolutions.map(solution => {
                                 const percentage = calculateRemainingPercentage(solution.initial_stock, solution.remaining_quantity);
-                                const progressBarColor = getProgressBarColor(percentage);
-
                                 return (
                                     <tr key={solution.id}>
                                         <td>{solution.name}</td>
@@ -250,7 +230,13 @@ const SolutionManagement = () => {
                                         </td>
                                         <td>
                                             <div className="progress-bar-container">
-                                                <div className="progress-bar" style={{ width: `${percentage}%`, backgroundColor: progressBarColor }}>
+                                                <div 
+                                                    className="progress-bar" 
+                                                    style={{ 
+                                                        width: `${percentage}%`,
+                                                        backgroundColor: percentage > 50 ? '#4CAF50' : percentage > 20 ? '#FFA500' : '#FF0000'
+                                                    }}
+                                                >
                                                     {percentage}%
                                                 </div>
                                             </div>

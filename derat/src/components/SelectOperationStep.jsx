@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { useEmployeeForm } from './EmployeeFormProvider'; // Importă hook-ul pentru context
-import supabase from '../../supabaseClient'; // Importă clientul Supabase
+import { useEmployeeForm } from './EmployeeFormProvider';
+import supabase from '../../supabaseClient';
 
 const SelectOperationStep = () => {
-  const { formData, updateFormData } = useEmployeeForm(); // Folosește contextul
+  const { formData, updateFormData } = useEmployeeForm();
   const [selectedOperations, setSelectedOperations] = useState(formData.operations || []);
   const [selectedSolutions, setSelectedSolutions] = useState(formData.solutions || {});
   const [solutions, setSolutions] = useState([]);
@@ -14,7 +14,7 @@ const SelectOperationStep = () => {
   const navigate = useNavigate();
 
   const operations = [
-    { value: 'Dezinfectare', label: 'Dezinsectare' },
+    { value: 'Dezinfectare', label: 'Dezinfectare' },
     { value: 'Dezinsectare', label: 'Dezinsectare' },
     { value: 'Deratizare', label: 'Deratizare' },
   ];
@@ -22,7 +22,7 @@ const SelectOperationStep = () => {
   useEffect(() => {
     const fetchSolutions = async () => {
       const { data, error } = await supabase
-        .from('solutions') // Înlocuiește 'solutions' cu numele tabelului tău
+        .from('solutions')
         .select('*');
 
       if (error) {
@@ -32,6 +32,8 @@ const SelectOperationStep = () => {
         setSolutions(data.map(solution => ({
           value: solution.id,
           label: solution.name,
+          quantity_per_sqm: solution.quantity_per_sqm,
+          unit_of_measure: solution.unit_of_measure,
           ...solution,
         })));
       }
@@ -40,7 +42,7 @@ const SelectOperationStep = () => {
     fetchSolutions();
   }, []);
 
-  const handleCheckboxChange = (operation) => {
+  const handleOperationSelect = (operation) => {
     setSelectedOperations(prevSelectedOperations => {
       if (prevSelectedOperations.includes(operation)) {
         const updatedSelectedOperations = prevSelectedOperations.filter(op => op !== operation);
@@ -60,6 +62,7 @@ const SelectOperationStep = () => {
   };
 
   const handleSolutionChange = (operation, selectedOption) => {
+    console.log('Selected solutions for', operation, ':', selectedOption);
     setSelectedSolutions(prevSelectedSolutions => ({
       ...prevSelectedSolutions,
       [operation]: selectedOption
@@ -69,13 +72,20 @@ const SelectOperationStep = () => {
 
   const updateQuantities = (operation, selected) => {
     const surface = formData.customer?.surface || 0;
+    console.log('Surface:', surface);
     let totalQuantity = 0;
 
-    if (selected) {
+    if (selected && Array.isArray(selected)) {
       selected.forEach(solution => {
-        totalQuantity += surface * solution.quantity_per_sqm;
+        if (solution && solution.quantity_per_sqm) {
+          const quantityForSolution = surface * solution.quantity_per_sqm;
+          console.log(`Calculating for ${solution.label}:`, quantityForSolution);
+          totalQuantity += quantityForSolution;
+        }
       });
     }
+
+    console.log(`Total quantity for ${operation}:`, totalQuantity);
 
     setQuantities(prevQuantities => ({
       ...prevQuantities,
@@ -84,55 +94,56 @@ const SelectOperationStep = () => {
   };
 
   const handleNext = () => {
-    const newFormData = { ...formData, operations: selectedOperations, solutions: selectedSolutions, quantities: quantities };
+    const newFormData = {
+      ...formData,
+      operations: selectedOperations,
+      solutions: selectedSolutions,
+      quantities: quantities
+    };
     updateFormData(newFormData);
-    console.log('Navigating to client-representative with formData:', newFormData);
-    navigate('/employee/step4'); // Navighează la următorul pas
+    navigate('/employee/step4');
   };
 
   const handleBack = () => {
-    navigate('/employee/step2'); // Revine la SelectClientStep
+    navigate('/employee/step2');
   };
 
   return (
     <div className="select-operation-step">
-      <h2>Selecteaza operatia si solutia</h2>
-      <div className="operations-checkboxes">
+      <h2>Selectează operația și soluția</h2>
+      
+      <div className="operations-list">
         {operations.map(operation => (
-          <div key={operation.value} className="checkbox-container">
-            <input
-              type="checkbox"
-              id={`operation-${operation.value}`}
-              name={`operation-${operation.value}`}
-              value={operation.value}
-              checked={selectedOperations.includes(operation.value)}
-              onChange={() => handleCheckboxChange(operation.value)}
-            />
-            <label htmlFor={`operation-${operation.value}`}>{operation.label}</label>
+          <div key={operation.value} className="operation-item">
+            <button
+              className={`operation-button ${selectedOperations.includes(operation.value) ? 'selected' : ''}`}
+              onClick={() => handleOperationSelect(operation.value)}
+            >
+              {operation.label}
+            </button>
+            
+            {selectedOperations.includes(operation.value) && (
+              <div className="solution-select-wrapper">
+                <Select
+                  className="solution-select"
+                  options={solutions}
+                  isMulti
+                  value={selectedSolutions[operation.value] || []}
+                  onChange={(selectedOption) => handleSolutionChange(operation.value, selectedOption)}
+                  placeholder={`Selectează soluții pentru ${operation.label}...`}
+                />
+                <div className="quantity-display">
+                  <label>Cantitate necesară: </label>
+                  <span>{quantities[operation.value]?.toFixed(2) || 0}</span>
+                  {selectedSolutions[operation.value] && selectedSolutions[operation.value].length > 0 && (
+                    <span> {selectedSolutions[operation.value][0].unit_of_measure}</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
-
-      {selectedOperations.map(operation => (
-        <div key={operation} className="solution-select-container">
-          <h3>{operation}</h3>
-          <Select
-            className="solution-select"
-            options={solutions}
-            isMulti
-            value={selectedSolutions[operation] || []}
-            onChange={(selectedOption) => handleSolutionChange(operation, selectedOption)}
-            placeholder={`Select solutions for ${operation}...`}
-          />
-          <div className="quantity-display">
-            <label>Cantitate necesara: </label>
-            <span>{quantities[operation] || 0}</span>
-            {selectedSolutions[operation] && selectedSolutions[operation].length > 0 && (
-              <span> {selectedSolutions[operation][0].unit_of_measure}</span>
-            )}
-          </div>
-        </div>
-      ))}
 
       {errorMessage && (
         <div className="error-message">
@@ -141,8 +152,13 @@ const SelectOperationStep = () => {
       )}
 
       <div className="navigation-buttons">
-        <button onClick={handleBack}>Back</button>
-        <button onClick={handleNext} disabled={selectedOperations.length === 0}>Next</button>
+        <button onClick={handleBack}>Înapoi</button>
+        <button 
+          onClick={handleNext} 
+          disabled={selectedOperations.length === 0}
+        >
+          Următorul
+        </button>
       </div>
     </div>
   );
