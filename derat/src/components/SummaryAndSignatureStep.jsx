@@ -58,20 +58,20 @@ const SummaryAndSignatureStep = () => {
         client_name: formData.customer.name,
         client_contract: formData.customer.contract_number,
         client_location: formData.customer.location,
-        client_surface: formData.customer.surface,
+        client_surface: Number.parseInt(formData.customer.surface),
         employee_name: formData.employeeName,
-        procedure1: formData.procedure1,
-        product1_name: formData.operations[0],
-        product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.label).join(', '),
-        product1_quantity: formData.quantities[formData.operations[0]],
-        procedure2: formData.operations[1] ? formData.procedure2 : '',
-        product2_name: formData.operations[1] || '',
-        product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.label).join(', ') : '',
-        product2_quantity: formData.operations[1] ? formData.quantities[formData.operations[1]] : '',
-        procedure3: formData.operations[2] ? formData.procedure3 : '',
-        product3_name: formData.operations[2] || '',
-        product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.label).join(', ') : '',
-        product3_quantity: formData.operations[2] ? formData.quantities[formData.operations[2]] : ''
+        procedure1: formData.operations[0],
+        product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
+        product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.lot).join(', '),
+        product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]),
+        procedure2: formData.operations[1] || null,
+        product2_name: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.name).join(', ') : null,
+        product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
+        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) : null,
+        procedure3: formData.operations[2] || null,
+        product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
+        product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
+        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) : null
       }
       
       await addVerbalProcess(verbalProcess);
