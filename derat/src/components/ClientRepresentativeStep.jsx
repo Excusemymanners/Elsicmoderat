@@ -91,12 +91,12 @@ const ClientRepresentativeStep = () => {
       </div>
 
       <div className="navigation-buttons">
-        <button onClick={handleBack}>Înapoi</button>
+        <button onClick={handleBack}>Back</button>
         <button 
           onClick={handleNext} 
           disabled={!representative.trim()}
         >
-          Următorul
+          Next
         </button>
       </div>
     </div>
