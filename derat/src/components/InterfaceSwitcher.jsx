@@ -5,6 +5,7 @@ import EmployeeView from './EmployeeView';
 import CustomerManagement from './CustomerManagement';
 import SolutionManagement from './SolutionManagement';
 import EmployeeManagement from './EmployeeManagement';
+import GestionareLucrari from './GestionareLucrari';
 import AdminChoice from './AdminChoice';
 import Header from './Header';
 import { AuthProvider, useAuth } from './AuthContext';
@@ -58,6 +59,7 @@ const AppRoutes = () => {
           <Route path="/admin/gestionare-clienti" element={isAuthenticated ? <CustomerManagement /> : <Navigate to="/admin" />} />
           <Route path="/admin/gestionare-solutii" element={isAuthenticated ? <SolutionManagement /> : <Navigate to="/admin" />} />
           <Route path="/admin/gestionare-angajati" element={isAuthenticated ? <EmployeeManagement /> : <Navigate to="/admin" />} />
+          <Route path="/admin/gestionare-lucrari" element={isAuthenticated ? <GestionareLucrari /> : <Navigate to="/admin" />} />
         </Routes>
       </div>
     </div>

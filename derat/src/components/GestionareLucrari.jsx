@@ -8,7 +8,7 @@ const GestionareLucrari = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(true);
     const [newLucrare, setNewLucrare] = useState({
-        numar_ordin: '',
+        numar_ordine: '',
         client_name: '',
         client_contract: '',
         client_location: '',
@@ -70,7 +70,7 @@ const GestionareLucrari = () => {
             alert('Eroare la salvarea lucrării!');
         } else {
             setNewLucrare({
-                numar_ordin: '',
+                numar_ordine: '',
                 client_name: '',
                 client_contract: '',
                 client_location: '',
@@ -124,7 +124,7 @@ const GestionareLucrari = () => {
         if (editingLucrare) {
             setEditingLucrare(null);
             setNewLucrare({
-                numar_ordin: '',
+                numar_ordine: '',
                 client_name: '',
                 client_contract: '',
                 client_location: '',
@@ -149,7 +149,7 @@ const GestionareLucrari = () => {
     const filteredLucrari = lucrari.filter(lucrare =>
         lucrare.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lucrare.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lucrare.numar_ordin?.toString().includes(searchTerm)
+        lucrare.numar_ordine?.toString().includes(searchTerm)
     );
 
     const formatDate = (dateString) => {
@@ -162,6 +162,87 @@ const GestionareLucrari = () => {
         });
     };
 
+    const exportExcel = async () => {
+    const { data, error } = await supabase
+        .from('lucrari')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching lucrari:', error);
+        alert('Eroare la exportul fișierului Excel!');
+    } else {
+        // Helper function to escape CSV values
+        const escapeCSV = (value) => {
+            if (value === null || value === undefined) return '';
+            return `"${value.toString().replace(/"/g, '""')}"`;
+        };
+
+        const headers = [
+            'Nr. Proces Verbal',
+            'Data',
+            'Beneficiar',
+            'Locatie',
+            'Suprafata',
+            'Nume Angajat',
+            'Proceduri (Deratizare, Dezinfectie, Dezinsectie)',
+            'Denumire Produs',
+            'Lot si cantitate'
+        ];
+
+        const processRow = (lucrare) => {
+            const procedures = [
+                lucrare.procedure1,
+                lucrare.procedure2,
+                lucrare.procedure3
+            ].filter(Boolean).join('; ');
+
+            const products = [
+                lucrare.product1_name,
+                lucrare.product2_name,
+                lucrare.product3_name
+            ].filter(Boolean).join('; ');
+
+            const lotsAndQuantities = [
+                lucrare.product1_lot && lucrare.product1_quantity ? 
+                    `${lucrare.product1_name}: ${lucrare.product1_lot} - ${lucrare.product1_quantity}` : null,
+                lucrare.product2_lot && lucrare.product2_quantity ? 
+                    `${lucrare.product2_name}: ${lucrare.product2_lot} - ${lucrare.product2_quantity}` : null,
+                lucrare.product3_lot && lucrare.product3_quantity ? 
+                    `${lucrare.product3_name}: ${lucrare.product3_lot} - ${lucrare.product3_quantity}` : null
+            ].filter(Boolean).join('; ');
+
+            const row = [
+                lucrare.numar_ordine,
+                new Date(lucrare.created_at).toLocaleString('ro-RO'),
+                lucrare.client_name,
+                lucrare.client_location,
+                lucrare.client_surface,
+                lucrare.employee_name,
+                procedures,
+                products,
+                lotsAndQuantities
+            ];
+
+            return row.map(escapeCSV).join(',');
+        };
+
+        const csv = [
+            headers.map(escapeCSV).join(','),
+            ...data.map(processRow)
+        ].join('\n');
+
+        // Add BOM for Excel to properly detect UTF-8
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'lucrari.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+};
+
     return (
         <div className="lucrari-management">
             <h2>Gestionare Lucrări</h2>
@@ -170,6 +251,7 @@ const GestionareLucrari = () => {
                 <button onClick={handleToggleForm} disabled={loading}>
                     {showForm ? 'Caută Lucrări' : 'Adaugă Lucrare'}
                 </button>
+                <button onClick={exportExcel}>Exporta fisier Excel</button>
             </div>
 
             {showForm ? (
@@ -177,8 +259,8 @@ const GestionareLucrari = () => {
                     <input
                         type="text"
                         placeholder="Număr Ordin"
-                        value={newLucrare.numar_ordin}
-                        onChange={(e) => setNewLucrare({ ...newLucrare, numar_ordin: e.target.value })}
+                        value={newLucrare.numar_ordine}
+                        onChange={(e) => setNewLucrare({ ...newLucrare, numar_ordine: e.target.value })}
                         required
                     />
                     <input
@@ -278,7 +360,7 @@ const GestionareLucrari = () => {
                         <tbody>
                             {filteredLucrari.map(lucrare => (
                                 <tr key={lucrare.id}>
-                                    <td>{lucrare.numar_ordin}</td>
+                                    <td>{lucrare.numar_ordine}</td>
                                     <td>{formatDate(lucrare.created_at)}</td>
                                     <td>{lucrare.client_name}</td>
                                     <td>{lucrare.client_contract}</td>
