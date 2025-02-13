@@ -1,6 +1,4 @@
 /* Adăugați acestea la index.css */
 body {
-  margin: 0;
-  padding-top: 60px; /* Aceasta este înălțimea header-ului */
   min-height: 100vh;
 }

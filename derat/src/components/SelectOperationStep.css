@@ -28,7 +28,6 @@
 
 /* Container pentru fiecare operație */
 .operation-item {
-  width: 100%;
   background-color: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
@@ -40,7 +39,7 @@
 
 /* Buton de operație */
 .operation-button {
-  width: 100%;
+  display: inline;
   background-color: #646cff;
   color: white;
   border: none;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import supabase from '../../supabaseClient';
+import './SelectOperationStep.css';
 
 const SelectOperationStep = () => {
   const { formData, updateFormData } = useEmployeeForm();
@@ -14,9 +15,9 @@ const SelectOperationStep = () => {
   const navigate = useNavigate();
 
   const operations = [
-    { value: 'Dezinfectare', label: 'Dezinfectare' },
-    { value: 'Dezinsectare', label: 'Dezinsectare' },
-    { value: 'Deratizare', label: 'Deratizare' },
+    { value: 'Dezinfectare', label: 'Dezinsectie' },
+    { value: 'Dezinsectare', label: 'Dezinsectie' },
+    { value: 'Deratizare', label: 'Dezinfectie' },
   ];
 
   useEffect(() => {
