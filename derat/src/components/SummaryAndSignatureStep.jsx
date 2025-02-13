@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import { PDFDocument, rgb } from 'pdf-lib';
+import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 
 const SummaryAndSignatureStep = () => {
@@ -10,20 +11,50 @@ const SummaryAndSignatureStep = () => {
   const sigCanvas = useRef(null);
   const navigate = useNavigate();
   const [employeeSignature, setEmployeeSignature] = useState('');
+  const [receptionNumber, setReceptionNumber] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        if (!formData || !formData.customer) {
+          navigate('/employee/step1');
+          return;
+        }
+        const number = await fetchReceptionNumber();
+        setReceptionNumber(number);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [formData, navigate]);
 
   const handleFinish = async () => {
     if (!employeeSignature) {
-      alert('Please provide your signature.');
+      alert('Vă rugăm să adăugați semnătura.');
       return;
     }
 
-    const finalData = {
-      ...formData,
-      employeeSignature
-    };
+    try {
+      const finalData = {
+        ...formData,
+        employeeSignature,
+        signatureDateTime: '2025-02-12 19:25:23',
+        userLogin: 'Excusemymanners',
+        receptionNumber
+      };
 
-    await generateAndSendPDF(finalData);
-    navigate('/employee/completed');
+      await generateAndSendPDF(finalData);
+      await incrementReceptionNumber();
+      navigate('/employee/completed');
+    } catch (error) {
+      console.error('Error in handleFinish:', error);
+      alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
+    }
   };
 
   const handleBack = () => {
@@ -39,10 +70,11 @@ const SummaryAndSignatureStep = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
   };
 
-  const generateAndSendPDF = async (data) => {
-    const templateUrl = `${window.location.origin}/assets/template.pdf`;
-    const existingPdfBytes = await fetch(templateUrl).then(res => res.arrayBuffer());
+  if (isLoading) {
+    return <div className="loading">Se încarcă...</div>;
+  }
 
+  const generateAndSendPDF = async (data) => {
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const pages = pdfDoc.getPages();
     const firstPage = pages[0];
@@ -198,52 +230,146 @@ const SummaryAndSignatureStep = () => {
     // document.body.appendChild(link);
     // link.click();
     // document.body.removeChild(link);
-  };
+  }
 
   return (
     <div className="summary-step">
-      <h2>Summary</h2>
-      <div className="summary-details">
-        <h3>Employee Details</h3>
-        <p>Name: {formData.employeeName}</p>
-        <p>ID Series: {formData.employeeIDSeries}</p>
-        <p>ID Number: {formData.employeeIDNumber}</p>
-
-        <h3>Client Details</h3>
-        <p>Name: {formData.customer.name}</p>
-        <p>Email: {formData.customer.email}</p>
-        <p>Phone: {formData.customer.phone}</p>
-        <p>Contract Number: {formData.customer.contract_number}</p>
-        <p>Location: {formData.customer.location}</p>
-        <p>Surface: {formData.customer.surface}</p>
-
-        <h3>Operations</h3>
-        {formData.operations.map((operation, index) => (
-          <div key={index}>
-            <p>Operation: {operation}</p>
-            <p>Solutions: {formData.solutions[operation]?.map(sol => sol.label).join(', ')}</p>
-            <p>Quantity: {formData.quantities[operation]}</p>
+      <h3>Pasul 5: Sumarul Procesului Verbal</h3>
+      <div className="form-content">
+        <div className="summary-section">
+          <h4>Informații Generale</h4>
+          <div className="details-grid">
+            
+            <div className="detail-item">
+              <span className="label">Număr Recepție:</span>
+              <span className="value">{receptionNumber || 'Se încarcă...'}</span>
+            </div>
           </div>
-        ))}
+        </div>
 
-        <h3>Client Representative</h3>
-        <p>Representative Name: {formData.clientRepresentative}</p>
-        <img src={formData.clientSignature} alt="Client Signature" className="signature-image"/>
-      </div>
+        <div className="summary-section">
+          <h4>Detalii Angajat</h4>
+          <div className="details-grid">
+            <div className="detail-item">
+              <span className="label">Nume:</span>
+              <span className="value">{formData.employeeName}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Serie CI:</span>
+              <span className="value">{formData.employeeIDSeries}</span>
+            </div>
+          </div>
+        </div>
 
-      <div className="signature">
-        <h3>Your Signature</h3>
-        <SignatureCanvas 
-          ref={sigCanvas} 
-          onEnd={handleSignatureEnd}
-          canvasProps={{ className: 'sigCanvas' }} 
-        />
-        <button className="clear-signature-button" onClick={handleClear}>Clear Signature</button>
+        <div className="summary-section">
+          <h4>Detalii Client</h4>
+          <div className="details-grid">
+            <div className="detail-item">
+              <span className="label">Nume:</span>
+              <span className="value">{formData.customer.name}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Email:</span>
+              <span className="value">{formData.customer.email}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Telefon:</span>
+              <span className="value">{formData.customer.phone}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Nr. Contract:</span>
+              <span className="value">{formData.customer.contract_number}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Locație:</span>
+              <span className="value">{formData.customer.location}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Suprafață:</span>
+              <span className="value">{formData.customer.surface} mp</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="summary-section">
+          <h4>Operațiuni Efectuate</h4>
+          <div className="operations-list">
+            {formData.operations?.map((operation, index) => (
+              <div key={index} className="operation-summary">
+                <div className="detail-item">
+                  <span className="label">Operațiune:</span>
+                  <span className="value">{operation}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Soluții:</span>
+                  <span className="value">
+                    {formData.solutions[operation]?.map(sol => sol.label).join(', ')}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Cantitate:</span>
+                  <span className="value">
+                    {formData.quantities[operation]}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="summary-section">
+          <h4>Semnături</h4>
+          <div className="signatures-container">
+            <div className="signature-box client-signature">
+              <span className="signature-label">Semnătură Client:</span>
+              <div className="signature-display">
+                <img 
+                  src={formData.clientSignature} 
+                  alt="Semnătură Client" 
+                  className="signature-image"
+                />
+                <span className="signature-name">
+                  {formData.clientRepresentative}
+                </span>
+              </div>
+            </div>
+
+            <div className="signature-box employee-signature">
+              <span className="signature-label">Semnătura Dvs:</span>
+              <div className="signature-pad-container">
+                <SignatureCanvas 
+                  ref={sigCanvas} 
+                  onEnd={handleSignatureEnd}
+                  canvasProps={{
+                    className: 'signature-canvas',
+                    width: window.innerWidth < 768 ? 300 : 500,
+                    height: window.innerWidth < 768 ? 150 : 200,
+                    style: {
+                      cursor: 'crosshair',
+                      touchAction: 'none',
+                      backgroundColor: '#fff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px'
+                    }
+                  }}
+                />
+                <button className="clear-button" onClick={handleClear}>
+                  Șterge semnătura
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="navigation-buttons">
-        <button onClick={handleBack}>Back</button>
-        <button onClick={handleFinish}>Finish</button>
+        <button onClick={handleBack}>Înapoi</button>
+        <button 
+          onClick={handleFinish}
+          disabled={!employeeSignature || !receptionNumber}
+        >
+          Finalizează
+        </button>
       </div>
     </div>
   );

@@ -1,150 +1,83 @@
-/* 
- * Last modified: 2025-02-09 18:29:31 UTC
- * Author: Excusemymanners 
- */
+/* Reset CSS pentru a elimina comportamentele implicite */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
- #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Setări de bază pentru html și body */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-size: 16px; /* Bază pentru rem */
+}
+
+/* Viewport height fix pentru mobile */
+body {
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+}
+
+/* Fix pentru Safari mobile */
+html {
+  height: -webkit-fill-available;
+}
+
+#root {
+  width: 100%;
+  min-height: calc(100vh - 60px); /* Ajustat pentru header */
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.05)
+    135deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.02)
   );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
-/* Logo styling with enhanced effects */
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter, transform;
-  transition: filter 300ms ease, transform 300ms ease;
-  cursor: pointer;
-  transform-origin: center;
+.App {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-  transform: scale(1.05);
+/* Container pentru conținut cu scroll dacă e necesar */
+.content-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Pentru scroll smooth pe iOS */
 }
 
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-  transform: scale(1.05) rotate(10deg);
-}
-
-/* Enhanced logo spin animation */
-@keyframes logo-spin {
-  from {
-      transform: rotate(0deg) scale(1);
+/* Media Queries pentru diferite dispozitive */
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 14px; /* Ajustare font size pentru mobile */
   }
-  50% {
-      transform: rotate(180deg) scale(1.1);
-  }
-  to {
-      transform: rotate(360deg) scale(1);
-  }
-}
 
-/* Respecting user's motion preferences */
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-      animation: logo-spin infinite 20s cubic-bezier(0.4, 0, 0.2, 1);
+  .content-container {
+    padding: 0.5rem;
   }
 }
 
-/* Card component with modern styling */
-.card {
-  padding: 2em;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin: 1em 0;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 40px rgba(0, 0, 0, 0.15);
-}
-
-/* Documentation link styling */
-.read-the-docs {
-  color: #888;
-  font-size: 0.9em;
-  text-decoration: none;
-  transition: color 0.3s ease, transform 0.3s ease;
-  padding: 0.5em 1em;
-  border-radius: 8px;
-  background: rgba(136, 136, 136, 0.1);
-}
-
-.read-the-docs:hover {
-  color: #646cff;
-  transform: translateY(-2px);
-}
-
-/* Responsive design adjustments */
-@media (max-width: 768px) {
-  #root {
-      padding: 1rem;
-  }
-
-  .logo {
-      height: 4em;
-      padding: 1em;
-  }
-
-  .card {
-      padding: 1.5em;
-      margin: 0.5em 0;
+/* Previne zoom-ul pe input-uri pe iOS */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  #root {
-      background: linear-gradient(
-          135deg,
-          rgba(0, 0, 0, 0.1),
-          rgba(0, 0, 0, 0.05)
-      );
-  }
-
-  .card {
-      background: rgba(0, 0, 0, 0.2);
-      border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .read-the-docs {
-      background: rgba(136, 136, 136, 0.2);
-  }
-}
-
-/* Loading state animation */
-@keyframes pulse {
-  0% {
-      opacity: 1;
-  }
-  50% {
-      opacity: 0.6;
-  }
-  100% {
-      opacity: 1;
-  }
-}
-
-.loading {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+/* Restul stilurilor rămân la fel, doar asigurați-vă că folosesc unități relative (rem/em/vh/vw) în loc de pixeli ficși */

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import supabase from '../../supabaseClient';
-import './CustomerManagement.css'; // Asigură-te că acest fișier CSS există
+import './CustomerManagement.css';
 
 const SelectClientStep = () => {
   const { formData, updateFormData } = useEmployeeForm();
@@ -12,7 +12,6 @@ const SelectClientStep = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Funcția pentru a prelua lista de clienți din baza de date
   const fetchCustomers = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -30,18 +29,15 @@ const SelectClientStep = () => {
     fetchCustomers();
   }, []);
 
-  // Funcția pentru a naviga la pasul următor și a actualiza datele formularului
   const handleNext = () => {
     updateFormData({ customer: selectedCustomer });
-    navigate('/employee/step3'); // Navighează la pasul ClientRepresentativeStep
+    navigate('/employee/step3');
   };
 
-  // Funcția pentru a naviga înapoi la pasul anterior
   const handleBack = () => {
     navigate('/employee/step1');
   };
 
-  // Filtrarea clienților pe baza termenului de căutare
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,7 +66,7 @@ const SelectClientStep = () => {
                 <th>Telefon</th>
                 <th>Punct de lucru</th>
                 <th>Suprafață</th>
-                <th>Selectează</th>
+                <th>Acțiune</th>
               </tr>
             </thead>
             <tbody>
@@ -82,13 +78,12 @@ const SelectClientStep = () => {
                   <td>{customer.contract_number}</td>
                   <td>{customer.location}</td>
                   <td>
-                    <input
-                      type="radio"
-                      name="selectedCustomer"
-                      value={customer.id}
-                      checked={selectedCustomer.id === customer.id}
-                      onChange={() => setSelectedCustomer(customer)}
-                    />
+                    <button 
+                      onClick={() => setSelectedCustomer(customer)}
+                      className={selectedCustomer.id === customer.id ? 'selected-button' : ''}
+                    >
+                      {selectedCustomer.id === customer.id ? 'Selectat' : 'Selectează'}
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Routes, Route } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import AdminChoice from './AdminChoice';
 import './AdminView.css';
@@ -12,11 +12,11 @@ const AdminView = () => {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (password === 'admin123') { // Înlocuiește cu parola ta reală
+        if (password === 'admin123') {
             setIsAuthenticated(true);
             setIsAdmin(true);
-            localStorage.setItem('adminAuth', 'true'); // Salvează starea în localStorage
-            navigate('/admin/choose', { replace: true }); // Navighează imediat după autentificare
+            localStorage.setItem('adminAuth', 'true');
+            navigate('/admin/choose', { replace: true });
         } else {
             setError('Parolă incorectă');
         }
@@ -24,19 +24,24 @@ const AdminView = () => {
 
     return (
         <div className="admin-view">
-            <form onSubmit={handleLogin}>
-                <h2>Autentificare Admin</h2>
-                <div>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Introduceți parola"
-                    />
-                </div>
-                {error && <div className="error">{error}</div>}
-                <button type="submit">Autentificare</button>
-            </form>
+            <div className="admin-container">
+                <form onSubmit={handleLogin} className="auth-form">
+                    <h2>Autentificare Admin</h2>
+                    <div className="form-group">
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Introduceți parola"
+                            className="auth-input"
+                        />
+                    </div>
+                    {error && <div className="error-message">{error}</div>}
+                    <button type="submit" className="auth-button">
+                        Autentificare
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };
