@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import { PDFDocument, rgb } from 'pdf-lib';
+import { fillTemplate } from './fieldTemplate';
 import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 
@@ -75,127 +76,7 @@ const SummaryAndSignatureStep = () => {
   }
 
   const generateAndSendPDF = async (data) => {
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-
-    const { width, height } = firstPage.getSize();
-
-    firstPage.drawText(`Name: ${data.employeeName}`, {
-      x: 20,
-      y: height - 50,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`ID Series: ${data.employeeIDSeries}`, {
-      x: 20,
-      y: height - 70,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`ID Number: ${data.employeeIDNumber}`, {
-      x: 20,
-      y: height - 90,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-
-    firstPage.drawText(`Client Name: ${data.customer.name}`, {
-      x: 20,
-      y: height - 110,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`Email: ${data.customer.email}`, {
-      x: 20,
-      y: height - 130,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`Phone: ${data.customer.phone}`, {
-      x: 20,
-      y: height - 150,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`Contract Number: ${data.customer.contract_number}`, {
-      x: 20,
-      y: height - 170,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`Location: ${data.customer.location}`, {
-      x: 20,
-      y: height - 190,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    firstPage.drawText(`Surface: ${data.customer.surface}`, {
-      x: 20,
-      y: height - 210,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-
-    let yOffset = height - 230;
-    data.operations.forEach((operation, index) => {
-      firstPage.drawText(`Operation: ${operation}`, {
-        x: 20,
-        y: yOffset,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
-      yOffset -= 20;
-      firstPage.drawText(`Solutions: ${data.solutions[operation]?.map(sol => sol.label).join(', ')}`, {
-        x: 20,
-        y: yOffset,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
-      yOffset -= 20;
-      firstPage.drawText(`Quantity: ${data.quantities[operation]}`, {
-        x: 20,
-        y: yOffset,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
-      yOffset -= 20;
-    });
-
-    firstPage.drawText(`Representative Name: ${data.clientRepresentative}`, {
-      x: 20,
-      y: yOffset,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yOffset -= 40;
-
-    const clientSigImage = await pdfDoc.embedPng(data.clientSignature);
-    firstPage.drawImage(clientSigImage, {
-      x: 20,
-      y: yOffset,
-      width: 100,
-      height: 50,
-    });
-    yOffset -= 60;
-
-    firstPage.drawText('Employee Signature:', {
-      x: 20,
-      y: yOffset,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yOffset -= 40;
-
-    const empSigImage = await pdfDoc.embedPng(data.employeeSignature);
-    firstPage.drawImage(empSigImage, {
-      x: 20,
-      y: yOffset,
-      width: 100,
-      height: 50,
-    });
-
-    const pdfBytes = await pdfDoc.save();
+    const pdfBytes = await fillTemplate('/assets/template.pdf', data);
 
     let customerEmail = formData.customer.email;
 
