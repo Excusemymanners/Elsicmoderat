@@ -74,6 +74,7 @@ const SummaryAndSignatureStep = () => {
     return <div className="loading">Se încarcă...</div>;
   }
 
+  const generateAndSendPDF = async (data) => {
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const pages = pdfDoc.getPages();
     const firstPage = pages[0];
@@ -229,7 +230,7 @@ const SummaryAndSignatureStep = () => {
     // document.body.appendChild(link);
     // link.click();
     // document.body.removeChild(link);
-  };
+  }
 
   return (
     <div className="summary-step">
