@@ -64,8 +64,8 @@ const SelectClientStep = () => {
                 <th>Nume</th>
                 <th>Email</th>
                 <th>Telefon</th>
+                <th>Numar Contract</th>
                 <th>Punct de lucru</th>
-                <th>Suprafață</th>
                 <th>Acțiune</th>
               </tr>
             </thead>
