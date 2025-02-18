@@ -1,18 +1,97 @@
-.error-message {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
+.lucrari-management {
+    padding: 15px;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
-/* Adăugați și acest stil pentru mesajul "Nu există lucrări" */
-.lucrari-list > p {
+.lucrari-management h2 {
+    color: #333;
     text-align: center;
-    padding: 2rem;
-    color: #666;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.action-buttons {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.action-buttons button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    max-width: 300px;
+}
+
+.action-buttons button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.lucrari-list {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 300px;
+}
+
+th, td {
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+}
+
+th {
     background-color: #f8f9fa;
-    border-radius: 4px;
-    margin: 1rem 0;
+    font-weight: bold;
+}
+
+.procedures {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.procedure {
+    font-size: 0.9em;
+}
+
+.procedure strong {
+    margin-right: 5px;
+    color: #666;
+}
+
+@media screen and (min-width: 768px) {
+    .lucrari-management {
+      padding: 20px;
+      max-width: 1200px;
+    }
+
+    th, td {
+      font-size: 1rem;
+      padding: 15px 10px;
+    }
 }
