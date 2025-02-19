@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import supabase from '../../supabaseClient';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -7,20 +6,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { pdfBytes, numar_ordine } = req.body;
-
-        // Obține email-ul clientului folosind numar_ordine
-        const { data: clientData, error: clientError } = await supabase
-            .from('lucrari')
-            .select('client_name, client_email')
-            .eq('numar_ordine', numar_ordine)
-            .single();
-
-        if (clientError) {
-            throw new Error('Error fetching client email:', clientError.message);
-        }
-
-        const clientEmail = clientData.client_email;
+        const { pdfBytes, customerEmail } = req.body;
 
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
@@ -37,7 +23,7 @@ export default async function handler(req, res) {
 
         const mailOptions = {
             from: process.env.SMTP_EMAIL,
-            to: clientEmail, // trimite email-ul la clientul corespunzător
+            to: customerEmail,
             subject: 'Proces Verbal',
             text: 'Please find the attached Proces Verbal.',
             attachments: [
