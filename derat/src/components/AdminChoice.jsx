@@ -61,6 +61,9 @@ const AdminChoice = () => {
         <button onClick={() => navigate('/admin/gestionare-lucrari')}>
           Gestionare Lucrări
         </button>
+        <button onClick={() => navigate('/admin/gestionare-suprafete')}>
+          Gestionare Suprafete
+        </button>
       </div>
       <div className="increment-button-container">
         {error && <div className="error-message">{error}</div>}

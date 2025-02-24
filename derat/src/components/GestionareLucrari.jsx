@@ -88,7 +88,7 @@ const GestionareLucrari = () => {
             ].filter(Boolean).join('; ');
 
             const row = [
-                lucrare.numar_ordine,
+                lucrare.numar_ordine - 1, // Decrement numar_ordine by 1
                 new Date(lucrare.created_at).toLocaleString('ro-RO'),
                 lucrare.client_name,
                 lucrare.client_location,
@@ -116,19 +116,21 @@ const GestionareLucrari = () => {
         a.download = 'lucrari.csv';
         a.click();
         URL.revokeObjectURL(url);
+    };
 
-        // Șterge toate lucrările din baza de date după export
-        const { error: deleteError } = await supabase
+    const clearDatabase = async () => {
+        // Șterge toate lucrările din baza de date
+        const { error } = await supabase
             .from('lucrari')
             .delete()
             .neq('id', '00000000-0000-0000-0000-000000000000'); // Elimină toate înregistrările
 
-        if (deleteError) {
-            console.error('Error deleting lucrari:', deleteError);
+        if (error) {
+            console.error('Error deleting lucrari:', error);
             alert('Eroare la ștergerea lucrărilor din baza de date!');
         } else {
             setLucrari([]);
-            alert('Toate lucrările au fost șterse din baza de date după exportul Excel.');
+            alert('Toate lucrările au fost șterse din baza de date.');
         }
     };
 
@@ -143,7 +145,8 @@ const GestionareLucrari = () => {
             <h2>Gestionare Lucrări</h2>
 
             <div className="action-buttons">
-                <button onClick={exportExcel}>Exporta fisier Excel și șterge lucrările</button>
+                <button onClick={exportExcel}>Export Excel</button>
+                <button onClick={clearDatabase}>Eliberează Baza de Date</button>
             </div>
 
             <div className="search-container">
@@ -175,7 +178,7 @@ const GestionareLucrari = () => {
                         <tbody>
                             {filteredLucrari.map(lucrare => (
                                 <tr key={lucrare.id}>
-                                    <td>{lucrare.numar_ordine}</td>
+                                    <td>{lucrare.numar_ordine - 1}</td>
                                     <td>{formatDate(lucrare.created_at)}</td>
                                     <td>{lucrare.client_name}</td>
                                     <td>{lucrare.client_contract}</td>

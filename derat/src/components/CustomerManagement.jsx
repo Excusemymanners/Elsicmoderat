@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import supabase from '../../supabaseClient'; // Asigură-te că calea este corectă
-import './CustomerManagement.css'; // Importă fișierul CSS pentru stilizare
+import supabase from '../../supabaseClient';
+import './CustomerManagement.css';
 
 const CustomerManagement = () => {
     const [customers, setCustomers] = useState([]);
@@ -8,16 +8,20 @@ const CustomerManagement = () => {
         name: '',
         email: '',
         phone: '',
-        contract_number: '', // Modificat pentru a folosi contract_number
-        location: '', // Punct de lucru
-        surface: '' // Suprafață
+        contract_number: '',
+        location: '',
+        jobs: [
+            { label: 'Dezinfectie', value: 'dezinfectie', active: false, surface: '' },
+            { label: 'Dezinsectie', value: 'dezinsectie', active: false, surface: '' },
+            { label: 'Dezinsectie2', value: 'dezinsectie2', active: false, surface: '' },
+            { label: 'Deratizare', value: 'deratizare', active: false, surface: '' }
+        ]
     });
     const [editingCustomer, setEditingCustomer] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(true);
     const [loading, setLoading] = useState(false);
 
-    // Funcție pentru a încărca clienții din baza de date
     const fetchCustomers = async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -40,13 +44,11 @@ const CustomerManagement = () => {
         setLoading(true);
         let result;
         if (editingCustomer) {
-            // Actualizare client existent
             result = await supabase
                 .from('customers')
                 .update(newCustomer)
                 .eq('id', editingCustomer);
         } else {
-            // Adăugare client nou
             result = await supabase
                 .from('customers')
                 .insert([newCustomer]);
@@ -56,9 +58,21 @@ const CustomerManagement = () => {
         if (error) {
             console.error('Error adding/updating customer:', error);
         } else {
-            setNewCustomer({ name: '', email: '', phone: '', contract_number: '', location: '', surface: '' });
+            setNewCustomer({
+                name: '',
+                email: '',
+                phone: '',
+                contract_number: '',
+                location: '',
+                jobs: [
+                    { label: 'Dezinfectie', value: 'dezinfectie', active: false, surface: '' },
+                    { label: 'Dezinsectie', value: 'dezinsectie', active: false, surface: '' },
+                    { label: 'Dezinsectie2', value: 'dezinsectie2', active: false, surface: '' },
+                    { label: 'Deratizare', value: 'deratizare', active: false, surface: '' }
+                ]
+            });
             setEditingCustomer(null);
-            await fetchCustomers(); // Reîmprospătează lista de clienți după adăugare/actualizare
+            await fetchCustomers();
         }
         setLoading(false);
     };
@@ -72,7 +86,7 @@ const CustomerManagement = () => {
         if (error) {
             console.error('Error deleting customer:', error);
         } else {
-            await fetchCustomers(); // Reîmprospătează lista de clienți după ștergere
+            await fetchCustomers();
         }
         setLoading(false);
     };
@@ -85,6 +99,24 @@ const CustomerManagement = () => {
 
     const handleToggleForm = () => {
         setShowForm(!showForm);
+    };
+
+    const handleToggleJob = (index) => {
+        const updatedJobs = [...newCustomer.jobs];
+        updatedJobs[index].active = !updatedJobs[index].active;
+        setNewCustomer({
+            ...newCustomer,
+            jobs: updatedJobs
+        });
+    };
+
+    const handleSurfaceChange = (index, surface) => {
+        const updatedJobs = [...newCustomer.jobs];
+        updatedJobs[index].surface = surface;
+        setNewCustomer({
+            ...newCustomer,
+            jobs: updatedJobs
+        });
     };
 
     const filteredCustomers = customers.filter(customer =>
@@ -138,12 +170,27 @@ const CustomerManagement = () => {
                         value={newCustomer.location}
                         onChange={(e) => setNewCustomer({ ...newCustomer, location: e.target.value })}
                     />
-                    <input
-                        type="text"
-                        placeholder="Suprafață"
-                        value={newCustomer.surface}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, surface: e.target.value })}
-                    />
+                    <div className="job-container">
+                        {newCustomer.jobs.map((job, index) => (
+                            <div key={index} className="job-item">
+                                <button
+                                    type="button"
+                                    className={job.active ? 'active' : ''}
+                                    onClick={() => handleToggleJob(index)}
+                                >
+                                    {job.label}
+                                </button>
+                                {job.active && (
+                                    <input
+                                        type="text"
+                                        placeholder="Suprafață"
+                                        value={job.surface}
+                                        onChange={(e) => handleSurfaceChange(index, e.target.value)}
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
                     <button type="submit" disabled={loading}>
                         {editingCustomer !== null ? 'Actualizează Client' : 'Adaugă Client'}
                     </button>
@@ -171,7 +218,7 @@ const CustomerManagement = () => {
                                 <th>Telefon</th>
                                 <th>Număr de contract</th>
                                 <th>Punct de lucru</th>
-                                <th>Suprafață</th>
+                                <th>Joburi</th>
                                 <th>Acțiuni</th>
                             </tr>
                         </thead>
@@ -183,7 +230,15 @@ const CustomerManagement = () => {
                                     <td>{customer.phone}</td>
                                     <td>{customer.contract_number}</td>
                                     <td>{customer.location}</td>
-                                    <td>{customer.surface}</td>
+                                    <td>
+                                        {customer.jobs && customer.jobs
+                                            .filter(job => job.active)
+                                            .map((job, index) => (
+                                                <div key={index}>
+                                                    {job.label}: {job.surface}
+                                                </div>
+                                            ))}
+                                    </td>
                                     <td>
                                         <button onClick={() => handleEditCustomer(customer)}>
                                             Editează

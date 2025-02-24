@@ -12,16 +12,12 @@ const SelectOperationStep = () => {
   const [solutions, setSolutions] = useState([]);
   const [quantities, setQuantities] = useState(formData.quantities || {});
   const [errorMessage, setErrorMessage] = useState('');
+  const [customerJobs, setCustomerJobs] = useState([]);
   const navigate = useNavigate();
-
-  const operations = [
-    { value: 'Dezinfectare', label: 'Dezinsectie' },
-    { value: 'Dezinsectare', label: 'Dezinsectie' },
-    { value: 'Deratizare', label: 'Dezinfectie' },
-  ];
 
   useEffect(() => {
     fetchSolutions();
+    fetchCustomerData();
   }, []);
 
   const fetchSolutions = async () => {
@@ -45,6 +41,25 @@ const SelectOperationStep = () => {
     }
   };
 
+  const fetchCustomerData = async () => {
+    const customerId = formData.customer?.id;
+    if (customerId) {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('jobs')
+        .eq('id', customerId)
+        .single();
+
+      if (error) {
+        setErrorMessage('Failed to fetch customer data');
+        console.error(error);
+      } else {
+        setCustomerJobs(data.jobs || []);
+        updateFormData({ customer: { ...formData.customer, jobs: data.jobs } });
+      }
+    }
+  };
+
   const handleOperationSelect = (operation) => {
     setSelectedOperations(prevSelectedOperations => {
       if (prevSelectedOperations.includes(operation)) {
@@ -65,7 +80,6 @@ const SelectOperationStep = () => {
   };
 
   const handleSolutionChange = (operation, selectedOption) => {
-    console.log('Selected solutions for', operation, ':', selectedOption);
     setSelectedSolutions(prevSelectedSolutions => ({
       ...prevSelectedSolutions,
       [operation]: selectedOption
@@ -74,21 +88,18 @@ const SelectOperationStep = () => {
   };
 
   const updateQuantities = (operation, selected) => {
-    const surface = formData.customer?.surface || 0;
-    console.log('Surface:', surface);
+    const job = customerJobs.find(job => job.value === operation);
+    const surface = job ? job.surface : 0;
     let totalQuantity = 0;
 
     if (selected && Array.isArray(selected)) {
       selected.forEach(solution => {
         if (solution && solution.quantity_per_sqm) {
           const quantityForSolution = surface * solution.quantity_per_sqm;
-          console.log(`Calculating for ${solution.label}:`, quantityForSolution);
           totalQuantity += quantityForSolution;
         }
       });
     }
-
-    console.log(`Total quantity for ${operation}:`, totalQuantity);
 
     setQuantities(prevQuantities => ({
       ...prevQuantities,
@@ -98,20 +109,17 @@ const SelectOperationStep = () => {
 
   const updateSolutionStock = async () => {
     try {
-      // Iterăm prin toate operațiunile selectate
       for (const operation of selectedOperations) {
         const operationSolutions = selectedSolutions[operation] || [];
         
-        // Iterăm prin toate soluțiile selectate pentru operațiunea curentă
         for (const solution of operationSolutions) {
-          const quantityUsed = formData.customer.surface * solution.quantity_per_sqm;
+          const job = customerJobs.find(job => job.value === operation);
+          const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
           
-          // Verificăm dacă există suficient stoc
           if (solution.stock < quantityUsed) {
             throw new Error(`Stoc insuficient pentru soluția ${solution.label}`);
           }
 
-          // Actualizăm stocul în baza de date
           const { error } = await supabase
             .from('solutions')
             .update({ 
@@ -137,14 +145,12 @@ const SelectOperationStep = () => {
 
   const handleNext = async () => {
     try {
-      // Verificăm și actualizăm stocul
       const stockUpdateSuccess = await updateSolutionStock();
       
       if (!stockUpdateSuccess) {
-        return; // Oprim procesul dacă actualizarea stocului a eșuat
+        return;
       }
 
-      // Actualizăm datele formularului și navigăm la următorul pas
       const newFormData = {
         ...formData,
         operations: selectedOperations,
@@ -171,30 +177,30 @@ const SelectOperationStep = () => {
       <h2>Selectează operația și soluția</h2>
       
       <div className="operations-list">
-        {operations.map(operation => (
-          <div key={operation.value} className="operation-item">
+        {customerJobs.map(job => (
+          <div key={job.value} className="operation-item">
             <button
-              className={`operation-button ${selectedOperations.includes(operation.value) ? 'selected' : ''}`}
-              onClick={() => handleOperationSelect(operation.value)}
+              className={`operation-button ${selectedOperations.includes(job.value) ? 'selected' : ''}`}
+              onClick={() => handleOperationSelect(job.value)}
             >
-              {operation.label}
+              {job.label}
             </button>
             
-            {selectedOperations.includes(operation.value) && (
+            {selectedOperations.includes(job.value) && (
               <div className="solution-select-wrapper">
                 <Select
                   className="solution-select"
                   options={solutions}
                   isMulti
-                  value={selectedSolutions[operation.value] || []}
-                  onChange={(selectedOption) => handleSolutionChange(operation.value, selectedOption)}
-                  placeholder={`Selectează soluții pentru ${operation.label}...`}
+                  value={selectedSolutions[job.value] || []}
+                  onChange={(selectedOption) => handleSolutionChange(job.value, selectedOption)}
+                  placeholder={`Selectează soluții pentru ${job.label}...`}
                 />
                 <div className="quantity-display">
                   <label>Cantitate necesară: </label>
-                  <span>{quantities[operation.value]?.toFixed(2) || 0}</span>
-                  {selectedSolutions[operation.value] && selectedSolutions[operation.value].length > 0 && (
-                    <span> {selectedSolutions[operation.value][0].unit_of_measure}</span>
+                  <span>{quantities[job.value]?.toFixed(2) || 0}</span>
+                  {selectedSolutions[job.value] && selectedSolutions[job.value].length > 0 && (
+                    <span> {selectedSolutions[job.value][0].unit_of_measure}</span>
                   )}
                 </div>
               </div>

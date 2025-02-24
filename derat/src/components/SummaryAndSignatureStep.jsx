@@ -54,7 +54,7 @@ const SummaryAndSignatureStep = () => {
       await incrementReceptionNumber();
 
       const verbalProcess = {
-        numar_ordine: receptionNumber + 1,
+        numar_ordine: receptionNumber,
         client_name: formData.customer.name,
         client_contract: formData.customer.contract_number,
         client_location: formData.customer.location,
@@ -72,7 +72,7 @@ const SummaryAndSignatureStep = () => {
         product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
         product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
         product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) : null
-      }
+      };
       
       await addVerbalProcess(verbalProcess);
       navigate('/employee/completed');
@@ -116,26 +116,18 @@ const SummaryAndSignatureStep = () => {
         })
       });
       
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error);
+      const responseData = await response.json();
+      if (!responseData.success) {
+        throw new Error(responseData.error);
       }
       
       console.log('Email sent successfully');
-      return data;
+      return responseData;
     } catch (error) {
       console.error('Error sending email:', error);
       throw error;
     }
-
-    // const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    // const link = document.createElement('a');
-    // link.href = URL.createObjectURL(blob);
-    // link.download = "dog.pdf";
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
-  }
+  };
 
   return (
     <div className="summary-step">
@@ -144,7 +136,6 @@ const SummaryAndSignatureStep = () => {
         <div className="summary-section">
           <h4>Informații Generale</h4>
           <div className="details-grid">
-            
             <div className="detail-item">
               <span className="label">Număr Recepție:</span>
               <span className="value">{receptionNumber || 'Se încarcă...'}</span>

@@ -25,6 +25,8 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    display: block;
+    margin: 0 auto;
 }
 
 .customer-form button:hover {
@@ -69,6 +71,37 @@
     background-color: #007bb5;
 }
 
+.job-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.job-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.job-item button {
+    background-color: #ddd;
+    color: black;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.job-item button.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.job-item button:hover {
+    background-color: #ccc;
+}
+
 @media (max-width: 768px) {
     .customers-list table, .customers-list thead, .customers-list tbody, .customers-list th, .customers-list td, .customers-list tr {
         display: block;
@@ -100,21 +133,6 @@
     .customers-list td:nth-of-type(3):before { content: "Telefon"; }
     .customers-list td:nth-of-type(4):before { content: "Nr contract"; }
     .customers-list td:nth-of-type(5):before { content: "Unitate de lucru"; }
-    .customers-list td:nth-of-type(6):before { content: "Suprafață"; }
-
-    .back-to-top {
-        display: block;
-        width: 100%;
-        text-align: center;
-        margin-top: 10px;
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    .back-to-top:hover {
-        background-color: #0056b3;
-    }
+    .customers-list td:nth-of-type(6):before { content: "Joburi"; }
+    .customers-list td:nth-of-type(7):before { content: "Acțiuni"; }
 }
