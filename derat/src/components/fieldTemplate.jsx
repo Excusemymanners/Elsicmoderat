@@ -110,13 +110,13 @@ export const fillTemplate = async (templateUrl, formData) => {
     
     formData.operations.forEach(operation => {
       const i = procedureCoordinates[operation];
-      let yPosition = height - 310 + i * 20;
+      let yPosition = height - 310 + i * 20 + (i > 2 ? 5 * (i - 1) : 0);
       drawText('X', 130, yPosition);
 
       const solutionXPosition = 180;
       const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
-      const concentrationXPosition = quantityXPosition + 90; // Position concentrations to the right of quantities
-      const lotXPosition = concentrationXPosition + 150; // Position lot to the right of concentrations
+      const concentrationXPosition = quantityXPosition + 105; // Position concentrations to the right of quantities
+      const lotXPosition = concentrationXPosition + 135; // Position lot to the right of concentrations
 
       // Iterate over selected solutions and add them to the PDF
       formData.solutions[operation]?.forEach(solution => {
