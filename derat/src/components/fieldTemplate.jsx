@@ -118,15 +118,13 @@ export const fillTemplate = async (templateUrl, formData) => {
         const lotXPosition = concentrationXPosition + 70; // Position lot to the right of concentrations
 
         // Iterate over selected solutions and add them to the PDF
-        Object.keys(formData.solutions).forEach(operation => {
-          formData.solutions[operation]?.forEach(solution => {
-            drawText(` ${solution.label}`, solutionXPosition, yPosition);
-            const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
-            drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, yPosition);
-            drawText(`${solution.concentration}%`, concentrationXPosition, yPosition);
-            drawText(`${solution.lot}`, lotXPosition, yPosition);
-            yPosition -= 22; // Adjust the position for the next solution
-          });
+        formData.solutions[operation]?.forEach(solution => {
+          drawText(` ${solution.label}`, solutionXPosition, yPosition);
+          const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
+          drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, yPosition);
+          drawText(`${solution.concentration}%`, concentrationXPosition, yPosition);
+          drawText(`${solution.lot}`, lotXPosition, yPosition);
+          yPosition -= 22; // Adjust the position for the next solution
         });
       }
     });
