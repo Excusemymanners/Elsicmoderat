@@ -107,6 +107,8 @@ export const fillTemplate = async (templateUrl, formData) => {
 
     formData.operations.forEach(operation => {
       const i = procedureCoordinates[operation];
+      console.log(operation, i)
+
       let yPosition = height - 310 + i * 20 + (i > 2 ? 5 * (i - 1) : 0);
       drawText('X', 130, yPosition);
       
