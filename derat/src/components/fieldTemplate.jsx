@@ -106,27 +106,27 @@ export const fillTemplate = async (templateUrl, formData) => {
     };
 
     // Iterate over selected procedures and mark them with 'X'
+    console.log(formData.operations);
+    
     formData.operations.forEach(operation => {
-      if (procedureCoordinates[operation]) {
-        const i = procedureCoordinates[operation];
-        let yPosition = height - 270 + i * 20;
-        drawText('X', 130, yPosition);
+      const i = procedureCoordinates[operation];
+      let yPosition = height - 270 + i * 20;
+      drawText('X', 130, yPosition);
 
-        const solutionXPosition = 180;
-        const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
-        const concentrationXPosition = quantityXPosition + 145; // Position concentrations to the right of quantities
-        const lotXPosition = concentrationXPosition + 70; // Position lot to the right of concentrations
+      const solutionXPosition = 180;
+      const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
+      const concentrationXPosition = quantityXPosition + 90; // Position concentrations to the right of quantities
+      const lotXPosition = concentrationXPosition + 150; // Position lot to the right of concentrations
 
-        // Iterate over selected solutions and add them to the PDF
-        formData.solutions[operation]?.forEach(solution => {
-          drawText(` ${solution.label}`, solutionXPosition, yPosition);
-          const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
-          drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, yPosition);
-          drawText(`${solution.concentration}%`, concentrationXPosition, yPosition);
-          drawText(`${solution.lot}`, lotXPosition, yPosition);
-          yPosition -= 22; // Adjust the position for the next solution
-        });
-      }
+      // Iterate over selected solutions and add them to the PDF
+      formData.solutions[operation]?.forEach(solution => {
+        drawText(` ${solution.label}`, solutionXPosition, yPosition);
+        const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
+        drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, yPosition);
+        drawText(`${solution.concentration}%`, concentrationXPosition, yPosition);
+        drawText(`${solution.lot}`, lotXPosition, yPosition);
+        yPosition -= 22; // Adjust the position for the next solution
+      });
     });
 
     // Save the PDF document and return the bytes
