@@ -96,39 +96,39 @@ export const fillTemplate = async (templateUrl, formData) => {
       drawText(`Employee Signature: Not provided`, 50, height - 490);
     }
 
+    
     // Coordinates for procedures checkboxes (example coordinates)
     const procedureCoordinates = {
-      Dezinfectare: { x: 130, y: height - 270 },
-      Dezinsectare: { x: 130, y: height - 290 },
-      Deratizare: { x: 130, y: height - 315 },
-      // Add more procedures as needed
+      'dezinfectie': 3,
+      'dezinsectie': 1,
+      'dezinsectie2': 2,
+      'deratizare': 0,
     };
 
     // Iterate over selected procedures and mark them with 'X'
     formData.operations.forEach(operation => {
       if (procedureCoordinates[operation]) {
-        const { x, y } = procedureCoordinates[operation];
-        drawText('X', x, y);
+        const i = procedureCoordinates[operation];
+        let yPosition = height - 270 + i * 20;
+        drawText('X', 130, yPosition);
+
+        const solutionXPosition = 180;
+        const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
+        const concentrationXPosition = quantityXPosition + 145; // Position concentrations to the right of quantities
+        const lotXPosition = concentrationXPosition + 70; // Position lot to the right of concentrations
+
+        // Iterate over selected solutions and add them to the PDF
+        Object.keys(formData.solutions).forEach(operation => {
+          formData.solutions[operation]?.forEach(solution => {
+            drawText(` ${solution.label}`, solutionXPosition, yPosition);
+            const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
+            drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, yPosition);
+            drawText(`${solution.concentration}%`, concentrationXPosition, yPosition);
+            drawText(`${solution.lot}`, lotXPosition, yPosition);
+            yPosition -= 22; // Adjust the position for the next solution
+          });
+        });
       }
-    });
-
-    // Coordinates for solutions (example coordinates)
-    let solutionYPosition = height - 270;
-    const solutionXPosition = 180;
-    const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
-    const concentrationXPosition = quantityXPosition + 145; // Position concentrations to the right of quantities
-    const lotXPosition = concentrationXPosition + 70; // Position lot to the right of concentrations
-
-    // Iterate over selected solutions and add them to the PDF
-    Object.keys(formData.solutions).forEach(operation => {
-      formData.solutions[operation]?.forEach(solution => {
-        drawText(` ${solution.label}`, solutionXPosition, solutionYPosition);
-        const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
-        drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, solutionYPosition);
-        drawText(`${solution.concentration}%`, concentrationXPosition, solutionYPosition);
-        drawText(`${solution.lot}`, lotXPosition, solutionYPosition);
-        solutionYPosition -= 22; // Adjust the position for the next solution
-      });
     });
 
     // Save the PDF document and return the bytes

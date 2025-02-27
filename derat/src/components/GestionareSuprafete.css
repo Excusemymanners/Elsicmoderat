@@ -1,7 +1,8 @@
 .gestionare-suprafete {
-    padding: 20px;
     max-width: 600px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
   
   .add-suprafata-form {
@@ -24,6 +25,15 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+  }
+
+  .search-container {
+    margin: 0;
+    padding: 0;
+  }
+
+  input {
+    margin: 0;
   }
   
   .add-suprafata-form button:disabled {
@@ -69,4 +79,26 @@
   
   .suprafete-list button:hover {
     background-color: #E64A19;
+  }
+
+  .clients {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .client {
+    padding: 4px 8px;
+    background-color: darkgray;
+    color: white;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .client:hover {
+    background-color: gray;
   }
