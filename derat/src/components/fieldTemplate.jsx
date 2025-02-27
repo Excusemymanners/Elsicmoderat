@@ -105,27 +105,22 @@ export const fillTemplate = async (templateUrl, formData) => {
       'deratizare': 0,
     };
 
-    // Iterate over selected procedures and mark them with 'X'
-    console.log(formData.operations);
-    
     formData.operations.forEach(operation => {
       const i = procedureCoordinates[operation];
       let yPosition = height - 310 + i * 20 + (i > 2 ? 5 * (i - 1) : 0);
       drawText('X', 130, yPosition);
-
+      
       const solutionXPosition = 180;
-      const quantityXPosition = solutionXPosition + 110; // Position quantities to the right of solutions
-      const concentrationXPosition = quantityXPosition + 105; // Position concentrations to the right of quantities
-      const lotXPosition = concentrationXPosition + 135; // Position lot to the right of concentrations
+      const quantityXPosition = solutionXPosition + 110; 
+      const concentrationXPosition = quantityXPosition + 105; 
+      const lotXPosition = concentrationXPosition + 135; 
 
-      // Iterate over selected solutions and add them to the PDF
       formData.solutions[operation]?.forEach(solution => {
         drawText(` ${solution.label}`, solutionXPosition, yPosition);
-        const quantityUsed = formData.quantities[operation]; // Get the quantity used for this operation
+        const quantityUsed = formData.quantities[operation];
         drawText(`${quantityUsed} ${solution.unit_of_measure}`, quantityXPosition, yPosition);
         drawText(`${solution.concentration}%`, concentrationXPosition, yPosition);
         drawText(`${solution.lot}`, lotXPosition, yPosition);
-        yPosition -= 22; // Adjust the position for the next solution
       });
     });
 
