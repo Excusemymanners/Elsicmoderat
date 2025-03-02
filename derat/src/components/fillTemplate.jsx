@@ -44,16 +44,16 @@ export const fillTemplate = async (templateUrl, request) => {
 
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     }).replace(/\//g, '.');
     const formattedTime = now.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
     });
-    
+
     drawText(`${request.receptionNumber}`, 505, height - 112);
     drawText(`${formattedDate}`, 400, height - 135);
     drawText(`${formattedTime}`, 475, height - 135);
@@ -102,48 +102,24 @@ export const fillTemplate = async (templateUrl, request) => {
       'dezinfectie': 3,
     };
 
-    const updateRemainingQuantity = async (solutionId, usedQuantity) => {
-      try {
-        const response = await fetch(`/api/update-remaining-quantity`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ solutionId, usedQuantity }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to update remaining quantity: ${response.statusText}`);
-        }
-
-        const responseData = await response.json();
-        console.log('Remaining quantity updated:', responseData);
-      } catch (error) {
-        console.error('Error updating remaining quantity:', error);
-      }
-    };
-
     for (const operation of request.operations) {
       const coordinate = procedureCoordinates[operation.name];
       console.log(operation.name, coordinate);
 
       let yPosition = 370 - coordinate * 20;
-      drawText('X', 130, yPosition);  
+      drawText('X', 130, yPosition);
 
       const surfaceXPosition = 150;
       const solutionXPosition = 180;
-      const quantityXPosition = solutionXPosition + 110; 
-      const concentrationXPosition = quantityXPosition + 105; 
-      const lotXPosition = concentrationXPosition + 135; 
+      const quantityXPosition = solutionXPosition + 110;
+      const concentrationXPosition = quantityXPosition + 105;
+      const lotXPosition = concentrationXPosition + 135;
 
       drawText(`${operation.surface} mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
       drawText(`${parseFloat(operation.quantity).toFixed(4)} ml`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
-
-      // Update the remaining quantity in the database
-      await updateRemainingQuantity(operation.solutionId, operation.quantity);
     }
 
     // Save the PDF document and return the bytes

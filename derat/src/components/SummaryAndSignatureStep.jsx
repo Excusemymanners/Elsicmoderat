@@ -6,6 +6,7 @@ import { fillTemplate } from './fillTemplate';
 import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 import { addVerbalProcess } from './verbalProcess';
+import supabase from '../../supabaseClient';
 
 const SummaryAndSignatureStep = () => {
   const { formData, updateFormData } = useEmployeeForm();
@@ -73,6 +74,7 @@ const SummaryAndSignatureStep = () => {
       };
       
       await addVerbalProcess(verbalProcess);
+      await updateRemainingQuantities(finalData.operations);
       navigate('/employee/completed');
     } catch (error) {
       console.error('Error in handleFinish:', error);
@@ -91,6 +93,39 @@ const SummaryAndSignatureStep = () => {
 
   const handleSignatureEnd = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
+  };
+
+  const updateRemainingQuantities = async (operations) => {
+    try {
+      for (const operation of operations) {
+        const { solutionId, quantity } = operation;
+        const { data, error } = await supabase
+          .from('solutions')
+          .select('remaining_quantity')
+          .eq('id', solutionId)
+          .single();
+
+        if (error) {
+          throw new Error(`Failed to fetch remaining quantity: ${error.message}`);
+        }
+
+        const newRemainingQuantity = data.remaining_quantity - quantity;
+
+        const { error: updateError } = await supabase
+          .from('solutions')
+          .update({ remaining_quantity: newRemainingQuantity })
+          .eq('id', solutionId);
+
+        if (updateError) {
+          throw new Error(`Failed to update remaining quantity: ${updateError.message}`);
+        }
+
+        console.log(`Updated remaining quantity for solution ${solutionId}: ${newRemainingQuantity}`);
+      }
+    } catch (error) {
+      console.error('Error updating remaining quantities:', error);
+      throw error;
+    }
   };
 
   if (isLoading) {
@@ -120,6 +155,7 @@ const SummaryAndSignatureStep = () => {
       request.operations.push({
         name: operation,
         solution: data.solutions[operation][0].label,
+        solutionId: data.solutions[operation][0].id, // Include solution ID
         quantity: data.quantities[operation],
         concentration: data.solutions[operation][0].concentration,
         lot: data.solutions[operation][0].lot,
@@ -228,7 +264,7 @@ const SummaryAndSignatureStep = () => {
                 <div className="detail-item">
                   <span className="label">Cantitate:</span>
                   <span className="value">
-                    {formData.quantities[operation]}
+                    {Number.parseFloat(formData.quantities[operation]).toFixed(4)}
                   </span>
                 </div>
                 <div className="detail-item">
