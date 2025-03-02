@@ -102,13 +102,34 @@ export const fillTemplate = async (templateUrl, request) => {
       'dezinfectie': 3,
     };
 
-    request.operations.forEach(operation => {
+    const updateRemainingQuantity = async (solutionId, usedQuantity) => {
+      try {
+        const response = await fetch(`/api/update-remaining-quantity`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ solutionId, usedQuantity }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update remaining quantity: ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        console.log('Remaining quantity updated:', responseData);
+      } catch (error) {
+        console.error('Error updating remaining quantity:', error);
+      }
+    };
+
+    for (const operation of request.operations) {
       const coordinate = procedureCoordinates[operation.name];
       console.log(operation.name, coordinate);
 
       let yPosition = 370 - coordinate * 20;
       drawText('X', 130, yPosition);  
-      
+
       const surfaceXPosition = 150;
       const solutionXPosition = 180;
       const quantityXPosition = solutionXPosition + 110; 
@@ -117,10 +138,13 @@ export const fillTemplate = async (templateUrl, request) => {
 
       drawText(`${operation.surface} mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
-      drawText(`${operation.quantity.toFixed(5)} ml`, quantityXPosition, yPosition);
+      drawText(`${parseFloat(operation.quantity).toFixed(4)} ml`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
-    });
+
+      // Update the remaining quantity in the database
+      await updateRemainingQuantity(operation.solutionId, operation.quantity);
+    }
 
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
