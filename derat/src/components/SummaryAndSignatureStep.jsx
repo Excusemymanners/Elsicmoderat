@@ -7,6 +7,7 @@ import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumbe
 import './SummaryAndSignatureStep.css';
 import { addVerbalProcess } from './verbalProcess';
 import supabase from '../../supabaseClient';
+import { updateRemainingQuantities } from './SolutionManagement'; // Importăm funcția
 
 const SummaryAndSignatureStep = () => {
   const { formData, updateFormData } = useEmployeeForm();
@@ -96,39 +97,6 @@ const SummaryAndSignatureStep = () => {
 
   const handleSignatureEnd = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
-  };
-
-  const updateRemainingQuantities = async (operations) => {
-    try {
-      for (const operation of operations) {
-        const { solutionId, quantity } = operation;
-        const { data, error } = await supabase
-          .from('solutions')
-          .select('remaining_quantity')
-          .eq('id', solutionId)
-          .single();
-
-        if (error) {
-          throw new Error(`Failed to fetch remaining quantity: ${error.message}`);
-        }
-
-        const newRemainingQuantity = data.remaining_quantity - quantity;
-
-        const { error: updateError } = await supabase
-          .from('solutions')
-          .update({ remaining_quantity: newRemainingQuantity })
-          .eq('id', solutionId);
-
-        if (updateError) {
-          throw new Error(`Failed to update remaining quantity: ${updateError.message}`);
-        }
-
-        console.log(`Updated remaining quantity for solution ${solutionId}: ${newRemainingQuantity}`);
-      }
-    } catch (error) {
-      console.error('Error updating remaining quantities:', error);
-      throw error;
-    }
   };
 
   if (isLoading) {
