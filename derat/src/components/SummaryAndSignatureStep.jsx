@@ -237,6 +237,12 @@ const SummaryAndSignatureStep = () => {
                     {formData.quantities[operation]}
                   </span>
                 </div>
+                <div className="detail-item">
+                  <span className="label">Suprafață:</span>
+                  <span className="value">
+                    {formData.customer.jobs.find(job => job.value === operation)?.surface || 'N/A'} mp
+                  </span>
+                </div>
               </div>
             ))}
           </div>

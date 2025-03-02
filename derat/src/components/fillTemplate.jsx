@@ -13,7 +13,7 @@ export const fillTemplate = async (templateUrl, request) => {
 
     console.log('PDF Bytes Length:', existingPdfBytes.byteLength);
 
-    // Asigură-te că fișierul PDF are un antet valid
+    // Ensure the PDF file has a valid header
     const fileHeader = new Uint8Array(existingPdfBytes.slice(0, 4));
     const headerString = String.fromCharCode.apply(null, fileHeader);
     if (headerString !== '%PDF') {
@@ -81,7 +81,6 @@ export const fillTemplate = async (templateUrl, request) => {
     const blueGreenColor = rgb(0, 0.1, 0.3);
     drawText(` ${request.employeeName}`, 525, height - 522, blueGreenColor);
     drawText(` ${request.employeeIDSeries}`, 540, height - 532, blueGreenColor); // Add ID series
-    
 
     // Embed and draw the employee's signature
     if (request.employeeSignature) {
@@ -96,7 +95,6 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`Employee Signature: Not provided`, 50, height - 490);
     }
 
-    
     // Coordinates for procedures checkboxes
     const procedureCoordinates = {
       'deratizare': 0,
@@ -112,11 +110,13 @@ export const fillTemplate = async (templateUrl, request) => {
       let yPosition = 370 - coordinate * 20;
       drawText('X', 130, yPosition);  
       
+      const surfaceXPosition = 150;
       const solutionXPosition = 180;
       const quantityXPosition = solutionXPosition + 110; 
       const concentrationXPosition = quantityXPosition + 105; 
       const lotXPosition = concentrationXPosition + 135; 
 
+      drawText(`${operation.surface} mp`, surfaceXPosition, yPosition);
       drawText(` ${operation.solution}`, solutionXPosition, yPosition);
       drawText(`${operation.quantity} ml`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
