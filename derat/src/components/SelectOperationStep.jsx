@@ -80,11 +80,12 @@ const SelectOperationStep = () => {
   };
 
   const handleSolutionChange = (operation, selectedOption) => {
+    // Store the selected solution in an array with just one item
     setSelectedSolutions(prevSelectedSolutions => ({
       ...prevSelectedSolutions,
-      [operation]: selectedOption
+      [operation]: selectedOption ? [selectedOption] : []
     }));
-    updateQuantities(operation, selectedOption);
+    updateQuantities(operation, selectedOption ? [selectedOption] : []);
   };
 
   const updateQuantities = (operation, selected) => {
@@ -92,13 +93,11 @@ const SelectOperationStep = () => {
     const surface = job ? job.surface : 0;
     let totalQuantity = 0;
 
-    if (selected && Array.isArray(selected)) {
-      selected.forEach(solution => {
-        if (solution && solution.quantity_per_sqm) {
-          const quantityForSolution = surface * solution.quantity_per_sqm;
-          totalQuantity += quantityForSolution;
-        }
-      });
+    if (selected && Array.isArray(selected) && selected.length > 0) {
+      const solution = selected[0];
+      if (solution && solution.quantity_per_sqm) {
+        totalQuantity = surface * solution.quantity_per_sqm;
+      }
     }
 
     setQuantities(prevQuantities => ({
@@ -112,7 +111,8 @@ const SelectOperationStep = () => {
       for (const operation of selectedOperations) {
         const operationSolutions = selectedSolutions[operation] || [];
         
-        for (const solution of operationSolutions) {
+        if (operationSolutions.length > 0) {
+          const solution = operationSolutions[0];
           const job = customerJobs.find(job => job.value === operation);
           const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
           
@@ -191,10 +191,10 @@ const SelectOperationStep = () => {
                 <Select
                   className="solution-select"
                   options={solutions}
-                  isMulti
-                  value={selectedSolutions[job.value] || []}
+                  isMulti={false}
+                  value={selectedSolutions[job.value]?.[0] || null}
                   onChange={(selectedOption) => handleSolutionChange(job.value, selectedOption)}
-                  placeholder={`Selectează soluții pentru ${job.label}...`}
+                  placeholder={`Selectează o soluție pentru ${job.label}...`}
                 />
                 <div className="quantity-display">
                   <label>Cantitate necesară: </label>

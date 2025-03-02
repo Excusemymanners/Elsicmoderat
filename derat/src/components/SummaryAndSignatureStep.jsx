@@ -2,8 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
-import { PDFDocument, rgb } from 'pdf-lib';
-import { fillTemplate } from './fieldTemplate';
+import { fillTemplate } from './fillTemplate';
 import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 import { addVerbalProcess } from './verbalProcess';
@@ -100,7 +99,37 @@ const SummaryAndSignatureStep = () => {
   }
 
   const generateAndSendPDF = async (data) => {
-    const pdfBytes = await fillTemplate('/assets/template.pdf', data);
+    const request = {
+      receptionNumber: data.receptionNumber,
+      client: {
+        name: data.customer.name,
+        contract_number: data.customer.contract_number,
+        location: data.customer.location,
+        surface: data.customer.surface
+      },
+      clientRepresentative: data.clientRepresentative,
+      clientSignature: data.clientSignature,
+      employeeName: data.employeeName,
+      employeeIDSeries: data.employeeIDSeries,
+      employeeSignature: data.employeeSignature,
+      operations: []
+    }
+    
+    data.operations.forEach(operation => {
+      const jobInfo = data.customer.jobs.find(job => job.value === operation);
+      const surface = jobInfo ? jobInfo.surface : null;
+      
+      request.operations.push({
+        name: operation,
+        solution: data.solutions[operation][0].label,
+        quantity: data.quantities[operation],
+        concentration: data.solutions[operation][0].concentration,
+        lot: data.solutions[operation][0].lot,
+        surface: surface
+      });
+    })
+    
+    const pdfBytes = await fillTemplate('/assets/template.pdf', request);
 
     let customerEmail = formData.customer.email;
 

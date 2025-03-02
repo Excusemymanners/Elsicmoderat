@@ -1,61 +1,134 @@
-import { PDFDocument, rgb } from 'pdf-lib';
-import download from 'downloadjs';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
-const fillTemplate = async ({ formData }) => {
-  const existingPdfBytes = await fetch('/assets/template.pdf').then(res => res.arrayBuffer());
+export const fillTemplate = async (templateUrl, request) => {
+  try {
+    // Fetch and load the existing PDF template
+    const response = await fetch(templateUrl);
 
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
-  const pages = pdfDoc.getPages();
-  const firstPage = pages[0];
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PDF template: ${response.statusText}`);
+    }
 
-  // Adaugă detalii angajat
-  firstPage.drawText(`Name: ${formData.employeeName}`, { x: 20, y: 750, size: 12, color: rgb(0, 0, 0) });
-  firstPage.drawText(`ID Series: ${formData.employeeIDSeries}`, { x: 20, y: 730, size: 12, color: rgb(0, 0, 0) });
-  firstPage.drawText(`ID Number: ${formData.employeeIDNumber}`, { x: 20, y: 710, size: 12, color: rgb(0, 0, 0) });
+    const existingPdfBytes = await response.arrayBuffer();
 
-  // Adaugă detalii client
-  firstPage.drawText(`Name: ${formData.customer.name}`, { x: 20, y: 690, size: 12, color: rgb(0, 0, 0) });
-  firstPage.drawText(`Email: ${formData.customer.email}`, { x: 20, y: 670, size: 12, color: rgb(0, 0, 0) });
-  firstPage.drawText(`Phone: ${formData.customer.phone}`, { x: 20, y: 650, size: 12, color: rgb(0, 0, 0) });
-  firstPage.drawText(`Contract Number: ${formData.customer.contract_number}`, { x: 20, y: 630, size: 12, color: rgb(0, 0, 0) });
-  firstPage.drawText(`Location: ${formData.customer.location}`, { x: 20, y: 610, size: 12, color: rgb(0, 0, 0) });
+    console.log('PDF Bytes Length:', existingPdfBytes.byteLength);
 
-  // Adaugă operațiuni selectate
-  firstPage.drawText('Selected Operations:', { x: 20, y: 590, size: 12, color: rgb(0, 0, 0) });
-  formData.operations.forEach((operation, index) => {
-    firstPage.drawText(`Operation: ${operation}`, { x: 20, y: 570 - index * 20, size: 12, color: rgb(0, 0, 0) });
-    formData.solutions[operation].forEach((solution, i) => {
-      firstPage.drawText(`Solution: ${solution.label}, Quantity: ${formData.quantities[operation]} ${solution.unit_of_measure}`, { x: 40, y: 550 - index * 20 - i * 20, size: 12, color: rgb(0, 0, 0) });
+    // Asigură-te că fișierul PDF are un antet valid
+    const fileHeader = new Uint8Array(existingPdfBytes.slice(0, 4));
+    const headerString = String.fromCharCode.apply(null, fileHeader);
+    if (headerString !== '%PDF') {
+      throw new Error(`Invalid PDF header: ${headerString}`);
+    }
+
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    // Get the first page of the document
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontSize = 11;
+
+    // Function to draw text in the PDF
+    const drawText = (text, x, y, color = rgb(0, 0, 0)) => {
+      firstPage.drawText(text, {
+        x,
+        y,
+        size: fontSize,
+        font,
+        color,
+      });
+    };
+
+    console.log('Request data in fillTemplate:', request);
+
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '.');
+    const formattedTime = now.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
     });
-  });
+    
+    drawText(`${request.receptionNumber}`, 505, height - 112);
+    drawText(`${formattedDate}`, 400, height - 135);
+    drawText(`${formattedTime}`, 475, height - 135);
+    drawText(`${request.client.name}`, 200, height - 180);
+    drawText(`${request.client.contract_number}`, 525, height - 180);
+    drawText(`${request.client.location}`, 250, height - 202);
+    drawText(`${request.client.surface} mp`, 220, height - 225);
 
-  // Adaugă reprezentantul clientului
-  firstPage.drawText(`Client Representative: ${formData.clientRepresentative}`, { x: 20, y: 450, size: 12, color: rgb(0, 0, 0) });
+    drawText(` ${request.clientRepresentative}`, 140, height - 520);
 
-  // Adaugă semnătura clientului
-  if (formData.clientSignature) {
-    const clientSignatureImage = await pdfDoc.embedPng(formData.clientSignature);
-    firstPage.drawImage(clientSignatureImage, {
-      x: 20,
-      y: 400,
-      width: 100,
-      height: 50,
+    // Embed and draw the client representative's signature
+    if (request.clientSignature) {
+      const clientSignatureImage = await pdfDoc.embedPng(request.clientSignature);
+      firstPage.drawImage(clientSignatureImage, {
+        x: 80,
+        y: height - 550,
+        width: 150,
+        height: 50,
+      });
+    } else {
+      drawText(`Client Signature: Not provided`, 580, height - 520);
+    }
+
+    // Draw employee information in blue
+    const blueGreenColor = rgb(0, 0.1, 0.3);
+    drawText(` ${request.employeeName}`, 525, height - 522, blueGreenColor);
+    drawText(` ${request.employeeIDSeries}`, 540, height - 532, blueGreenColor); // Add ID series
+    
+
+    // Embed and draw the employee's signature
+    if (request.employeeSignature) {
+      const employeeSignatureImage = await pdfDoc.embedPng(request.employeeSignature);
+      firstPage.drawImage(employeeSignatureImage, {
+        x: 530,
+        y: height - 580,
+        width: 150,
+        height: 50,
+      });
+    } else {
+      drawText(`Employee Signature: Not provided`, 50, height - 490);
+    }
+
+    
+    // Coordinates for procedures checkboxes
+    const procedureCoordinates = {
+      'deratizare': 0,
+      'dezinsectie': 1,
+      'dezinsectie2': 2,
+      'dezinfectie': 3,
+    };
+
+    request.operations.forEach(operation => {
+      const i = procedureCoordinates[operation.name];
+      console.log(operation.name, i);
+
+      let yPosition = height - 310 + i * 20 + (i > 2 ? 5 * (i - 1) : 0);
+      drawText('X', 130, yPosition);
+      
+      const solutionXPosition = 180;
+      const quantityXPosition = solutionXPosition + 110; 
+      const concentrationXPosition = quantityXPosition + 105; 
+      const lotXPosition = concentrationXPosition + 135; 
+
+      drawText(` ${operation.solution}`, solutionXPosition, yPosition);
+      drawText(`${operation.quantity} ml`, quantityXPosition, yPosition);
+      drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
+      drawText(`${operation.lot}`, lotXPosition, yPosition);
     });
+
+    // Save the PDF document and return the bytes
+    const pdfBytes = await pdfDoc.save();
+    console.log('Generated PDF Bytes Length:', pdfBytes.length);
+    return pdfBytes;
+  } catch (error) {
+    console.error('Error filling template:', error);
+    throw error;
   }
-
-  // Adaugă semnătura angajatului
-  if (formData.employeeSignature) {
-    const employeeSignatureImage = await pdfDoc.embedPng(formData.employeeSignature);
-    firstPage.drawImage(employeeSignatureImage, {
-      x: 20,
-      y: 330,
-      width: 100,
-      height: 50,
-    });
-  }
-
-  const pdfBytes = await pdfDoc.save();
-  download(pdfBytes, 'summary_and_signature.pdf', 'application/pdf');
 };
-
-export default fillTemplate;
