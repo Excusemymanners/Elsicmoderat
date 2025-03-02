@@ -57,7 +57,6 @@ const SummaryAndSignatureStep = () => {
         client_name: formData.customer.name,
         client_contract: formData.customer.contract_number,
         client_location: formData.customer.location,
-        client_surface: Number.parseInt(formData.customer.surface),
         employee_name: formData.employeeName,
         procedure1: formData.operations[0],
         product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
@@ -105,7 +104,6 @@ const SummaryAndSignatureStep = () => {
         name: data.customer.name,
         contract_number: data.customer.contract_number,
         location: data.customer.location,
-        surface: data.customer.surface
       },
       clientRepresentative: data.clientRepresentative,
       clientSignature: data.clientSignature,
@@ -208,10 +206,6 @@ const SummaryAndSignatureStep = () => {
             <div className="detail-item">
               <span className="label">Locație:</span>
               <span className="value">{formData.customer.location}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Suprafață:</span>
-              <span className="value">{formData.customer.surface} mp</span>
             </div>
           </div>
         </div>

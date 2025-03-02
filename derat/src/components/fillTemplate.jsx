@@ -60,7 +60,6 @@ export const fillTemplate = async (templateUrl, request) => {
     drawText(`${request.client.name}`, 200, height - 180);
     drawText(`${request.client.contract_number}`, 525, height - 180);
     drawText(`${request.client.location}`, 250, height - 202);
-    drawText(`${request.client.surface} mp`, 220, height - 225);
 
     drawText(` ${request.clientRepresentative}`, 140, height - 520);
 
@@ -117,8 +116,8 @@ export const fillTemplate = async (templateUrl, request) => {
       const lotXPosition = concentrationXPosition + 135; 
 
       drawText(`${operation.surface} mp`, surfaceXPosition, yPosition);
-      drawText(` ${operation.solution}`, solutionXPosition, yPosition);
-      drawText(`${operation.quantity} ml`, quantityXPosition, yPosition);
+      drawText(`${operation.solution}`, solutionXPosition, yPosition);
+      drawText(`${operation.quantity.toFixed(5)} ml`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     });
