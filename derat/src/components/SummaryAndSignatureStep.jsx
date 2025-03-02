@@ -149,16 +149,16 @@ const SummaryAndSignatureStep = () => {
     }
     
     data.operations.forEach(operation => {
-      const jobInfo = data.customer.jobs.find(job => job.value === operation);
+      const jobInfo = data.customer.jobs?.find(job => job.value === operation);
       const surface = jobInfo ? jobInfo.surface : null;
       
       request.operations.push({
         name: operation,
-        solution: data.solutions[operation][0].label,
-        solutionId: data.solutions[operation][0].id, // Include solution ID
-        quantity: data.quantity[operation],
-        concentration: data.solutions[operation][0].concentration,
-        lot: data.solutions[operation][0].lot,
+        solution: data.solutions[operation]?.[0]?.label || '',
+        solutionId: data.solutions[operation]?.[0]?.id || null, // Include solution ID
+        quantity: data.quantity[operation] || 0,
+        concentration: data.solutions[operation]?.[0]?.concentration || '',
+        lot: data.solutions[operation]?.[0]?.lot || '',
         surface: surface
       });
     })
@@ -264,13 +264,13 @@ const SummaryAndSignatureStep = () => {
                 <div className="detail-item">
                   <span className="label">Cantitate:</span>
                   <span className="value">
-                    {Number.parseFloat(formData.quantity[operation]).toFixed(4)}
+                    {Number.parseFloat(formData.quantity[operation] || 0).toFixed(4)}
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="label">Suprafață:</span>
                   <span className="value">
-                    {formData.customer.jobs.find(job => job.value === operation)?.surface || 'N/A'} mp
+                    {formData.customer.jobs?.find(job => job.value === operation)?.surface || 'N/A'} mp
                   </span>
                 </div>
               </div>
