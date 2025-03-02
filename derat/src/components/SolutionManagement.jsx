@@ -1,339 +1,264 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import SignatureCanvas from 'react-signature-canvas';
-import { useEmployeeForm } from './EmployeeFormProvider';
-import { fillTemplate } from './fillTemplate';
-import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
-import './SummaryAndSignatureStep.css';
-import { addVerbalProcess } from './verbalProcess';
+import React, { useState, useEffect } from 'react';
 import supabase from '../../supabaseClient';
+import './SolutionManagement.css';
 
-const SummaryAndSignatureStep = () => {
-  const { formData, updateFormData } = useEmployeeForm();
-  const sigCanvas = useRef(null);
-  const navigate = useNavigate();
-  const [employeeSignature, setEmployeeSignature] = useState('');
-  const [receptionNumber, setReceptionNumber] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+const SolutionManagement = () => {
+    // State-uri
+    const [solutions, setSolutions] = useState([]);
+    const [newSolution, setNewSolution] = useState({
+        name: '',
+        lot: '',
+        concentration: '',
+        stock: '',
+        initial_stock: '',
+        total_quantity: '',
+        remaining_quantity: '',
+        quantity_per_sqm: '',
+        unit_of_measure: 'ml'
+    });
+    const [editingSolution, setEditingSolution] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showForm, setShowForm] = useState(true);
+    const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const initializeData = async () => {
-      try {
-        if (!formData || !formData.customer) {
-          navigate('/employee/step1');
-          return;
+    // Funcții
+    const fetchSolutions = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('solutions')
+            .select('*');
+        if (error) {
+            console.error('Error fetching solutions:', error);
+        } else {
+            setSolutions(data);
         }
-        const number = await fetchReceptionNumber();
-        setReceptionNumber(number);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error initializing data:', error);
-        setIsLoading(false);
-      }
+        setLoading(false);
     };
 
-    initializeData();
-  }, [formData, navigate]);
+    useEffect(() => {
+        fetchSolutions();
+    }, []);
 
-  const handleFinish = async () => {
-    if (!employeeSignature) {
-      alert('Vă rugăm să adăugați semnătura.');
-      return;
-    }
+    const handleToggleForm = () => {
+        setShowForm(!showForm);
+    };
 
-    try {
-      const finalData = {
-        ...formData,
-        employeeSignature,
-        signatureDateTime: new Date().toLocaleString('ro-RO'),
-        userLogin: 'Excusemymanners',
-        receptionNumber
-      };
+    const handleAddSolution = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        let result;
 
-      await generateAndSendPDF(finalData);
-      await incrementReceptionNumber();
+        const stock = parseFloat(newSolution.stock);
+        const quantityPerSqm = parseFloat(newSolution.quantity_per_sqm);
 
-      const verbalProcess = {
-        numar_ordine: receptionNumber,
-        client_name: formData.customer.name,
-        client_contract: formData.customer.contract_number,
-        client_location: formData.customer.location,
-        employee_name: formData.employeeName,
-        procedure1: formData.operations[0],
-        product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
-        product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.lot).join(', '),
-        product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]),
-        procedure2: formData.operations[1] || null,
-        product2_name: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.name).join(', ') : null,
-        product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
-        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) : null,
-        procedure3: formData.operations[2] || null,
-        product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
-        product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) : null
-      };
-      
-      await addVerbalProcess(verbalProcess);
-      await updateRemainingQuantities(finalData.operations);
-      navigate('/employee/completed');
-    } catch (error) {
-      console.error('Error in handleFinish:', error);
-      alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
-    }
-  };
+        if (isNaN(stock) || isNaN(quantityPerSqm)) {
+            console.error('Invalid numeric values for stock or quantity per sqm');
+            setLoading(false);
+            return;
+        }
 
-  const handleBack = () => {
-    navigate('/employee/step4');
-  };
+        const solutionToSave = {
+            ...newSolution,
+            initial_stock: stock,
+            total_quantity: stock,
+            remaining_quantity: stock,
+            quantity_per_sqm: quantityPerSqm
+        };
 
-  const handleClear = () => {
-    sigCanvas.current.clear();
-    setEmployeeSignature('');
-  };
+        if (editingSolution) {
+            result = await supabase
+                .from('solutions')
+                .update(solutionToSave)
+                .eq('id', editingSolution);
+        } else {
+            result = await supabase
+                .from('solutions')
+                .insert([solutionToSave]);
+        }
 
-  const handleSignatureEnd = () => {
-    setEmployeeSignature(sigCanvas.current.toDataURL());
-  };
-
-  const updateRemainingQuantities = async (operations) => {
-    try {
-      for (const operation of operations) {
-        const { solutionId, quantity } = operation;
-        const { data, error } = await supabase
-          .from('solutions')
-          .select('remaining_quantity')
-          .eq('id', solutionId)
-          .single();
-
+        const { error } = result;
         if (error) {
-          throw new Error(`Failed to fetch remaining quantity: ${error.message}`);
+            console.error('Error adding/updating solution:', error);
+        } else {
+            setNewSolution({
+                name: '',
+                lot: '',
+                concentration: '',
+                stock: '',
+                initial_stock: '',
+                total_quantity: '',
+                remaining_quantity: '',
+                quantity_per_sqm: '',
+                unit_of_measure: 'ml'
+            });
+            setEditingSolution(null);
+            await fetchSolutions();
         }
+        setLoading(false);
+    };
 
-        const newRemainingQuantity = data.remaining_quantity - quantity;
-
-        const { error: updateError } = await supabase
-          .from('solutions')
-          .update({ remaining_quantity: newRemainingQuantity })
-          .eq('id', solutionId);
-
-        if (updateError) {
-          throw new Error(`Failed to update remaining quantity: ${updateError.message}`);
+    const handleDeleteSolution = async (id) => {
+        setLoading(true);
+        const { error } = await supabase
+            .from('solutions')
+            .delete()
+            .eq('id', id);
+        if (error) {
+            console.error('Error deleting solution:', error);
+        } else {
+            await fetchSolutions();
         }
+        setLoading(false);
+    };
 
-        console.log(`Updated remaining quantity for solution ${solutionId}: ${newRemainingQuantity}`);
-      }
-    } catch (error) {
-      console.error('Error updating remaining quantities:', error);
-      throw error;
-    }
-  };
+    const handleEditSolution = (solution) => {
+        setNewSolution(solution);
+        setEditingSolution(solution.id);
+        setShowForm(true);
+    };
 
-  if (isLoading) {
-    return <div className="loading">Se încarcă...</div>;
-  }
+    const calculateRemainingPercentage = (initialStock, remainingQuantity) => {
+        return ((remainingQuantity / initialStock) * 100).toFixed(2);
+    };
 
-  const generateAndSendPDF = async (data) => {
-    const request = {
-      receptionNumber: data.receptionNumber,
-      client: {
-        name: data.customer.name,
-        contract_number: data.customer.contract_number,
-        location: data.customer.location,
-      },
-      clientRepresentative: data.clientRepresentative,
-      clientSignature: data.clientSignature,
-      employeeName: data.employeeName,
-      employeeIDSeries: data.employeeIDSeries,
-      employeeSignature: data.employeeSignature,
-      operations: []
-    }
-    
-    data.operations.forEach(operation => {
-      const jobInfo = data.customer.jobs.find(job => job.value === operation);
-      const surface = jobInfo ? jobInfo.surface : null;
-      
-      request.operations.push({
-        name: operation,
-        solution: data.solutions[operation][0].label,
-        solutionId: data.solutions[operation][0].id, // Include solution ID
-        quantity: data.quantities[operation],
-        concentration: data.solutions[operation][0].concentration,
-        lot: data.solutions[operation][0].lot,
-        surface: surface
-      });
-    })
-    
-    const pdfBytes = await fillTemplate('/assets/template.pdf', request);
+    const filteredSolutions = solutions.filter(solution =>
+        solution.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        solution.lot.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    let customerEmail = formData.customer.email;
+    // Render
+    return (
+        <div className="solution-management">
+            
 
-    try {
-      const response = await fetch('/derat/api/send-email.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pdfBytes,
-          customerEmail
-        })
-      });
-      
-      const responseData = await response.json();
-      if (!responseData.success) {
-        throw new Error(responseData.error);
-      }
-      
-      console.log('Email sent successfully');
-      return responseData;
-    } catch (error) {
-      console.error('Error sending email:', error);
-      throw error;
-    }
-  };
+            <h2>Gestionare Soluții</h2>
 
-  return (
-    <div className="summary-step">
-      <h3>Pasul 5: Sumarul Procesului Verbal</h3>
-      <div className="form-content">
-        <div className="summary-section">
-          <h4>Informații Generale</h4>
-          <div className="details-grid">
-            <div className="detail-item">
-              <span className="label">Număr Recepție:</span>
-              <span className="value">{receptionNumber || 'Se încarcă...'}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="summary-section">
-          <h4>Detalii Angajat</h4>
-          <div className="details-grid">
-            <div className="detail-item">
-              <span className="label">Nume:</span>
-              <span className="value">{formData.employeeName}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Serie CI:</span>
-              <span className="value">{formData.employeeIDSeries}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="summary-section">
-          <h4>Detalii Client</h4>
-          <div className="details-grid">
-            <div className="detail-item">
-              <span className="label">Nume:</span>
-              <span className="value">{formData.customer.name}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Email:</span>
-              <span className="value">{formData.customer.email}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Telefon:</span>
-              <span className="value">{formData.customer.phone}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Nr. Contract:</span>
-              <span className="value">{formData.customer.contract_number}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Locație:</span>
-              <span className="value">{formData.customer.location}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="summary-section">
-          <h4>Operațiuni Efectuate</h4>
-          <div className="operations-list">
-            {formData.operations?.map((operation, index) => (
-              <div key={index} className="operation-summary">
-                <div className="detail-item">
-                  <span className="label">Operațiune:</span>
-                  <span className="value">{operation}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Soluții:</span>
-                  <span className="value">
-                    {formData.solutions[operation]?.map(sol => sol.label).join(', ')}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Cantitate:</span>
-                  <span className="value">
-                    {Number.parseFloat(formData.quantities[operation]).toFixed(4)}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Suprafață:</span>
-                  <span className="value">
-                    {formData.customer.jobs.find(job => job.value === operation)?.surface || 'N/A'} mp
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="summary-section">
-          <h4>Semnături</h4>
-          <div className="signatures-container">
-            <div className="signature-box client-signature">
-              <span className="signature-label">Semnătură Client:</span>
-              <div className="signature-display">
-                <img 
-                  src={formData.clientSignature} 
-                  alt="Semnătură Client" 
-                  className="signature-image"
-                />
-                <span className="signature-name">
-                  {formData.clientRepresentative}
-                </span>
-              </div>
-            </div>
-
-            <div className="signature-box employee-signature">
-              <span className="signature-label">Semnătura Dvs:</span>
-              <div className="signature-pad-container">
-                <SignatureCanvas 
-                  ref={sigCanvas} 
-                  onEnd={handleSignatureEnd}
-                  canvasProps={{
-                    className: 'signature-canvas',
-                    width: window.innerWidth < 768 ? 300 : 500,
-                    height: window.innerWidth < 768 ? 150 : 200,
-                    style: {
-                      cursor: 'crosshair',
-                      touchAction: 'none',
-                      backgroundColor: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '6px'
-                    }
-                  }}
-                />
-                <button className="clear-button" onClick={handleClear}>
-                  Șterge semnătura
+            <div className="action-buttons">
+                <button onClick={handleToggleForm} disabled={loading}>
+                    {showForm ? 'Caută Soluții' : 'Adaugă Soluție'}
                 </button>
-              </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="navigation-buttons">
-        <button onClick={handleBack}>Înapoi</button>
-        <button 
-          onClick={handleFinish}
-          disabled={!employeeSignature || !receptionNumber}
-        >
-          Finalizează
-        </button>
-      </div>
-    </div>
-  );
+            {showForm ? (
+                <form onSubmit={handleAddSolution} className="solution-form">
+                    <input
+                        type="text"
+                        placeholder="Nume substanță"
+                        value={newSolution.name}
+                        onChange={(e) => setNewSolution({ ...newSolution, name: e.target.value })}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Aviz/Lot"
+                        value={newSolution.lot}
+                        onChange={(e) => setNewSolution({ ...newSolution, lot: e.target.value })}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Concentrație"
+                        value={newSolution.concentration}
+                        onChange={(e) => setNewSolution({ ...newSolution, concentration: e.target.value })}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder={`Cantitate stoc (${newSolution.unit_of_measure})`}
+                        value={newSolution.stock}
+                        onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder={`Cantitate pe metru pătrat (${newSolution.unit_of_measure})`}
+                        value={newSolution.quantity_per_sqm}
+                        onChange={(e) => setNewSolution({ ...newSolution, quantity_per_sqm: e.target.value })}
+                        required
+                    />
+                    <select
+                        value={newSolution.unit_of_measure}
+                        onChange={(e) => setNewSolution({ ...newSolution, unit_of_measure: e.target.value })}
+                        required
+                    >
+                        <option value="ml">Mililitri (ml)</option>
+                        <option value="g">Grame (g)</option>
+                    </select>
+                    <button type="submit" disabled={loading}>
+                        {editingSolution !== null ? 'Actualizează Soluție' : 'Adaugă Soluție'}
+                    </button>
+                </form>
+            ) : (
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="Caută soluție..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            )}
+
+            <div className="solutions-list">
+                {loading ? (
+                    <p>Se încarcă...</p>
+                ) : (
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nume</th>
+                                <th>Aviz/Lot</th>
+                                <th>Concentrație</th>
+                                <th>Stoc inițial</th>
+                                <th>Cantitate Rămasă / Totală</th>
+                                <th>Procentaj rămas</th>
+                                <th>Cantitate pe metru pătrat</th>
+                                <th>Acțiuni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredSolutions.map(solution => {
+                                const percentage = calculateRemainingPercentage(solution.initial_stock, solution.remaining_quantity);
+                                return (
+                                    <tr key={solution.id}>
+                                        <td>{solution.name}</td>
+                                        <td>{solution.lot}</td>
+                                        <td>{solution.concentration}</td>
+                                        <td>{solution.initial_stock} {solution.unit_of_measure}</td>
+                                        <td>
+                                            {solution.remaining_quantity} {solution.unit_of_measure} / {solution.total_quantity} {solution.unit_of_measure}
+                                        </td>
+                                        <td>
+                                            <div className="progress-bar-container">
+                                                <div 
+                                                    className="progress-bar" 
+                                                    style={{ 
+                                                        width: `${percentage}%`,
+                                                        backgroundColor: percentage > 50 ? '#4CAF50' : percentage > 20 ? '#FFA500' : '#FF0000'
+                                                    }}
+                                                >
+                                                    {percentage}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{solution.quantity_per_sqm} {solution.unit_of_measure}</td>
+                                        <td>
+                                            <button onClick={() => handleEditSolution(solution)}>
+                                                Editează
+                                            </button>
+                                            <button onClick={() => handleDeleteSolution(solution.id)}>
+                                                Șterge
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+        </div>
+    );
 };
 
-export default SummaryAndSignatureStep;
+export default SolutionManagement;
