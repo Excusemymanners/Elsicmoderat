@@ -62,15 +62,15 @@ const SummaryAndSignatureStep = () => {
         procedure1: formData.operations[0],
         product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
         product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.lot).join(', '),
-        product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]),
+        product1_quantity: Number.parseFloat(formData.quantity[formData.operations[0]]),
         procedure2: formData.operations[1] || null,
         product2_name: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.name).join(', ') : null,
         product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
-        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) : null,
+        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantity[formData.operations[1]]) : null,
         procedure3: formData.operations[2] || null,
         product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
         product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) : null
+        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantity[formData.operations[2]]) : null
       };
       
       await addVerbalProcess(verbalProcess);
@@ -156,7 +156,7 @@ const SummaryAndSignatureStep = () => {
         name: operation,
         solution: data.solutions[operation][0].label,
         solutionId: data.solutions[operation][0].id, // Include solution ID
-        quantity: data.quantities[operation],
+        quantity: data.quantity[operation],
         concentration: data.solutions[operation][0].concentration,
         lot: data.solutions[operation][0].lot,
         surface: surface
@@ -264,7 +264,7 @@ const SummaryAndSignatureStep = () => {
                 <div className="detail-item">
                   <span className="label">Cantitate:</span>
                   <span className="value">
-                    {Number.parseFloat(formData.quantities[operation]).toFixed(4)}
+                    {Number.parseFloat(formData.quantity[operation]).toFixed(4)}
                   </span>
                 </div>
                 <div className="detail-item">
