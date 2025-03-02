@@ -106,10 +106,13 @@ export const fillTemplate = async (templateUrl, request) => {
     };
 
     request.operations.forEach(operation => {
+      console.log('Operation:', operation);
       const i = procedureCoordinates[operation.name];
+      console.log('Coordinate:', i);
       console.log(operation.name, i);
+      console.log('Name:', operation.name);
 
-      let yPosition = height - 310 + i * 20 + (i > 2 ? 5 * (i - 1) : 0);
+      let yPosition = height - 310 + i * 20;
       drawText('X', 130, yPosition);
       
       const solutionXPosition = 180;
@@ -118,9 +121,13 @@ export const fillTemplate = async (templateUrl, request) => {
       const lotXPosition = concentrationXPosition + 135; 
 
       drawText(` ${operation.solution}`, solutionXPosition, yPosition);
+      console.log('Solution:', operation.solution);
       drawText(`${operation.quantity} ml`, quantityXPosition, yPosition);
+      console.log('Quantity:', operation.quantity);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
+      console.log('Concentration:', operation.concentration);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
+      console.log('Lot:', operation.lot);
     });
 
     // Save the PDF document and return the bytes
