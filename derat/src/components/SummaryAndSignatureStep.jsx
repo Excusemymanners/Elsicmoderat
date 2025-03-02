@@ -63,21 +63,21 @@ const SummaryAndSignatureStep = () => {
         procedure1: formData.operations[0],
         product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
         product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.lot).join(', '),
-        product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]),
+        product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]) || 0,
         procedure2: formData.operations[1] || null,
         product2_name: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.name).join(', ') : null,
         product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
-        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) : null,
+        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) || 0 : null,
         procedure3: formData.operations[2] || null,
         product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
         product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) : null
+        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null
       };
       
       await addVerbalProcess(verbalProcess);
       await updateRemainingQuantities(formData.operations.map(operation => ({
         solutionId: formData.solutions[operation][0].id,
-        quantity: formData.quantities[operation]
+        quantity: Number.parseFloat(formData.quantities[operation]) || 0
       })));
       navigate('/employee/completed');
     } catch (error) {
