@@ -141,7 +141,7 @@ const GestionareSuprafete = () => {
                       <input
                         type="number"
                         value={job.surface}
-                        onChange={(event) => {setClientSurfaces(clientSurfaces.map(j => j.value === job.value ? { ...j, surface: event.target.value } : j))}}
+                        onChange={(event) => {setClientSurfaces(clientSurfaces.map(j => j.value === job.value ? { ...j, surface: parseFloat(event.target.value) } : j))}}
                       />
                     </td>
                   </tr>
