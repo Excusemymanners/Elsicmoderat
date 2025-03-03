@@ -244,7 +244,7 @@ const SummaryAndSignatureStep = () => {
                 <div className="detail-item">
                   <span className="label">Suprafață:</span>
                   <span className="value">
-                    {formData.customer.jobs.find(job => job.value === operation)?.surface || 'N/A'} mp
+                    {formData.customer.jobs.find(job => job.value === operation)?.surface || '0'} mp
                   </span>
                 </div>
               </div>

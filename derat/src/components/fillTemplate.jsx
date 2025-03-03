@@ -41,7 +41,7 @@ export const fillTemplate = async (templateUrl, request) => {
     // Get the first page of the document
     const pages = pdfDoc.getPages();
     const firstPage = pages[0];
-    const { width, height } = firstPage.getSize();
+    const { height } = firstPage.getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontSize = 11;
 

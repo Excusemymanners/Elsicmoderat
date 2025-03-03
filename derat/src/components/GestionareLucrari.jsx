@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import supabase from '../../supabaseClient';
 import './GestionareLucrari.css';
 
@@ -6,6 +6,8 @@ const GestionareLucrari = () => {
     const [lucrari, setLucrari] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [surfaces, setSurfaces] = useState({});
+    const [clientsCache, setClientsCache] = useState({});
 
     useEffect(() => {
         fetchLucrari();
@@ -25,17 +27,44 @@ const GestionareLucrari = () => {
         return data[0];
     };
 
+    const getCombinedSurfaces = async (lucrare) => {
+        if (!lucrare.client_name) return '0';
+        
+        // Check cache first
+        if (!clientsCache[lucrare.client_name]) {
+            const client = await fetchClient(lucrare.client_name);
+            setClientsCache(prev => ({...prev, [lucrare.client_name]: client}));
+        }
+        
+        const client = clientsCache[lucrare.client_name];
+        const surfaces = [];
+        
+        if (lucrare.procedure1) surfaces.push(getSurface(client, lucrare.procedure1));
+        if (lucrare.procedure2) surfaces.push(getSurface(client, lucrare.procedure2));
+        if (lucrare.procedure3) surfaces.push(getSurface(client, lucrare.procedure3));
+        if (lucrare.procedure4) surfaces.push(getSurface(client, lucrare.procedure4));
+        
+        return surfaces.join('; ');
+    };
+
     const fetchLucrari = async () => {
         setLoading(true);
         const { data, error } = await supabase
             .from('lucrari')
             .select('*')
             .order('created_at', { ascending: false });
-
+    
         if (error) {
             console.error('Error fetching lucrari:', error);
         } else {
             setLucrari(data || []);
+            
+            // Pre-calculate all surfaces
+            const surfacesData = {};
+            for (const lucrare of data || []) {
+                surfacesData[lucrare.id] = await getCombinedSurfaces(lucrare);
+            }
+            setSurfaces(surfacesData);
         }
         setLoading(false);
     };
@@ -50,12 +79,17 @@ const GestionareLucrari = () => {
         });
     };
 
+    const getSurface = (client, jobValue) => {
+        const job = client?.jobs?.find(job => job.value === jobValue);
+        if (!job || !job.surface) return '0';
+        // Convert to number and back to string to handle both number and string inputs
+        return String(Number(job.surface) || 0);
+    };
+    
     const exportExcel = async () => {
         const { data, error } = await supabase
             .from('lucrari')
             .select('*');
-
-        console.log(data);  
 
         if (error) {
             console.error('Error fetching lucrari:', error);
@@ -89,38 +123,31 @@ const GestionareLucrari = () => {
             const surfaces = [];
             const lotsAndQuantities = [];
         
-            const getSurface = (jobLabel) => {
-                const job = client?.jobs?.find(job => job.value === jobLabel);
-                if (!job || !job.surface) return '0';
-                // Convert to number and back to string to handle both number and string inputs
-                return String(Number(job.surface) || 0);
-            };
-        
             if(lucrare.procedure1 !== null) {
                 procedures.push(lucrare.procedure1);
                 products.push(lucrare.product1_name);
-                surfaces.push(getSurface(lucrare.procedure1));
+                surfaces.push(getSurface(client, lucrare.procedure1));
                 lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
             }
         
             if(lucrare.procedure2 !== null) {
                 procedures.push(lucrare.procedure2);
                 products.push(lucrare.product2_name);
-                surfaces.push(getSurface(lucrare.procedure2));
+                surfaces.push(getSurface(client, lucrare.procedure2));
                 lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
             }
         
             if(lucrare.procedure3 !== null) {
                 procedures.push(lucrare.procedure3);
                 products.push(lucrare.product3_name);
-                surfaces.push(getSurface(lucrare.procedure3));
+                surfaces.push(getSurface(client, lucrare.procedure3));
                 lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
             }
         
             if(lucrare.procedure4 !== null) {
                 procedures.push(lucrare.procedure4);
                 products.push(lucrare.product4_name);
-                surfaces.push(getSurface(lucrare.procedure4));
+                surfaces.push(getSurface(client, lucrare.procedure4));
                 lotsAndQuantities.push(`${lucrare.product4_lot} - ${lucrare.product4_quantity}`);
             }
 
@@ -141,6 +168,12 @@ const GestionareLucrari = () => {
 
         const processedRows = await Promise.all(data.map(processRow));
 
+        processedRows.sort((a, b) => {
+            const numA = parseInt(a.split(',')[0].replace(/"/g, ''));
+            const numB = parseInt(b.split(',')[0].replace(/"/g, ''));
+            return numA - numB;
+        });
+        
         const csv = [
             headers.map(escapeCSV).join(','),
             ...processedRows
@@ -222,7 +255,7 @@ const GestionareLucrari = () => {
                                     <td>{lucrare.client_name}</td>
                                     <td>{lucrare.client_contract}</td>
                                     <td>{lucrare.client_location}</td>
-                                    <td>{lucrare.client_surface} mp</td>
+                                    <td>{surfaces[lucrare.id] || '...'}</td>
                                     <td>{lucrare.employee_name}</td>
                                     <td>
                                         <div className="procedures">
@@ -242,6 +275,12 @@ const GestionareLucrari = () => {
                                                 <div className="procedure">
                                                     <strong>{lucrare.procedure3}:</strong>
                                                     <span>{lucrare.product3_name} (Lot: {lucrare.product3_lot}) - {lucrare.product3_quantity}</span>
+                                                </div>
+                                            )}
+                                            {lucrare.procedure4 && (
+                                                <div className="procedure">
+                                                    <strong>{lucrare.procedure4}:</strong>
+                                                    <span>{lucrare.product4_name} (Lot: {lucrare.product4_lot}) - {lucrare.product4_quantity}</span>
                                                 </div>
                                             )}
                                         </div>
