@@ -109,7 +109,7 @@ export const fillTemplate = async (templateUrl, request) => {
       let yPosition = 360 - coordinate * 20;
       drawText('X', 130, yPosition);
 
-      const surfaceXPosition = 150;
+      const surfaceXPosition = 170;
       const solutionXPosition = 180;
       const quantityXPosition = solutionXPosition + 110;
       const concentrationXPosition = quantityXPosition + 105;
