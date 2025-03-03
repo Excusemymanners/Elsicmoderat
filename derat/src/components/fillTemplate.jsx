@@ -1,4 +1,20 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import supabase from '../../supabaseClient';
+
+export const fetchSolutionUnitOfMeasure = async (id) => {
+  const { data, error } = await supabase
+    .from('solutions')
+    .select('unit_of_measure')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching reception number:', error);
+    return null;
+  }
+  
+  return data.unit_of_measure;
+};
 
 export const fillTemplate = async (templateUrl, request) => {
   try {
@@ -102,6 +118,8 @@ export const fillTemplate = async (templateUrl, request) => {
       'dezinfectie': 3,
     };
 
+    console.log(request)
+
     for (const operation of request.operations) {
       const coordinate = procedureCoordinates[operation.name];
       console.log(operation.name, coordinate);
@@ -117,7 +135,7 @@ export const fillTemplate = async (templateUrl, request) => {
 
       drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
-      drawText(`${parseFloat(operation.quantity).toFixed(2)} ml`, quantityXPosition, yPosition);
+      drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }

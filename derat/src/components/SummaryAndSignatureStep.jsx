@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
@@ -6,11 +6,10 @@ import { fillTemplate } from './fillTemplate';
 import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 import { addVerbalProcess } from './verbalProcess';
-import supabase from '../../supabaseClient';
 import { updateRemainingQuantities } from './SolutionManagement'; // Importăm funcția
 
 const SummaryAndSignatureStep = () => {
-  const { formData, updateFormData } = useEmployeeForm();
+  const { formData } = useEmployeeForm();
   const sigCanvas = useRef(null);
   const navigate = useNavigate();
   const [employeeSignature, setEmployeeSignature] = useState('');
