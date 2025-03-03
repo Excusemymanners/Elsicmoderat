@@ -130,5 +130,5 @@ export const fillTemplate = async (templateUrl, request) => {
     console.error('Error filling template:', error);
     throw error;
   }
-  let a=1;
+  
 };
