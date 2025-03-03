@@ -106,7 +106,7 @@ export const fillTemplate = async (templateUrl, request) => {
       const coordinate = procedureCoordinates[operation.name];
       console.log(operation.name, coordinate);
 
-      let yPosition = 365 - coordinate * 25;
+      let yPosition = 365 - coordinate * 22;
       drawText('X', 130, yPosition);
 
       const surfaceXPosition = 170;
