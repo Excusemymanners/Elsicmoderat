@@ -11,6 +11,20 @@ const GestionareLucrari = () => {
         fetchLucrari();
     }, []);
 
+    const fetchClient = async (clientName) => {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('name', clientName);
+      
+        if (error) {
+          console.error('Error fetching reception number:', error);
+          return null;
+        }
+        
+        return data[0];
+    };
+
     const fetchLucrari = async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -41,6 +55,8 @@ const GestionareLucrari = () => {
             .from('lucrari')
             .select('*');
 
+        console.log(data);  
+
         if (error) {
             console.error('Error fetching lucrari:', error);
             alert('Eroare la exportul fișierului Excel!');
@@ -65,46 +81,69 @@ const GestionareLucrari = () => {
             'Lot si cantitate'
         ];
 
-        const processRow = (lucrare) => {
-            const procedures = [
-                lucrare.procedure1,
-                lucrare.procedure2,
-                lucrare.procedure3
-            ].filter(Boolean).join('; ');
-
-            const products = [
-                lucrare.product1_name,
-                lucrare.product2_name,
-                lucrare.product3_name
-            ].filter(Boolean).join('; ');
-
-            const lotsAndQuantities = [
-                lucrare.product1_lot && lucrare.product1_quantity ? 
-                    `${lucrare.product1_name}: ${lucrare.product1_lot} - ${lucrare.product1_quantity}` : null,
-                lucrare.product2_lot && lucrare.product2_quantity ? 
-                    `${lucrare.product2_name}: ${lucrare.product2_lot} - ${lucrare.product2_quantity}` : null,
-                lucrare.product3_lot && lucrare.product3_quantity ? 
-                    `${lucrare.product3_name}: ${lucrare.product3_lot} - ${lucrare.product3_quantity}` : null
-            ].filter(Boolean).join('; ');
+        const processRow = async (lucrare) => {
+            const client = await fetchClient(lucrare.client_name);
+            
+            const procedures = [];
+            const products = [];
+            const surfaces = [];
+            const lotsAndQuantities = [];
+        
+            const getSurface = (jobLabel) => {
+                const job = client?.jobs?.find(job => job.value === jobLabel);
+                if (!job || !job.surface) return '0';
+                // Convert to number and back to string to handle both number and string inputs
+                return String(Number(job.surface) || 0);
+            };
+        
+            if(lucrare.procedure1 !== null) {
+                procedures.push(lucrare.procedure1);
+                products.push(lucrare.product1_name);
+                surfaces.push(getSurface(lucrare.procedure1));
+                lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
+            }
+        
+            if(lucrare.procedure2 !== null) {
+                procedures.push(lucrare.procedure2);
+                products.push(lucrare.product2_name);
+                surfaces.push(getSurface(lucrare.procedure2));
+                lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
+            }
+        
+            if(lucrare.procedure3 !== null) {
+                procedures.push(lucrare.procedure3);
+                products.push(lucrare.product3_name);
+                surfaces.push(getSurface(lucrare.procedure3));
+                lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
+            }
+        
+            if(lucrare.procedure4 !== null) {
+                procedures.push(lucrare.procedure4);
+                products.push(lucrare.product4_name);
+                surfaces.push(getSurface(lucrare.procedure4));
+                lotsAndQuantities.push(`${lucrare.product4_lot} - ${lucrare.product4_quantity}`);
+            }
 
             const row = [
                 lucrare.numar_ordine - 1, // Decrement numar_ordine by 1
                 new Date(lucrare.created_at).toLocaleString('ro-RO'),
                 lucrare.client_name,
                 lucrare.client_location,
-                lucrare.client_surface,
+                surfaces.join('; '),
                 lucrare.employee_name,
-                procedures,
-                products,
-                lotsAndQuantities
+                procedures.join('; '),
+                products.join('; '),
+                lotsAndQuantities.join('; ')
             ];
 
             return row.map(escapeCSV).join(',');
         };
 
+        const processedRows = await Promise.all(data.map(processRow));
+
         const csv = [
             headers.map(escapeCSV).join(','),
-            ...data.map(processRow)
+            ...processedRows
         ].join('\n');
 
         // Add BOM for Excel to properly detect UTF-8
