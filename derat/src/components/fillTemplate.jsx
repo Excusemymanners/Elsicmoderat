@@ -122,7 +122,6 @@ export const fillTemplate = async (templateUrl, request) => {
 
     for (const operation of request.operations) {
       const coordinate = procedureCoordinates[operation.name];
-      console.log(operation.name, coordinate);
 
       let yPosition = 365 - coordinate * 22;
       drawText('X', 130, yPosition);
@@ -135,7 +134,7 @@ export const fillTemplate = async (templateUrl, request) => {
 
       drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
-      drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
+      drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${await fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
