@@ -109,9 +109,9 @@ export const fillTemplate = async (templateUrl, request) => {
       let yPosition = 365 - coordinate * 22;
       drawText('X', 130, yPosition);
 
-      const surfaceXPosition = 182;
+      const surfaceXPosition = 180;
       const solutionXPosition = 250;
-      const quantityXPosition = solutionXPosition + 120;
+      const quantityXPosition = solutionXPosition + 150;
       const concentrationXPosition = quantityXPosition + 105;
       const lotXPosition = concentrationXPosition + 135;
 
