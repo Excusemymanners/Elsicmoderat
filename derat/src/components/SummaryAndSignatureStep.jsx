@@ -76,7 +76,7 @@ const SummaryAndSignatureStep = () => {
         product4_lot: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
         product4_quantity: formData.operations[3] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null
       };
-      
+      console.log('Verbal process:', verbalProcess);
       await addVerbalProcess(verbalProcess);
       await updateRemainingQuantities(formData.operations.map(operation => ({
         solutionId: formData.solutions[operation][0].id,
