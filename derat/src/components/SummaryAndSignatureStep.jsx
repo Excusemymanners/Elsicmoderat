@@ -303,7 +303,7 @@ const SummaryAndSignatureStep = () => {
           onClick={handleFinish}
           disabled={!employeeSignature || !receptionNumber}
         >
-          let a=1;
+          
           Finalizează
         </button>
       </div>
