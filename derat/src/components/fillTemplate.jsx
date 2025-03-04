@@ -130,7 +130,7 @@ export const fillTemplate = async (templateUrl, request) => {
       const solutionXPosition = 250;
       const quantityXPosition = solutionXPosition + 145;
       const concentrationXPosition = quantityXPosition + 140;
-      const lotXPosition = concentrationXPosition + 85;
+      const lotXPosition = concentrationXPosition + 65;
 
       drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
