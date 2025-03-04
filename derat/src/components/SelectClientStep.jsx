@@ -40,7 +40,9 @@ const SelectClientStep = () => {
 
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.unitatea_de_lucru?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
