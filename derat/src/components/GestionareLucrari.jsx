@@ -3,7 +3,7 @@ import supabase from '../../supabaseClient';
 import './GestionareLucrari.css';
 
 const GestionareLucrari = () => {
-    const [lucrari, setLucrari] = useState([]);
+    const [lucrari, setLucrari] = useState([]); 
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [surfaces, setSurfaces] = useState({});
@@ -82,8 +82,7 @@ const GestionareLucrari = () => {
     const getSurface = (client, jobValue) => {
         const job = client?.jobs?.find(job => job.value === jobValue);
         if (!job || !job.surface) return '0';
-        // Convert to number and back to string to handle both number and string inputs
-        return String(Number(job.surface) || 0);
+        return Number(job.surface);
     };
     
     const exportExcel = async () => {
