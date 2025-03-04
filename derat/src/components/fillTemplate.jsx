@@ -139,6 +139,7 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
 
+    console.log(request.observations)
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
     console.log('Generated PDF Bytes Length:', pdfBytes.length);

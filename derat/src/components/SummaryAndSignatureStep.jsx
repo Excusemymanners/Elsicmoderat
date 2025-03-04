@@ -15,6 +15,7 @@ const SummaryAndSignatureStep = () => {
   const [employeeSignature, setEmployeeSignature] = useState('');
   const [receptionNumber, setReceptionNumber] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [observations, setObservations] = useState('');
 
   useEffect(() => {
     const initializeData = async () => {
@@ -47,7 +48,8 @@ const SummaryAndSignatureStep = () => {
         employeeSignature,
         signatureDateTime: new Date().toLocaleString('ro-RO'),
         userLogin: 'Excusemymanners',
-        receptionNumber
+        receptionNumber,
+        observations
       };
 
       await generateAndSendPDF(finalData);
@@ -119,7 +121,8 @@ const SummaryAndSignatureStep = () => {
       employeeName: data.employeeName,
       employeeIDSeries: data.employeeIDSeries,
       employeeSignature: data.employeeSignature,
-      operations: []
+      operations: [],
+      observations: data.observations
     }
     
     data.operations.forEach(operation => {
@@ -294,6 +297,18 @@ const SummaryAndSignatureStep = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="observations-container">
+          <label htmlFor="observations">Observații:</label>
+          <textarea
+            id="observations"
+            value={observations}
+            onChange={(e) => setObservations(e.target.value)}
+            rows="4"
+            cols="50"
+            placeholder="Introduceți observațiile aici..."
+          />
         </div>
       </div>
 
