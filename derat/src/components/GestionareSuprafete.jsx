@@ -120,9 +120,14 @@ const GestionareSuprafete = () => {
     setLoading(true);
     try {
       for (const client of selectedClients) {
+        const updatedJobs = client.jobs.map(job => {
+          const updatedJob = clientSurfaces.find(j => j.value === job.value);
+          return updatedJob ? { ...job, surface: updatedJob.surface } : job;
+        });
+
         const { error } = await supabase
           .from('customers')
-          .update({ jobs: clientSurfaces })
+          .update({ jobs: updatedJobs })
           .eq('id', client.id);
 
         if (error) {
