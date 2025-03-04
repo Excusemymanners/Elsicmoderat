@@ -10,7 +10,8 @@ const Header = ({ isAuthenticated, isAdmin, handleLogout, handleToggle }) => {
         '/admin/gestionare-clienti',
         '/admin/gestionare-solutii',
         '/admin/gestionare-angajati',
-        '/admin/gestionare-lucrari'
+        '/admin/gestionare-lucrari',
+        '/admin/gestionare-suprafete',
     ].includes(location.pathname);
 
     const onLogout = () => {
