@@ -4,12 +4,12 @@ import './GestionareSuprafete.css';
 
 const GestionareSuprafete = () => {
   const [clients, setClients] = useState(new Map());
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedClients, setSelectedClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [clientSurfaces, setClientSurfaces] = useState([]);
-  const [loadingSelectedClient, setLoadingSelectedClient] = useState(false);
+  const [loadingSelectedClients, setLoadingSelectedClients] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -26,14 +26,11 @@ const GestionareSuprafete = () => {
     } else {
       const clientMap = new Map();
       data.forEach(client => {
-        const existingEntry = Array.from(clientMap.entries()).find(
-          ([existingClient]) => existingClient.name === client.name
-        );
-        
-        if (existingEntry) {
-          clientMap.set(existingEntry[0], clientMap.get(existingEntry[0]) + 1);
+        const firstWord = client.name.split(' ')[0];
+        if (clientMap.has(firstWord)) {
+          clientMap.get(firstWord).push(client);
         } else {
-          clientMap.set(client, 1);
+          clientMap.set(firstWord, [client]);
         }
       });
       setClients(clientMap);
@@ -43,36 +40,100 @@ const GestionareSuprafete = () => {
   };
 
   const handleClientSelect = async (client) => {
-    setSelectedClient(client);
-    setLoadingSelectedClient(true);
+    const alreadySelected = selectedClients.find(c => c.id === client.id);
+    const newSelectedClients = alreadySelected
+      ? selectedClients.filter(c => c.id !== client.id)
+      : [...selectedClients, client];
+
+    setSelectedClients(newSelectedClients);
+
+    if (newSelectedClients.length === 0) {
+      setClientSurfaces([]);
+      return;
+    }
+
+    setLoadingSelectedClients(true);
     const { data, error } = await supabase
       .from('customers')
       .select('jobs')
-      .eq('id', client.id);
+      .in('id', newSelectedClients.map(c => c.id));
     if (error) {
       console.error('Eroare la încărcarea suprafețelor clientului:', error);
       setError('Nu s-au putut încărca suprafețele clientului');
     } else {
-      setClientSurfaces(data[0]?.jobs || []);
-      console.log(clientSurfaces)
+      const commonJobs = data.length > 0 ? data[0].jobs.map(job => ({ ...job })) : [];
+      newSelectedClients.forEach(client => {
+        data.forEach(d => {
+          d.jobs.forEach(job => {
+            const commonJob = commonJobs.find(j => j.value === job.value);
+            if (commonJob && commonJob.surface !== job.surface) {
+              commonJob.surface = '';
+            }
+          });
+        });
+      });
+      setClientSurfaces(commonJobs);
     }
-    setLoadingSelectedClient(false);
+    setLoadingSelectedClients(false);
+  };
+
+  const handleGroupSelect = async (clientGroup) => {
+    const clientsInGroup = clients.get(clientGroup);
+    const allSelected = clientsInGroup.every(client => selectedClients.some(c => c.id === client.id));
+    const newSelectedClients = allSelected
+      ? selectedClients.filter(c => !clientsInGroup.some(client => client.id === c.id))
+      : [...selectedClients, ...clientsInGroup.filter(client => !selectedClients.some(c => c.id === client.id))];
+
+    setSelectedClients(newSelectedClients);
+
+    if (newSelectedClients.length === 0) {
+      setClientSurfaces([]);
+      return;
+    }
+
+    setLoadingSelectedClients(true);
+    const { data, error } = await supabase
+      .from('customers')
+      .select('jobs')
+      .in('id', newSelectedClients.map(c => c.id));
+    if (error) {
+      console.error('Eroare la încărcarea suprafețelor clientului:', error);
+      setError('Nu s-au putut încărca suprafețele clientului');
+    } else {
+      const commonJobs = data.length > 0 ? data[0].jobs.map(job => ({ ...job })) : [];
+      newSelectedClients.forEach(client => {
+        data.forEach(d => {
+          d.jobs.forEach(job => {
+            const commonJob = commonJobs.find(j => j.value === job.value);
+            if (commonJob && commonJob.surface !== job.surface) {
+              commonJob.surface = '';
+            }
+          });
+        });
+      });
+      setClientSurfaces(commonJobs);
+    }
+    setLoadingSelectedClients(false);
   };
 
   const handleSaveChanges = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('customers')
-        .update({ jobs: clientSurfaces })
-        .eq('name', selectedClient.name);
+      for (const client of selectedClients) {
+        const { error } = await supabase
+          .from('customers')
+          .update({ jobs: clientSurfaces })
+          .eq('id', client.id);
 
-      if (error) {
-        throw new Error('Eroare la actualizarea suprafețelor');
+        if (error) {
+          throw new Error('Eroare la actualizarea suprafețelor');
+        }
       }
 
       alert('Suprafețele au fost actualizate cu succes');
-      handleClientSelect(selectedClient); // Reîmprospătează suprafețele după actualizare
+      setSelectedClients([]);
+      setClientSurfaces([]);
+      fetchClients(); // Reîmprospătează lista de clienți după actualizare
     } catch (error) {
       console.error(error);
       setError(error.message);
@@ -82,15 +143,15 @@ const GestionareSuprafete = () => {
   };
 
   const filteredClients = () => {
-      const filteredMap = new Map();
+    const filteredMap = new Map();
 
-      for (const [client, count] of clients.entries()) {
-        if (client.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-            filteredMap.set(client, count);
-        }
+    for (const [clientGroup, clientList] of clients.entries()) {
+      if (clientGroup.toLowerCase().includes(searchTerm.toLowerCase())) {
+        filteredMap.set(clientGroup, clientList);
       }
-      
-      return filteredMap;
+    }
+
+    return filteredMap;
   };
 
   return (
@@ -105,8 +166,6 @@ const GestionareSuprafete = () => {
         />
       </div>
       <div className="gestionare-suprafete">
-        
-
         {error && <div className="error-message">{error}</div>}
 
         <div className="clients-list">
@@ -114,18 +173,27 @@ const GestionareSuprafete = () => {
             <p>Se încarcă...</p>
           ) : (
             <div className='clients'>
-              {Array.from(filteredClients().keys()).map(client => (
-                <div className='client' key={client.id} onClick={() => handleClientSelect(client)}>
-                  {client.name} - ({filteredClients().get(client)})
+              {Array.from(filteredClients().entries()).map(([clientGroup, clientList]) => (
+                <div key={clientGroup} className='client-group'>
+                  <h3 onClick={() => handleGroupSelect(clientGroup)}>{clientGroup}</h3>
+                  {clientList.map(client => (
+                    <div
+                      className={`client ${selectedClients.some(c => c.id === client.id) ? 'selected' : ''}`}
+                      key={client.id}
+                      onClick={() => handleClientSelect(client)}
+                    >
+                      {client.name}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {selectedClient && !loadingSelectedClient && (
+        {selectedClients.length > 0 && !loadingSelectedClients && (
           <div className="client-details">
-            <h3>Suprafete pentru {selectedClient.name}</h3>
+            <h3>Suprafete pentru clienții selectați</h3>
             <table>
               <thead>
                 <tr>
@@ -141,7 +209,7 @@ const GestionareSuprafete = () => {
                       <input
                         type="number"
                         value={job.surface}
-                        onChange={(event) => {setClientSurfaces(clientSurfaces.map(j => j.value === job.value ? { ...j, surface: parseFloat(event.target.value) } : j))}}
+                        onChange={(event) => { setClientSurfaces(clientSurfaces.map(j => j.value === job.value ? { ...j, surface: parseFloat(event.target.value) } : j)) }}
                       />
                     </td>
                   </tr>

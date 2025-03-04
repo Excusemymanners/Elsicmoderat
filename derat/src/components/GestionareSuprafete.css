@@ -1,104 +1,122 @@
 .gestionare-suprafete {
-    max-width: 600px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.search-container {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.search-container input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.clients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.client-group {
+  margin-bottom: 20px;
+}
+
+.client-group h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+  text-transform: capitalize;
+}
+
+.clients {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.client {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #f8f9fa;
+}
+
+.client:hover {
+  background-color: #e2e6ea;
+}
+
+.client.selected {
+  background-color: #d3e9ff;
+  border-color: #66b3ff;
+}
+
+.client-details {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+}
+
+.client-details h3 {
+  margin-top: 0;
+}
+
+.client-details table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.client-details th, .client-details td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.client-details th {
+  background-color: #e9ecef;
+}
+
+.client-details button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.client-details button[disabled] {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+}
+
+@media screen and (max-width: 768px) {
+  .search-container input {
+    padding: 10px;
   }
-  
-  .add-suprafata-form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  
-  .add-suprafata-form input {
-    flex: 1;
+
+  .client-details th, .client-details td {
     padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
   }
-  
-  .add-suprafata-form button {
+
+  .client-details button {
     padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    font-size: 0.9rem;
   }
-
-  .search-container {
-    margin: 0;
-    padding: 0;
-  }
-
-  input {
-    margin: 0;
-  }
-  
-  .add-suprafata-form button:disabled {
-    background-color: #ddd;
-  }
-  
-  .error-message {
-    color: red;
-    margin-bottom: 10px;
-  }
-  
-  .suprafete-list table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .suprafete-list th, .suprafete-list td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  .suprafete-list th {
-    background-color: #f2f2f2;
-  }
-  
-  .suprafete-list tr:nth-child(even) {
-    background-color: #f9f9f9;
-  }
-  
-  .suprafete-list tr:hover {
-    background-color: #ddd;
-  }
-  
-  .suprafete-list button {
-    padding: 5px 10px;
-    background-color: #FF5722;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .suprafete-list button:hover {
-    background-color: #E64A19;
-  }
-
-  .clients {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .client {
-    padding: 4px 8px;
-    background-color: darkgray;
-    color: white;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.3s;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .client:hover {
-    background-color: gray;
-  }
+}
