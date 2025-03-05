@@ -3,11 +3,21 @@ import supabase from '../../supabaseClient';
 import './GestionareLucrari.css';
 
 const GestionareLucrari = () => {
-    const [lucrari, setLucrari] = useState([]); 
+    const [lucrari, setLucrari] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [surfaces, setSurfaces] = useState({});
     const [clientsCache, setClientsCache] = useState({});
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+
+    useEffect(() => {
+        if (showConfirmModal) {
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
+    }, [showConfirmModal]);
 
     useEffect(() => {
         fetchLucrari();
@@ -15,35 +25,35 @@ const GestionareLucrari = () => {
 
     const fetchClient = async (clientName) => {
         const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .eq('name', clientName);
-      
+            .from('customers')
+            .select('*')
+            .eq('name', clientName);
+
         if (error) {
-          console.error('Error fetching reception number:', error);
-          return null;
+            console.error('Error fetching reception number:', error);
+            return null;
         }
-        
+
         return data[0];
     };
 
     const getCombinedSurfaces = async (lucrare) => {
         if (!lucrare.client_name) return '0';
-        
+
         // Check cache first
         if (!clientsCache[lucrare.client_name]) {
             const client = await fetchClient(lucrare.client_name);
-            setClientsCache(prev => ({...prev, [lucrare.client_name]: client}));
+            setClientsCache(prev => ({ ...prev, [lucrare.client_name]: client }));
         }
-        
+
         const client = clientsCache[lucrare.client_name];
         const surfaces = [];
-        
+
         if (lucrare.procedure1) surfaces.push(getSurface(client, lucrare.procedure1));
         if (lucrare.procedure2) surfaces.push(getSurface(client, lucrare.procedure2));
         if (lucrare.procedure3) surfaces.push(getSurface(client, lucrare.procedure3));
         if (lucrare.procedure4) surfaces.push(getSurface(client, lucrare.procedure4));
-        
+
         return surfaces.join('; ');
     };
 
@@ -53,12 +63,12 @@ const GestionareLucrari = () => {
             .from('lucrari')
             .select('*')
             .order('created_at', { ascending: false });
-    
+
         if (error) {
             console.error('Error fetching lucrari:', error);
         } else {
             setLucrari(data || []);
-            
+
             // Pre-calculate all surfaces
             const surfacesData = {};
             for (const lucrare of data || []) {
@@ -84,7 +94,7 @@ const GestionareLucrari = () => {
         if (!job || !job.surface) return '0';
         return Number(job.surface);
     };
-    
+
     const exportExcel = async () => {
         const { data, error } = await supabase
             .from('lucrari')
@@ -116,34 +126,34 @@ const GestionareLucrari = () => {
 
         const processRow = async (lucrare) => {
             const client = await fetchClient(lucrare.client_name);
-            
+
             const procedures = [];
             const products = [];
             const surfaces = [];
             const lotsAndQuantities = [];
-        
-            if(lucrare.procedure1 !== null) {
+
+            if (lucrare.procedure1 !== null) {
                 procedures.push(lucrare.procedure1);
                 products.push(lucrare.product1_name);
                 surfaces.push(getSurface(client, lucrare.procedure1));
                 lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
             }
-        
-            if(lucrare.procedure2 !== null) {
+
+            if (lucrare.procedure2 !== null) {
                 procedures.push(lucrare.procedure2);
                 products.push(lucrare.product2_name);
                 surfaces.push(getSurface(client, lucrare.procedure2));
                 lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
             }
-        
-            if(lucrare.procedure3 !== null) {
+
+            if (lucrare.procedure3 !== null) {
                 procedures.push(lucrare.procedure3);
                 products.push(lucrare.product3_name);
                 surfaces.push(getSurface(client, lucrare.procedure3));
                 lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
             }
-        
-            if(lucrare.procedure4 !== null) {
+
+            if (lucrare.procedure4 !== null) {
                 procedures.push(lucrare.procedure4);
                 products.push(lucrare.product4_name);
                 surfaces.push(getSurface(client, lucrare.procedure4));
@@ -172,7 +182,7 @@ const GestionareLucrari = () => {
             const numB = parseInt(b.split(',')[0].replace(/"/g, ''));
             return numA - numB;
         });
-        
+
         const csv = [
             headers.map(escapeCSV).join(','),
             ...processedRows
@@ -190,6 +200,17 @@ const GestionareLucrari = () => {
     };
 
     const clearDatabase = async () => {
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmClear = async () => {
+        if (confirmText !== 'Confirm') {
+            alert('Ștergerea a fost anulată.');
+            setShowConfirmModal(false);
+            setConfirmText('');
+            return;
+        }
+
         // Șterge toate lucrările din baza de date
         const { error } = await supabase
             .from('lucrari')
@@ -203,6 +224,13 @@ const GestionareLucrari = () => {
             setLucrari([]);
             alert('Toate lucrările au fost șterse din baza de date.');
         }
+        setShowConfirmModal(false);
+        setConfirmText('');
+    };
+
+    const handleCancelClear = () => {
+        setShowConfirmModal(false);
+        setConfirmText('');
     };
 
     const filteredLucrari = lucrari.filter(lucrare =>
@@ -213,6 +241,24 @@ const GestionareLucrari = () => {
 
     return (
         <div className="lucrari-management">
+            {showConfirmModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Confirmare ștergere</h3>
+                        <p>Pentru a confirma ștergerea, scrieți "Confirm":</p>
+                        <input
+                            type="text"
+                            value={confirmText}
+                            onChange={(e) => setConfirmText(e.target.value)}
+                            placeholder="Scrieți 'Confirm'"
+                        />
+                        <div className="modal-buttons">
+                            <button onClick={handleCancelClear}>Anulează</button>
+                            <button onClick={handleConfirmClear}>Confirmă</button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <h2>Gestionare Lucrări</h2>
 
             <div className="action-buttons">
