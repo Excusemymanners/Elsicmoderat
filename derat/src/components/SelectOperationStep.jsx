@@ -13,6 +13,7 @@ const SelectOperationStep = () => {
     const [quantities, setQuantities] = useState(formData.quantities || {});
     const [errorMessage, setErrorMessage] = useState('');
     const [customerJobs, setCustomerJobs] = useState([]);
+    const [stockErrors, setStockErrors] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -24,7 +25,7 @@ const SelectOperationStep = () => {
         const { data, error } = await supabase
             .from('solutions')
             .select('*');
-
+        
         if (error) {
             setErrorMessage('Failed to fetch solutions from database');
             console.error(error);
@@ -80,7 +81,6 @@ const SelectOperationStep = () => {
     };
 
     const handleSolutionChange = (operation, selectedOption) => {
-        // Store the selected solution in an array with just one item
         setSelectedSolutions(prevSelectedSolutions => ({
             ...prevSelectedSolutions,
             [operation]: selectedOption ? [selectedOption] : []
@@ -172,6 +172,24 @@ const SelectOperationStep = () => {
         navigate('/employee/step2');
     };
 
+    useEffect(() => {
+        const errors = [];
+        for (const operation of selectedOperations) {
+            const operationSolutions = selectedSolutions[operation] || [];
+            
+            if (operationSolutions.length > 0) {
+                const solution = operationSolutions[0];
+                const job = customerJobs.find(job => job.value === operation && job.active);
+                const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
+                
+                if (solution.stock < quantityUsed) {
+                    errors.push(`Stoc insuficient pentru soluția ${solution.label}.`);
+                }
+            }
+        }
+        setStockErrors(errors);
+    }, [selectedOperations, selectedSolutions, customerJobs]);
+
     return (
         <div className="select-operation-step">
             <h2>Selectează operația și soluția</h2>
@@ -216,11 +234,19 @@ const SelectOperationStep = () => {
                 </div>
             )}
 
+            {stockErrors.length > 0 && (
+                <div className="stock-errors">
+                    {stockErrors.map((error, index) => (
+                        <p key={index}>{error}</p>
+                    ))}
+                </div>
+            )}
+
             <div className="navigation-buttons">
                 <button onClick={handleBack}>Back</button>
                 <button 
                     onClick={handleNext} 
-                    disabled={selectedOperations.length === 0}
+                    disabled={selectedOperations.length === 0 || stockErrors.length > 0}
                 >
                     Next
                 </button>
