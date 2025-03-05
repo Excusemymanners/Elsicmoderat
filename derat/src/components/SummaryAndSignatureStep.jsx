@@ -271,6 +271,7 @@ const SummaryAndSignatureStep = () => {
                 </span>
               </div>
             </div>
+            
 
             <div className="signature-box employee-signature">
               <span className="signature-label">Semnătura Dvs:</span>
@@ -294,12 +295,11 @@ const SummaryAndSignatureStep = () => {
                 <button className="clear-button" onClick={handleClear}>
                   Șterge semnătura
                 </button>
+                
               </div>
+              
             </div>
-          </div>
-        </div>
-
-        <div className="observations-container">
+            <div className="observations-container">
           <label htmlFor="observations">Observații:</label>
           <textarea
             id="observations"
@@ -308,8 +308,11 @@ const SummaryAndSignatureStep = () => {
             rows="4"
             cols="50"
             placeholder="Introduceți observațiile aici..."
-          />
+          /></div>
+          </div>
         </div>
+
+        
       </div>
 
       <div className="navigation-buttons">
