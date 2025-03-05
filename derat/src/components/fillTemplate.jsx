@@ -130,7 +130,7 @@ export const fillTemplate = async (templateUrl, request) => {
       const solutionXPosition = 250;
       const quantityXPosition = solutionXPosition + 145;
       const concentrationXPosition = quantityXPosition + 140;
-      const lotXPosition = concentrationXPosition + 65;
+      const lotXPosition = concentrationXPosition + 70;
 
       drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
@@ -138,7 +138,7 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
-    drawText(`${request.observations}`, 210, 300);
+    drawText(`${request.observations}`, 210, 550);
 
     console.log(request.observations)
     // Save the PDF document and return the bytes
