@@ -138,7 +138,7 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
-    drawText(`${request.observations}`, 210,180 );
+    drawText(`${request.observations}`, 210,170 );
 
     console.log(request.observations)
     // Save the PDF document and return the bytes
