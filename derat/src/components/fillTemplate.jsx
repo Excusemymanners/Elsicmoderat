@@ -94,7 +94,7 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw employee information in blue
     const blueGreenColor = rgb(0, 0.1, 0.3);
-    drawText(` ${request.employeeName}`, 525, height - 522, blueGreenColor);
+    drawText(` ${request.employeeName}`, 530, height - 522, blueGreenColor);
     drawText(` ${request.employeeIDSeries}`, 540, height - 532, blueGreenColor); // Add ID series
 
     // Embed and draw the employee's signature
@@ -138,7 +138,7 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
-    drawText(`${request.observations}`, 210,165 );
+    drawText(`${request.observations}`, 190,160 );
 
     console.log(request.observations)
     // Save the PDF document and return the bytes
