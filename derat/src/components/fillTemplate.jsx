@@ -94,7 +94,7 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw employee information in blue
     const blueGreenColor = rgb(0, 0.1, 0.3);
-    drawText(` ${request.employeeName}`, 530, height - 522, blueGreenColor);
+    drawText(` ${request.employeeName}`, 540, height - 522, blueGreenColor);
     drawText(` ${request.employeeIDSeries}`, 540, height - 532, blueGreenColor); // Add ID series
 
     // Embed and draw the employee's signature
@@ -130,7 +130,7 @@ export const fillTemplate = async (templateUrl, request) => {
       const solutionXPosition = 250;
       const quantityXPosition = solutionXPosition + 145;
       const concentrationXPosition = quantityXPosition + 140;
-      const lotXPosition = concentrationXPosition + 60;
+      const lotXPosition = concentrationXPosition + 50;
 
       drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
       drawText(`${operation.solution}`, solutionXPosition, yPosition);
