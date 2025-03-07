@@ -25,7 +25,7 @@ export default async function handler(req, res) {
             from: process.env.SMTP_EMAIL,
             to: customerEmail,
             subject: 'ElsiCom SRL',
-            text: 'Buna ziua!Aici aveti atasat procesul verbal.',
+            text: 'Buna ziua!Aici aveti atasat procesul verbal DDD.',
             attachments: [
                 {
                     filename: 'proces-verbal.pdf',
