@@ -24,8 +24,8 @@ export default async function handler(req, res) {
         const mailOptions = {
             from: process.env.SMTP_EMAIL,
             to: customerEmail,
-            subject: 'Proces Verbal',
-            text: 'Please find the attached Proces Verbal.',
+            subject: 'ElsiCom SRL',
+            text: 'Buna ziua!Aici aveti atasat procesul verbal.',
             attachments: [
                 {
                     filename: 'proces-verbal.pdf',
