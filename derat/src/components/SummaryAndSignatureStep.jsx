@@ -49,7 +49,8 @@ const SummaryAndSignatureStep = () => {
         signatureDateTime: new Date().toLocaleString('ro-RO'),
         userLogin: 'Excusemymanners',
         receptionNumber,
-        observations
+        observations,
+        clientSurface: formData.customer.surface // Add client surface to final data
       };
 
       await generateAndSendPDF(finalData);
@@ -115,6 +116,7 @@ const SummaryAndSignatureStep = () => {
         name: data.customer.name,
         contract_number: data.customer.contract_number,
         location: data.customer.location,
+        surface: data.clientSurface // Include client surface in request
       },
       clientRepresentative: data.clientRepresentative,
       clientSignature: data.clientSignature,
