@@ -6,7 +6,7 @@ import { fillTemplate } from './fillTemplate';
 import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumber';
 import './SummaryAndSignatureStep.css';
 import { addVerbalProcess } from './verbalProcess';
-import { updateRemainingQuantities } from './SolutionManagement'; // Importăm funcția
+import { updateRemainingQuantities } from './SolutionManagement';
 
 const SummaryAndSignatureStep = () => {
   const { formData } = useEmployeeForm();
@@ -219,6 +219,10 @@ const SummaryAndSignatureStep = () => {
             <div className="detail-item">
               <span className="label">Locație:</span>
               <span className="value">{formData.customer.location}</span>
+            </div>
+            <div className="detail-item">
+              <span className="label">Suprafat client:</span>
+              <span className="value">{formData.customer.surface}</span>
             </div>
           </div>
         </div>

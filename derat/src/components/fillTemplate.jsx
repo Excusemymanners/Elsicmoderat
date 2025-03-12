@@ -76,6 +76,7 @@ export const fillTemplate = async (templateUrl, request) => {
     drawText(`${request.client.name}`, 200, height - 180);
     drawText(`${request.client.contract_number}`, 525, height - 180);
     drawText(`${request.client.location}`, 250, height - 202);
+    drawText(`${request.client.surface}`, 250, height - 224); // Added Suprafat client
 
     drawText(` ${request.clientRepresentative}`, 140, height - 520);
 

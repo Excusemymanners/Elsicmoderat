@@ -10,6 +10,7 @@ const CustomerManagement = () => {
         phone: '',
         contract_number: '',
         location: '',
+        surface: '',
         jobs: [
             { label: 'Dezinfectie', value: 'dezinfectie', active: false, surface: '' },
             { label: 'Dezinsectie', value: 'dezinsectie', active: false, surface: '' },
@@ -64,6 +65,7 @@ const CustomerManagement = () => {
                 phone: '',
                 contract_number: '',
                 location: '',
+                surface: '',
                 jobs: [
                     { label: 'Dezinfectie', value: 'dezinfectie', active: false, surface: '' },
                     { label: 'Dezinsectie', value: 'dezinsectie', active: false, surface: '' },
@@ -139,36 +141,42 @@ const CustomerManagement = () => {
                     <input
                         type="text"
                         placeholder="Nume client"
-                        value={newCustomer.name}
+                        value={newCustomer.name || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
                         required
                     />
                     <input
                         type="email"
                         placeholder="Email"
-                        value={newCustomer.email}
+                        value={newCustomer.email || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
                         required
                     />
                     <input
                         type="tel"
                         placeholder="Telefon"
-                        value={newCustomer.phone}
+                        value={newCustomer.phone || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                         required
                     />
                     <input
                         type="text"
                         placeholder="Număr de contract"
-                        value={newCustomer.contract_number}
+                        value={newCustomer.contract_number || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, contract_number: e.target.value })}
                         required
                     />
                     <input
                         type="text"
                         placeholder="Punct de lucru"
-                        value={newCustomer.location}
+                        value={newCustomer.location || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, location: e.target.value })}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Suprafat client"
+                        value={newCustomer.surface || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, surface: e.target.value })}
                     />
                     <div className="job-container">
                         {newCustomer.jobs.map((job, index) => (
@@ -184,7 +192,7 @@ const CustomerManagement = () => {
                                     <input
                                         type="text"
                                         placeholder="Suprafață"
-                                        value={job.surface}
+                                        value={job.surface || ''}
                                         onChange={(e) => handleSurfaceChange(index, e.target.value)}
                                     />
                                 )}
@@ -218,6 +226,7 @@ const CustomerManagement = () => {
                                 <th>Telefon</th>
                                 <th>Număr de contract</th>
                                 <th>Punct de lucru</th>
+                                <th>Suprafat client</th>
                                 <th>Joburi</th>
                                 <th>Acțiuni</th>
                             </tr>
@@ -230,6 +239,7 @@ const CustomerManagement = () => {
                                     <td>{customer.phone}</td>
                                     <td>{customer.contract_number}</td>
                                     <td>{customer.location}</td>
+                                    <td>{customer.surface}</td>
                                     <td>
                                         {customer.jobs && customer.jobs
                                             .filter(job => job.active)
