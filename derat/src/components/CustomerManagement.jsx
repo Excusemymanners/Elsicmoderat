@@ -22,6 +22,9 @@ const CustomerManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+    const [customerToDelete, setCustomerToDelete] = useState(null);
 
     const fetchCustomers = async () => {
         setLoading(true);
@@ -80,17 +83,38 @@ const CustomerManagement = () => {
     };
 
     const handleDeleteCustomer = async (id) => {
+        setCustomerToDelete(id);
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (confirmText !== 'Confirm') {
+            alert('Ștergerea a fost anulată.');
+            setShowConfirmModal(false);
+            setConfirmText('');
+            return;
+        }
+
         setLoading(true);
         const { error } = await supabase
             .from('customers')
             .delete()
-            .eq('id', id);
+            .eq('id', customerToDelete);
         if (error) {
             console.error('Error deleting customer:', error);
         } else {
             await fetchCustomers();
         }
         setLoading(false);
+        setShowConfirmModal(false);
+        setConfirmText('');
+        setCustomerToDelete(null);
+    };
+
+    const handleCancelDelete = () => {
+        setShowConfirmModal(false);
+        setConfirmText('');
+        setCustomerToDelete(null);
     };
 
     const handleEditCustomer = (customer) => {
@@ -128,6 +152,24 @@ const CustomerManagement = () => {
 
     return (
         <div className="customer-management">
+            {showConfirmModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Confirmare ștergere</h3>
+                        <p>Pentru a confirma ștergerea, scrieți "Confirm":</p>
+                        <input
+                            type="text"
+                            value={confirmText}
+                            onChange={(e) => setConfirmText(e.target.value)}
+                            placeholder="Scrieți 'Confirm'"
+                        />
+                        <div className="modal-buttons">
+                            <button onClick={handleCancelDelete}>Anulează</button>
+                            <button onClick={handleConfirmDelete}>Confirmă</button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <h2>Gestionare Clienți</h2>
 
             <div className="action-buttons">
@@ -174,7 +216,7 @@ const CustomerManagement = () => {
                     />
                     <input
                         type="text"
-                        placeholder="Suprafat client"
+                        placeholder="Suprafață client"
                         value={newCustomer.surface || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, surface: e.target.value })}
                     />
@@ -226,7 +268,7 @@ const CustomerManagement = () => {
                                 <th>Telefon</th>
                                 <th>Număr de contract</th>
                                 <th>Punct de lucru</th>
-                                <th>Suprafat client</th>
+                                <th>Suprafață client</th>
                                 <th>Joburi</th>
                                 <th>Acțiuni</th>
                             </tr>
