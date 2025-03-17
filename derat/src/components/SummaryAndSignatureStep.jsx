@@ -16,6 +16,7 @@ const SummaryAndSignatureStep = () => {
   const [receptionNumber, setReceptionNumber] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [observations, setObservations] = useState('');
+  const [isFinalizeDisabled, setIsFinalizeDisabled] = useState(false); // State to disable finalize button
 
   useEffect(() => {
     const initializeData = async () => {
@@ -41,6 +42,8 @@ const SummaryAndSignatureStep = () => {
       alert('Vă rugăm să adăugați semnătura.');
       return;
     }
+
+    setIsFinalizeDisabled(true); // Disable finalize button after it's clicked
 
     try {
       const finalData = {
@@ -89,6 +92,7 @@ const SummaryAndSignatureStep = () => {
     } catch (error) {
       console.error('Error in handleFinish:', error);
       alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
+      setIsFinalizeDisabled(false); // Re-enable finalize button if there is an error
     }
   };
 
@@ -325,7 +329,7 @@ const SummaryAndSignatureStep = () => {
         <button onClick={handleBack}>Înapoi</button>
         <button 
           onClick={handleFinish}
-          disabled={!employeeSignature || !receptionNumber}
+          disabled={!employeeSignature || !receptionNumber || isFinalizeDisabled} // Disable button if already clicked
         >
           
           Finalizează
