@@ -1,352 +1,240 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import supabase from '../../supabaseClient';
-import './GestionareLucrari.css';
+import './GestionareSuprafete.css';
 
-const GestionareLucrari = () => {
-    const [lucrari, setLucrari] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [surfacesLoading, setSurfacesLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [surfaces, setSurfaces] = useState({});
-    const [clientsCache, setClientsCache] = useState({});
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [confirmText, setConfirmText] = useState('');
+const GestionareSuprafete = () => {
+  const [clients, setClients] = useState(new Map());
+  const [selectedClients, setSelectedClients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [clientSurfaces, setClientSurfaces] = useState([]);
+  const [loadingSelectedClients, setLoadingSelectedClients] = useState(false);
 
-    useEffect(() => {
-        if (showConfirmModal) {
-            document.body.classList.add('modal-open');
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const fetchClients = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*');
+    if (error) {
+      console.error('Eroare la încărcarea clienților:', error);
+      setError('Nu s-au putut încărca clienții');
+    } else {
+      const clientMap = new Map();
+      data.forEach(client => {
+        const firstWord = client.name.split(' ')[0];
+        if (clientMap.has(firstWord)) {
+          clientMap.get(firstWord).push(client);
         } else {
-            document.body.classList.remove('modal-open');
+          clientMap.set(firstWord, [client]);
         }
-    }, [showConfirmModal]);
+      });
+      setClients(clientMap);
+      setError(null);
+    }
+    setLoading(false);
+  };
 
-    useEffect(() => {
-        fetchLucrari();
-    }, []);
+  const handleClientSelect = async (client) => {
+    const alreadySelected = selectedClients.find(c => c.id === client.id);
+    const newSelectedClients = alreadySelected
+      ? selectedClients.filter(c => c.id !== client.id)
+      : [...selectedClients, client];
 
-    const fetchClient = async (clientName) => {
-        const { data, error } = await supabase
-            .from('customers')
-            .select('*')
-            .eq('name', clientName);
+    setSelectedClients(newSelectedClients);
 
-        if (error) {
-            console.error('Error fetching client:', error);
-            return null;
-        }
+    if (newSelectedClients.length === 0) {
+      setClientSurfaces([]);
+      return;
+    }
 
-        return data[0];
-    };
-
-    const getSurface = (client, jobValue) => {
-        const job = client?.jobs?.find(job => job.value === jobValue);
-        if (!job || !job.surface) return '0';
-        return Number(job.surface);
-    };
-
-    const getCombinedSurfaces = async (lucrare) => {
-        if (!lucrare.client_name) return '0';
-
-        // Check cache first
-        if (!clientsCache[lucrare.client_name]) {
-            const client = await fetchClient(lucrare.client_name);
-            setClientsCache(prev => ({ ...prev, [lucrare.client_name]: client }));
-            const surfaces = [];
-            if (lucrare.procedure1) surfaces.push(getSurface(client, lucrare.procedure1));
-            if (lucrare.procedure2) surfaces.push(getSurface(client, lucrare.procedure2));
-            if (lucrare.procedure3) surfaces.push(getSurface(client, lucrare.procedure3));
-            if (lucrare.procedure4) surfaces.push(getSurface(client, lucrare.procedure4));
-
-            return surfaces.join('; ');
-        }
-
-        // If we have cached data, use it
-        const client = clientsCache[lucrare.client_name];
-        const surfaces = [];
-        if (lucrare.procedure1) surfaces.push(getSurface(client, lucrare.procedure1));
-        if (lucrare.procedure2) surfaces.push(getSurface(client, lucrare.procedure2));
-        if (lucrare.procedure3) surfaces.push(getSurface(client, lucrare.procedure3));
-        if (lucrare.procedure4) surfaces.push(getSurface(client, lucrare.procedure4));
-
-        return surfaces.join('; ');
-    };
-
-    const fetchLucrari = async () => {
-        setLoading(true);
-        setSurfacesLoading(true);
-        const { data, error } = await supabase
-            .from('lucrari')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching lucrari:', error);
-        } else {
-            setLucrari(data || []);
-            const surfacesData = {};
-            for (const lucrare of data || []) {
-                surfacesData[lucrare.id] = await getCombinedSurfaces(lucrare);
+    setLoadingSelectedClients(true);
+    const { data, error } = await supabase
+      .from('customers')
+      .select('jobs')
+      .in('id', newSelectedClients.map(c => c.id));
+    if (error) {
+      console.error('Eroare la încărcarea suprafețelor clientului:', error);
+      setError('Nu s-au putut încărca suprafețele clientului');
+    } else {
+      const commonJobs = data.length > 0 ? data[0].jobs.map(job => ({ ...job })) : [];
+      newSelectedClients.forEach(client => {
+        data.forEach(d => {
+          d.jobs.forEach(job => {
+            const commonJob = commonJobs.find(j => j.value === job.value);
+            if (commonJob && commonJob.surface !== job.surface) {
+              commonJob.surface = '';
             }
-            setSurfaces(surfacesData);
-        }
-        setLoading(false);
-        setSurfacesLoading(false);
-    };
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleString('ro-RO', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+          });
         });
-    };
+      });
+      setClientSurfaces(commonJobs);
+    }
+    setLoadingSelectedClients(false);
+  };
 
-    const exportExcel = async () => {
-        const { data, error } = await supabase
-            .from('lucrari')
-            .select('*');
+  const handleGroupSelect = async (clientGroup) => {
+    const clientsInGroup = clients.get(clientGroup);
+    const allSelected = clientsInGroup.every(client => selectedClients.some(c => c.id === client.id));
+    const newSelectedClients = allSelected
+      ? selectedClients.filter(c => !clientsInGroup.some(client => client.id === c.id))
+      : [...selectedClients, ...clientsInGroup.filter(client => !selectedClients.some(c => c.id === client.id))];
 
-        if (error) {
-            console.error('Error fetching lucrari:', error);
-            alert('Eroare la exportul fișierului Excel!');
-            return;
-        }
+    setSelectedClients(newSelectedClients);
 
-        const escapeCSV = (value) => {
-            if (value === null || value === undefined) return '';
-            return `"${value.toString().replace(/"/g, '""')}"`;
-        };
+    if (newSelectedClients.length === 0) {
+      setClientSurfaces([]);
+      return;
+    }
 
-        const headers = [
-            'Nr. Proces Verbal',
-            'Data',
-            'Beneficiar',
-            'Locatie',
-            'Unitatea de lucru',
-            'Suprafata',
-            'Nume Angajat',
-            'Proceduri (Deratizare, Dezinfectie, Dezinsectie)',
-            'Denumire Produs',
-            'Lot si cantitate'
-        ];
-
-        const processRow = async (lucrare) => {
-            const client = await fetchClient(lucrare.client_name);
-
-            const procedures = [];
-            const products = [];
-            const surfaces = [];
-            const lotsAndQuantities = [];
-
-            if (lucrare.procedure1 !== null) {
-                procedures.push(lucrare.procedure1);
-                products.push(lucrare.product1_name);
-                surfaces.push(getSurface(client, lucrare.procedure1));
-                lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
+    setLoadingSelectedClients(true);
+    const { data, error } = await supabase
+      .from('customers')
+      .select('jobs')
+      .in('id', newSelectedClients.map(c => c.id));
+    if (error) {
+      console.error('Eroare la încărcarea suprafețelor clientului:', error);
+      setError('Nu s-au putut încărca suprafețele clientului');
+    } else {
+      const commonJobs = data.length > 0 ? data[0].jobs.map(job => ({ ...job })) : [];
+      newSelectedClients.forEach(client => {
+        data.forEach(d => {
+          d.jobs.forEach(job => {
+            const commonJob = commonJobs.find(j => j.value === job.value);
+            if (commonJob && commonJob.surface !== job.surface) {
+              commonJob.surface = '';
             }
-
-            if (lucrare.procedure2 !== null) {
-                procedures.push(lucrare.procedure2);
-                products.push(lucrare.product2_name);
-                surfaces.push(getSurface(client, lucrare.procedure2));
-                lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
-            }
-
-            if (lucrare.procedure3 !== null) {
-                procedures.push(lucrare.procedure3);
-                products.push(lucrare.product3_name);
-                surfaces.push(getSurface(client, lucrare.procedure3));
-                lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
-            }
-
-            if (lucrare.procedure4 !== null) {
-                procedures.push(lucrare.procedure4);
-                products.push(lucrare.product4_name);
-                surfaces.push(getSurface(client, lucrare.procedure4));
-                lotsAndQuantities.push(`${lucrare.product4_lot} - ${lucrare.product4_quantity}`);
-            }
-
-            const row = [
-                lucrare.numar_ordine - 1,
-                new Date(lucrare.created_at).toLocaleString('ro-RO'),
-                lucrare.client_name,
-                lucrare.client_location,
-                lucrare.client_location,
-                surfaces.join('; '),
-                lucrare.employee_name,
-                procedures.join('; '),
-                products.join('; '),
-                lotsAndQuantities.join('; ')
-            ];
-
-            return row.map(escapeCSV).join(',');
-        };
-
-        const processedRows = await Promise.all(data.map(processRow));
-
-        processedRows.sort((a, b) => {
-            const numA = parseInt(a.split(',')[0].replace(/"/g, ''));
-            const numB = parseInt(b.split(',')[0].replace(/"/g, ''));
-            return numA - numB;
+          });
         });
+      });
+      setClientSurfaces(commonJobs);
+    }
+    setLoadingSelectedClients(false);
+  };
 
-        const csv = [
-            headers.map(escapeCSV).join(','),
-            ...processedRows
-        ].join('\n');
-
-        const BOM = '\uFEFF';
-        const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'lucrari.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    const clearDatabase = async () => {
-        setShowConfirmModal(true);
-    };
-
-    const handleConfirmClear = async () => {
-        if (confirmText !== 'Confirm') {
-            alert('Ștergerea a fost anulată.');
-            setShowConfirmModal(false);
-            setConfirmText('');
-            return;
-        }
+  const handleSaveChanges = async () => {
+    setLoading(true);
+    try {
+      for (const client of selectedClients) {
+        const updatedJobs = client.jobs.map(job => {
+          const updatedJob = clientSurfaces.find(j => j.value === job.value);
+          return updatedJob ? { ...job, surface: updatedJob.surface } : job;
+        });
 
         const { error } = await supabase
-            .from('lucrari')
-            .delete()
-            .neq('id', '00000000-0000-0000-0000-000000000000');
+          .from('customers')
+          .update({ jobs: updatedJobs })
+          .eq('id', client.id);
 
         if (error) {
-            console.error('Error deleting lucrari:', error);
-            alert('Eroare la ștergerea lucrărilor din baza de date!');
-        } else {
-            setLucrari([]);
-            alert('Toate lucrările au fost șterse din baza de date.');
+          throw new Error('Eroare la actualizarea suprafețelor');
         }
-        setShowConfirmModal(false);
-        setConfirmText('');
-    };
+      }
 
-    const handleCancelClear = () => {
-        setShowConfirmModal(false);
-        setConfirmText('');
-    };
+      alert('Suprafețele au fost actualizate cu succes');
+      setSelectedClients([]);
+      setClientSurfaces([]);
+      fetchClients(); // Reîmprospătează lista de clienți după actualizare
+    } catch (error) {
+      console.error(error);
+      setError(error.message);
+      alert('A apărut o eroare la actualizarea suprafețelor');
+    }
+    setLoading(false);
+  };
 
-    const filteredLucrari = lucrari.filter(lucrare =>
-        lucrare.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lucrare.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lucrare.numar_ordine?.toString().includes(searchTerm)
-    );
+  const filteredClients = () => {
+    const filteredMap = new Map();
 
-    return (
-        <div className="lucrari-management">
-            {showConfirmModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h3>Confirmare ștergere</h3>
-                        <p>Pentru a confirma ștergerea, scrieți "Confirm":</p>
-                        <input
-                            type="text"
-                            value={confirmText}
-                            onChange={(e) => setConfirmText(e.target.value)}
-                            placeholder="Scrieți 'Confirm'"
-                        />
-                        <div className="modal-buttons">
-                            <button onClick={handleCancelClear}>Anulează</button>
-                            <button onClick={handleConfirmClear}>Confirmă</button>
-                        </div>
+    for (const [clientGroup, clientList] of clients.entries()) {
+      if (clientGroup.toLowerCase().includes(searchTerm.toLowerCase())) {
+        filteredMap.set(clientGroup, clientList);
+      }
+    }
+
+    return filteredMap;
+  };
+
+  const handleSurfaceChange = (jobValue, newSurface) => {
+    setClientSurfaces(clientSurfaces.map(job => 
+      job.value === jobValue ? { ...job, surface: parseFloat(newSurface), active: true } : job
+    ));
+  };
+
+  return (
+    <div>
+      <h2>Gestionare Suprafete</h2>
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Caută client..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      <div className="gestionare-suprafete">
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="clients-list">
+          {loading ? (
+            <p>Se încarcă...</p>
+          ) : (
+            <div className='clients'>
+              {Array.from(filteredClients().entries()).map(([clientGroup, clientList]) => (
+                <div key={clientGroup} className='client-group'>
+                  <h3 onClick={() => handleGroupSelect(clientGroup)}>{clientGroup}</h3>
+                  {clientList.map(client => (
+                    <div
+                      className={`client ${selectedClients.some(c => c.id === client.id) ? 'selected' : ''}`}
+                      key={client.id}
+                      onClick={() => handleClientSelect(client)}
+                    >
+                      {client.name}
                     </div>
+                  ))}
                 </div>
-            )}
-            <h2>Gestionare Lucrări</h2>
-
-            <div className="action-buttons">
-                <button onClick={exportExcel}>Export Excel</button>
-                <button onClick={clearDatabase}>Eliberează Baza de Date</button>
+              ))}
             </div>
-
-            <div className="search-container">
-                <input
-                    type="text"
-                    placeholder="Caută lucrare..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-
-            <div className="lucrari-list">
-                {loading ? (
-                    <p>Se încarcă...</p>
-                ) : (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nr. Ordin</th>
-                                <th>Data</th>
-                                <th>Client</th>
-                                <th>Contract</th>
-                                <th>Locație</th>
-                                <th>Unitatea de lucru</th>
-                                <th>Suprafață</th>
-                                <th>Angajat</th>
-                                <th>Proceduri și Produse</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredLucrari.map(lucrare => (
-                                <tr key={lucrare.id}>
-                                    <td>{lucrare.numar_ordine - 1}</td>
-                                    <td>{formatDate(lucrare.created_at)}</td>
-                                    <td>{lucrare.client_name}</td>
-                                    <td>{lucrare.client_contract}</td>
-                                    <td>{lucrare.client_location}</td>
-                                    <td>{lucrare.client_location}</td>
-                                    <td>{surfacesLoading ? 'Se încarcă...' : (surfaces[lucrare.id] || '0')}</td>
-                                    <td>{lucrare.employee_name}</td>
-                                    <td>
-                                        <div className="procedures">
-                                            {lucrare.procedure1 && (
-                                                <div className="procedure">
-                                                    <strong>{lucrare.procedure1}:</strong>
-                                                    <span>{lucrare.product1_name} (Lot: {lucrare.product1_lot}) - {lucrare.product1_quantity}</span>
-                                                </div>
-                                            )}
-                                            {lucrare.procedure2 && (
-                                                <div className="procedure">
-                                                    <strong>{lucrare.procedure2}:</strong>
-                                                    <span>{lucrare.product2_name} (Lot: {lucrare.product2_lot}) - {lucrare.product2_quantity}</span>
-                                                </div>
-                                            )}
-                                            {lucrare.procedure3 && (
-                                                <div className="procedure">
-                                                    <strong>{lucrare.procedure3}:</strong>
-                                                    <span>{lucrare.product3_name} (Lot: {lucrare.product3_lot}) - {lucrare.product3_quantity}</span>
-                                                </div>
-                                            )}
-                                            {lucrare.procedure4 && (
-                                                <div className="procedure">
-                                                    <strong>{lucrare.procedure4}:</strong>
-                                                    <span>{lucrare.product4_name} (Lot: {lucrare.product4_lot}) - {lucrare.product4_quantity}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+          )}
         </div>
-    );
+
+        {selectedClients.length > 0 && !loadingSelectedClients && (
+          <div className="client-details">
+            <h3>Suprafete pentru clienții selectați</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Suprafață</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientSurfaces.map(job => (
+                  <tr key={job.value}>
+                    <td>{job.label}</td>
+                    <td>
+                      <input
+                        type="number"
+                        value={job.surface}
+                        onChange={(event) => handleSurfaceChange(job.value, event.target.value)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button onClick={handleSaveChanges} disabled={loading}>
+              {loading ? 'Se salvează...' : 'Salvează modificările'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
-export default GestionareLucrari;
+export default GestionareSuprafete;

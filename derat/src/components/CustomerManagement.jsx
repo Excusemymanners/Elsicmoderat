@@ -139,6 +139,7 @@ const CustomerManagement = () => {
     const handleSurfaceChange = (index, surface) => {
         const updatedJobs = [...newCustomer.jobs];
         updatedJobs[index].surface = surface;
+        updatedJobs[index].active = true;  // Enable the job when its surface is modified
         setNewCustomer({
             ...newCustomer,
             jobs: updatedJobs

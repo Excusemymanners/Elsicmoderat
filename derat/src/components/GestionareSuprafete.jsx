@@ -116,13 +116,25 @@ const GestionareSuprafete = () => {
     setLoadingSelectedClients(false);
   };
 
+  const handleSurfaceChange = (jobValue, newSurface) => {
+    setClientSurfaces(clientSurfaces.map(job => 
+      job.value === jobValue ? { ...job, surface: parseFloat(newSurface), active: true } : job
+    ));
+  };
+
+  const handleJobToggle = (jobValue) => {
+    setClientSurfaces(clientSurfaces.map(job =>
+      job.value === jobValue ? { ...job, active: !job.active } : job
+    ));
+  };
+
   const handleSaveChanges = async () => {
     setLoading(true);
     try {
       for (const client of selectedClients) {
         const updatedJobs = client.jobs.map(job => {
           const updatedJob = clientSurfaces.find(j => j.value === job.value);
-          return updatedJob ? { ...job, surface: updatedJob.surface } : job;
+          return updatedJob ? { ...job, surface: updatedJob.surface, active: updatedJob.active } : job;
         });
 
         const { error } = await supabase
@@ -204,6 +216,7 @@ const GestionareSuprafete = () => {
                 <tr>
                   <th>Job</th>
                   <th>Suprafață</th>
+                  <th>Acțiuni</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,8 +227,16 @@ const GestionareSuprafete = () => {
                       <input
                         type="number"
                         value={job.surface}
-                        onChange={(event) => { setClientSurfaces(clientSurfaces.map(j => j.value === job.value ? { ...j, surface: parseFloat(event.target.value) } : j)) }}
+                        onChange={(event) => handleSurfaceChange(job.value, event.target.value)}
                       />
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => handleJobToggle(job.value)}
+                        className={job.active ? 'disable' : 'enable'}
+                      >
+                        {job.active ? 'Dezactivează' : 'Activează'}
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -228,6 +249,7 @@ const GestionareSuprafete = () => {
         )}
       </div>
     </div>
+ 
   );
 };
 
