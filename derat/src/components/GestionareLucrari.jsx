@@ -31,7 +31,7 @@ const GestionareLucrari = () => {
             .eq('name', clientName);
 
         if (error) {
-            console.error('Error fetching reception number:', error);
+            console.error('Error fetching client:', error);
             return null;
         }
 
@@ -39,13 +39,6 @@ const GestionareLucrari = () => {
     };
 
     const getSurface = (client, jobValue) => {
-        console.log('Surface calculation details:', {
-            clientName: client?.name,
-            jobValue,
-            clientJobs: client?.jobs,
-            foundJob: client?.jobs?.find(job => job.value === jobValue),
-            surface: client?.jobs?.find(job => job.value === jobValue)?.surface || '0'
-        });
         const job = client?.jobs?.find(job => job.value === jobValue);
         if (!job || !job.surface) return '0';
         return Number(job.surface);
@@ -57,57 +50,25 @@ const GestionareLucrari = () => {
         // Check cache first
         if (!clientsCache[lucrare.client_name]) {
             const client = await fetchClient(lucrare.client_name);
-            console.log('Fetched client data:', {
-                clientName: lucrare.client_name,
-                clientData: client,
-                clientJobs: client?.jobs,
-                procedures: [lucrare.procedure1, lucrare.procedure2, lucrare.procedure3, lucrare.procedure4]
-            });
-            // Update cache and wait for it to be available
             setClientsCache(prev => ({ ...prev, [lucrare.client_name]: client }));
-            // Use the client data directly instead of from cache
             const surfaces = [];
             if (lucrare.procedure1) surfaces.push(getSurface(client, lucrare.procedure1));
             if (lucrare.procedure2) surfaces.push(getSurface(client, lucrare.procedure2));
             if (lucrare.procedure3) surfaces.push(getSurface(client, lucrare.procedure3));
             if (lucrare.procedure4) surfaces.push(getSurface(client, lucrare.procedure4));
 
-            const combinedSurfaces = surfaces.join('; ');
-            console.log('Combined surfaces for lucrare:', {
-                lucrareId: lucrare.id,
-                clientName: lucrare.client_name,
-                procedures: [lucrare.procedure1, lucrare.procedure2, lucrare.procedure3, lucrare.procedure4],
-                surfaces,
-                combinedSurfaces,
-                clientJobs: client?.jobs
-            });
-            return combinedSurfaces;
+            return surfaces.join('; ');
         }
 
         // If we have cached data, use it
         const client = clientsCache[lucrare.client_name];
-        console.log('Using cached client data:', {
-            clientName: client?.name,
-            clientJobs: client?.jobs,
-            procedures: [lucrare.procedure1, lucrare.procedure2, lucrare.procedure3, lucrare.procedure4]
-        });
         const surfaces = [];
-
         if (lucrare.procedure1) surfaces.push(getSurface(client, lucrare.procedure1));
         if (lucrare.procedure2) surfaces.push(getSurface(client, lucrare.procedure2));
         if (lucrare.procedure3) surfaces.push(getSurface(client, lucrare.procedure3));
         if (lucrare.procedure4) surfaces.push(getSurface(client, lucrare.procedure4));
 
-        const combinedSurfaces = surfaces.join('; ');
-        console.log('Combined surfaces for lucrare:', {
-            lucrareId: lucrare.id,
-            clientName: lucrare.client_name,
-            procedures: [lucrare.procedure1, lucrare.procedure2, lucrare.procedure3, lucrare.procedure4],
-            surfaces,
-            combinedSurfaces,
-            clientJobs: client?.jobs
-        });
-        return combinedSurfaces;
+        return surfaces.join('; ');
     };
 
     const fetchLucrari = async () => {
@@ -121,15 +82,11 @@ const GestionareLucrari = () => {
         if (error) {
             console.error('Error fetching lucrari:', error);
         } else {
-            console.log('Fetched lucrari:', data);
             setLucrari(data || []);
-
-            // Pre-calculate all surfaces
             const surfacesData = {};
             for (const lucrare of data || []) {
                 surfacesData[lucrare.id] = await getCombinedSurfaces(lucrare);
             }
-            console.log('Final surfaces data:', surfacesData);
             setSurfaces(surfacesData);
         }
         setLoading(false);
@@ -157,7 +114,6 @@ const GestionareLucrari = () => {
             return;
         }
 
-        // Helper function to escape CSV values
         const escapeCSV = (value) => {
             if (value === null || value === undefined) return '';
             return `"${value.toString().replace(/"/g, '""')}"`;
@@ -168,6 +124,7 @@ const GestionareLucrari = () => {
             'Data',
             'Beneficiar',
             'Locatie',
+            'Unitatea de lucru',
             'Suprafata',
             'Nume Angajat',
             'Proceduri (Deratizare, Dezinfectie, Dezinsectie)',
@@ -212,9 +169,10 @@ const GestionareLucrari = () => {
             }
 
             const row = [
-                lucrare.numar_ordine - 1, // Decrement numar_ordine by 1
+                lucrare.numar_ordine - 1,
                 new Date(lucrare.created_at).toLocaleString('ro-RO'),
                 lucrare.client_name,
+                lucrare.client_location,
                 lucrare.client_location,
                 surfaces.join('; '),
                 lucrare.employee_name,
@@ -239,7 +197,6 @@ const GestionareLucrari = () => {
             ...processedRows
         ].join('\n');
 
-        // Add BOM for Excel to properly detect UTF-8
         const BOM = '\uFEFF';
         const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -262,11 +219,10 @@ const GestionareLucrari = () => {
             return;
         }
 
-        // Șterge toate lucrările din baza de date
         const { error } = await supabase
             .from('lucrari')
             .delete()
-            .neq('id', '00000000-0000-0000-0000-000000000000'); // Elimină toate înregistrările
+            .neq('id', '00000000-0000-0000-0000-000000000000');
 
         if (error) {
             console.error('Error deleting lucrari:', error);
@@ -338,6 +294,7 @@ const GestionareLucrari = () => {
                                 <th>Client</th>
                                 <th>Contract</th>
                                 <th>Locație</th>
+                                <th>Unitatea de lucru</th>
                                 <th>Suprafață</th>
                                 <th>Angajat</th>
                                 <th>Proceduri și Produse</th>
@@ -350,6 +307,7 @@ const GestionareLucrari = () => {
                                     <td>{formatDate(lucrare.created_at)}</td>
                                     <td>{lucrare.client_name}</td>
                                     <td>{lucrare.client_contract}</td>
+                                    <td>{lucrare.client_location}</td>
                                     <td>{lucrare.client_location}</td>
                                     <td>{surfacesLoading ? 'Se încarcă...' : (surfaces[lucrare.id] || '0')}</td>
                                     <td>{lucrare.employee_name}</td>
