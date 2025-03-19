@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import supabase from '../../supabaseClient';
 import './GestionareSuprafete.css';
 
@@ -10,6 +10,7 @@ const GestionareSuprafete = () => {
   const [error, setError] = useState(null);
   const [clientSurfaces, setClientSurfaces] = useState([]);
   const [loadingSelectedClients, setLoadingSelectedClients] = useState(false);
+  const modificationSectionRef = useRef(null);
 
   useEffect(() => {
     fetchClients();
@@ -171,6 +172,12 @@ const GestionareSuprafete = () => {
     return filteredMap;
   };
 
+  const handleModifyClick = () => {
+    if (modificationSectionRef.current) {
+      modificationSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div>
       <h2>Gestionare Suprafete</h2>
@@ -185,31 +192,41 @@ const GestionareSuprafete = () => {
       <div className="gestionare-suprafete">
         {error && <div className="error-message">{error}</div>}
 
-        <div className="clients-list">
-          {loading ? (
-            <p>Se încarcă...</p>
-          ) : (
-            <div className='clients'>
-              {Array.from(filteredClients().entries()).map(([clientGroup, clientList]) => (
-                <div key={clientGroup} className='client-group'>
-                  <h3 onClick={() => handleGroupSelect(clientGroup)}>{clientGroup}</h3>
-                  {clientList.map(client => (
-                    <div
-                      className={`client ${selectedClients.some(c => c.id === client.id) ? 'selected' : ''}`}
-                      key={client.id}
-                      onClick={() => handleClientSelect(client)}
-                    >
-                      {client.name}
-                    </div>
-                  ))}
-                </div>
-              ))}
+        <div className="clients-and-button">
+          <div className="clients-list">
+            {loading ? (
+              <p>Se încarcă...</p>
+            ) : (
+              <div className='clients'>
+                {Array.from(filteredClients().entries()).map(([clientGroup, clientList]) => (
+                  <div key={clientGroup} className='client-group'>
+                    <h3 onClick={() => handleGroupSelect(clientGroup)}>{clientGroup}</h3>
+                    {clientList.map(client => (
+                      <div
+                        className={`client ${selectedClients.some(c => c.id === client.id) ? 'selected' : ''}`}
+                        key={client.id}
+                        onClick={() => handleClientSelect(client)}
+                      >
+                        {client.name}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {selectedClients.length > 0 && (
+            <div className="modify-button-container">
+              <button onClick={handleModifyClick} className="modify-button">
+                Modifică
+              </button>
             </div>
           )}
         </div>
 
         {selectedClients.length > 0 && !loadingSelectedClients && (
-          <div className="client-details">
+          <div ref={modificationSectionRef} className="client-details">
             <h3>Suprafete pentru clienții selectați</h3>
             <table>
               <thead>
@@ -249,7 +266,6 @@ const GestionareSuprafete = () => {
         )}
       </div>
     </div>
- 
   );
 };
 
