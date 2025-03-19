@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import supabase from '../../supabaseClient';
 import './CustomerManagement.css';
 
@@ -25,6 +25,8 @@ const CustomerManagement = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmText, setConfirmText] = useState('');
     const [customerToDelete, setCustomerToDelete] = useState(null);
+    const [showBackToTop, setShowBackToTop] = useState(false);
+    const topRef = useRef(null);
 
     const fetchCustomers = async () => {
         setLoading(true);
@@ -41,6 +43,19 @@ const CustomerManagement = () => {
 
     useEffect(() => {
         fetchCustomers();
+    }, []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.pageYOffset > 300) {
+                setShowBackToTop(true);
+            } else {
+                setShowBackToTop(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const handleAddCustomer = async (e) => {
@@ -121,6 +136,7 @@ const CustomerManagement = () => {
         setNewCustomer(customer);
         setEditingCustomer(customer.id);
         setShowForm(true);
+        topRef.current.scrollIntoView({ behavior: 'smooth' });
     };
 
     const handleToggleForm = () => {
@@ -151,8 +167,13 @@ const CustomerManagement = () => {
         customer.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const scrollToTop = () => {
+        topRef.current.scrollIntoView({ behavior: 'smooth' });
+    };
+
     return (
         <div className="customer-management">
+            <div ref={topRef} />
             {showConfirmModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -306,6 +327,12 @@ const CustomerManagement = () => {
                     </table>
                 )}
             </div>
+
+            {showBackToTop && (
+                <button className="back-to-top" onClick={scrollToTop}>
+                    Înapoi sus
+                </button>
+            )}
         </div>
     );
 };

@@ -102,6 +102,24 @@
     background-color: #ccc;
 }
 
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.back-to-top:hover {
+    background-color: #0056b3;
+}
+
 @media (max-width: 768px) {
     .customers-list table, .customers-list thead, .customers-list tbody, .customers-list th, .customers-list td, .customers-list tr {
         display: block;
