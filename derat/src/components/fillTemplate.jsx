@@ -156,7 +156,7 @@ export const fillTemplate = async (templateUrl, request) => {
     custodyItems.forEach(item => {
       if (item.value > 0) {
         drawText(`${item.label}: ${item.value}`, xOffset, height - 390);
-        xOffset += 200;
+        xOffset += 300;
       }
     });
 
