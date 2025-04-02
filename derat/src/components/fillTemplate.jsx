@@ -145,11 +145,11 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw custody items if their values are greater than 0
     const custodyItems = [
-      { label: 'Ultrasunete Rozatoare', value: request.custodyItems.ultrasuneteRozatoare },
-      { label: 'Ultrasunete Pasari', value: request.custodyItems.ultrasunetePasari },
-      { label: 'Antiinsecte', value: request.custodyItems.antiinsecte },
-      { label: 'Capturare Rozatoare', value: request.custodyItems.capturareRozatoare },
-      { label: 'Statie Intoxicare', value: request.custodyItems.statieIntoxicare }
+      { label: 'Dispozitive profesionale ultrasunete rozatoare', value: request.custodyItems.ultrasuneteRozatoare },
+      { label: 'Dispozitive profesionale ultrasunete pasari', value: request.custodyItems.ultrasunetePasari },
+      { label: 'Dispozitive profesionale antiinsecte', value: request.custodyItems.antiinsecte },
+      { label: 'Dispozitiv mecanic capturare rozatoare', value: request.custodyItems.capturareRozatoare },
+      { label: 'Statie de intoxicare exterior', value: request.custodyItems.statieIntoxicare }
     ];
 
     let xOffset = 220;
