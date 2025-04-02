@@ -145,8 +145,8 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw custody items
     drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, 220, height - 390);
-    drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 340, height - 390);
-    drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`,445, height - 390);
+    drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 350, height - 390);
+    drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`,455, height - 390);
     drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`,525, height - 390);
     drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, 650, height - 390);
 
