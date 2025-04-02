@@ -143,12 +143,22 @@ export const fillTemplate = async (templateUrl, request) => {
     drawText(`${request.observations}`, 190, 160);
     console.log(request.observations);
 
-    // Draw custody items
-    // drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, 220, height - 390);
-    // drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 350, height - 390);
-    // drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`,455, height - 390);
-    // drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`,525, height - 390);
-    // drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, 650, height - 390);
+    // Draw custody items if their values are greater than 0
+    if (request.custodyItems.ultrasuneteRozatoare > 0) {
+      drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, 220, height - 390);
+    }
+    if (request.custodyItems.ultrasunetePasari > 0) {
+      drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 350, height - 390);
+    }
+    if (request.custodyItems.antiinsecte > 0) {
+      drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`, 455, height - 390);
+    }
+    if (request.custodyItems.capturareRozatoare > 0) {
+      drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`, 525, height - 390);
+    }
+    if (request.custodyItems.statieIntoxicare > 0) {
+      drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, 650, height - 390);
+    }
 
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
