@@ -119,7 +119,7 @@ export const fillTemplate = async (templateUrl, request) => {
       'dezinfectie': 3,
     };
 
-    console.log(request)
+    console.log(request);
 
     for (const operation of request.operations) {
       const coordinate = procedureCoordinates[operation.name];
@@ -143,28 +143,22 @@ export const fillTemplate = async (templateUrl, request) => {
     drawText(`${request.observations}`, 190, 160);
     console.log(request.observations);
 
-    // Draw custody items from left to right with a distance of 120 between them
-    let xOffset = 100;
-    if (request.custodyItems.ultrasuneteRozatoare > 0) {
-      drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, xOffset, height - 390);
-      xOffset += 120;
-    }
-    if (request.custodyItems.ultrasunetePasari > 0) {
-      drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, xOffset, height - 390);
-      xOffset += 120;
-    }
-    if (request.custodyItems.antiinsecte > 0) {
-      drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`, xOffset, height - 390);
-      xOffset += 120;
-    }
-    if (request.custodyItems.capturareRozatoare > 0) {
-      drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`, xOffset, height - 390);
-      xOffset += 120;
-    }
-    if (request.custodyItems.statieIntoxicare > 0) {
-      drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, xOffset, height - 390);
-      xOffset += 120;
-    }
+    // Draw custody items if their values are greater than 0
+    const custodyItems = [
+      { label: 'Ultrasunete Rozatoare', value: request.custodyItems.ultrasuneteRozatoare },
+      { label: 'Ultrasunete Pasari', value: request.custodyItems.ultrasunetePasari },
+      { label: 'Antiinsecte', value: request.custodyItems.antiinsecte },
+      { label: 'Capturare Rozatoare', value: request.custodyItems.capturareRozatoare },
+      { label: 'Statie Intoxicare', value: request.custodyItems.statieIntoxicare }
+    ];
+
+    let xOffset = 220;
+    custodyItems.forEach(item => {
+      if (item.value > 0) {
+        drawText(`${item.label}: ${item.value}`, xOffset, height - 390);
+        xOffset += 120;
+      }
+    });
 
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
