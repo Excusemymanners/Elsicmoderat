@@ -145,10 +145,10 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw custody items
     drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, 180, height - 390);
-    drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 200, height - 390);
-    drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`,220, height - 390);
-    drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`, 240, height - 390);
-    drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, 260, height - 390);
+    drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 280, height - 390);
+    drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`,380, height - 390);
+    drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`, 480, height - 390);
+    drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, 580, height - 390);
 
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
