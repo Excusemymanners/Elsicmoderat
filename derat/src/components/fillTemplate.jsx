@@ -119,7 +119,7 @@ export const fillTemplate = async (templateUrl, request) => {
       'dezinfectie': 3,
     };
 
-    console.log(request);
+    console.log(request)
 
     for (const operation of request.operations) {
       const coordinate = procedureCoordinates[operation.name];
@@ -156,7 +156,7 @@ export const fillTemplate = async (templateUrl, request) => {
     custodyItems.forEach(item => {
       if (item.value > 0) {
         drawText(`${item.label}: ${item.value}`, xOffset, height - 390);
-        xOffset += 120;
+        xOffset += 100;
       }
     });
 
