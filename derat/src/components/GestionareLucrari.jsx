@@ -221,6 +221,7 @@ const GestionareLucrari = () => {
                 procedures.join('; '),
                 products.join('; '),
                 lotsAndQuantities.join('; ')
+               
             ];
 
             return row.map(escapeCSV).join(',');
