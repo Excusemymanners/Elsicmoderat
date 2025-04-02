@@ -139,9 +139,17 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
-    drawText(`${request.observations}`, 190,160 );
 
-    console.log(request.observations)
+    drawText(`${request.observations}`, 190, 160);
+    console.log(request.observations);
+
+    // Draw custody items
+    drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, 50, height - 630);
+    drawText(`Ultrasunete Pasari: ${request.custodyItems.ultrasunetePasari}`, 50, height - 645);
+    drawText(`Antiinsecte: ${request.custodyItems.antiinsecte}`, 50, height - 660);
+    drawText(`Capturare Rozatoare: ${request.custodyItems.capturareRozatoare}`, 50, height - 675);
+    drawText(`Statie Intoxicare: ${request.custodyItems.statieIntoxicare}`, 50, height - 690);
+
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
     console.log('Generated PDF Bytes Length:', pdfBytes.length);
@@ -150,5 +158,4 @@ export const fillTemplate = async (templateUrl, request) => {
     console.error('Error filling template:', error);
     throw error;
   }
-  
 };

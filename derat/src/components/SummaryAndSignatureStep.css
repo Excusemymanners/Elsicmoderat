@@ -227,6 +227,42 @@
   color: #64748b;
 }
 
+.custody-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.custody-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.custody-item span {
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.custody-item button {
+  padding: 6px 12px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.custody-item button:hover {
+  background-color: #e2e8f0;
+}
+
 @media screen and (max-width: 768px) {
   .summary-step {
     padding: 1rem;

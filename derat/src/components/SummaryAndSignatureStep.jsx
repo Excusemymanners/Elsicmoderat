@@ -18,6 +18,14 @@ const SummaryAndSignatureStep = () => {
   const [observations, setObservations] = useState('');
   const [isFinalizeDisabled, setIsFinalizeDisabled] = useState(false); // State to disable finalize button
 
+  const [custodyItems, setCustodyItems] = useState({
+    ultrasuneteRozatoare: 0,
+    ultrasunetePasari: 0,
+    antiinsecte: 0,
+    capturareRozatoare: 0,
+    statieIntoxicare: 0
+  });
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -53,7 +61,8 @@ const SummaryAndSignatureStep = () => {
         userLogin: 'Excusemymanners',
         receptionNumber,
         observations,
-        clientSurface: formData.customer.surface // Add client surface to final data
+        clientSurface: formData.customer.surface, // Add client surface to final data
+        custodyItems // Add custody items to final data
       };
 
       await generateAndSendPDF(finalData);
@@ -69,18 +78,23 @@ const SummaryAndSignatureStep = () => {
         product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
         product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.lot).join(', '),
         product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]) || 0,
+        concentration1: formData.solutions[formData.operations[0]]?.map(sol => sol.concentration).join(', '), // Add concentration1
         procedure2: formData.operations[1] || null,
         product2_name: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.name).join(', ') : null,
         product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
         product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) || 0 : null,
+        concentration2: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration2
         procedure3: formData.operations[2] || null,
         product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
         product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
         product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null,
+        concentration3: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration3
         procedure4: formData.operations[3] || null,
         product4_name: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
         product4_lot: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product4_quantity: formData.operations[3] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null
+        product4_quantity: formData.operations[3] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null,
+        concentration4: formData.operations[3] ? formData.solutions[formData.operations[3]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration4
+        custodyItems // Add custody items to verbal process
       };
       console.log('Verbal process:', verbalProcess);
       await addVerbalProcess(verbalProcess);
@@ -109,6 +123,20 @@ const SummaryAndSignatureStep = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
   };
 
+  const incrementItem = (item) => {
+    setCustodyItems(prev => ({
+      ...prev,
+      [item]: prev[item] + 1
+    }));
+  };
+
+  const decrementItem = (item) => {
+    setCustodyItems(prev => ({
+      ...prev,
+      [item]: Math.max(prev[item] - 1, 0)
+    }));
+  };
+
   if (isLoading) {
     return <div className="loading">Se încarcă...</div>;
   }
@@ -128,7 +156,8 @@ const SummaryAndSignatureStep = () => {
       employeeIDSeries: data.employeeIDSeries,
       employeeSignature: data.employeeSignature,
       operations: [],
-      observations: data.observations
+      observations: data.observations,
+      custodyItems: data.custodyItems // Add custody items to PDF request
     }
     
     data.operations.forEach(operation => {
@@ -266,6 +295,42 @@ const SummaryAndSignatureStep = () => {
         </div>
 
         <div className="summary-section">
+          <h4>Am predat în custodie:</h4>
+          <div className="custody-items">
+            <div className="custody-item">
+              <span>dispozitive profesionale ultrasunete rozătoare</span>
+              <button onClick={() => incrementItem('ultrasuneteRozatoare')}>+</button>
+              <span>{custodyItems.ultrasuneteRozatoare}</span>
+              <button onClick={() => decrementItem('ultrasuneteRozatoare')}>-</button>
+            </div>
+            <div className="custody-item">
+              <span>dispozitive profesionale ultrasunete păsări</span>
+              <button onClick={() => incrementItem('ultrasunetePasari')}>+</button>
+              <span>{custodyItems.ultrasunetePasari}</span>
+              <button onClick={() => decrementItem('ultrasunetePasari')}>-</button>
+            </div>
+            <div className="custody-item">
+              <span>dispozitive profesionale antiinsecte</span>
+              <button onClick={() => incrementItem('antiinsecte')}>+</button>
+              <span>{custodyItems.antiinsecte}</span>
+              <button onClick={() => decrementItem('antiinsecte')}>-</button>
+            </div>
+            <div className="custody-item">
+              <span>dispozitiv mecanic capturare rozătoare</span>
+              <button onClick={() => incrementItem('capturareRozatoare')}>+</button>
+              <span>{custodyItems.capturareRozatoare}</span>
+              <button onClick={() => decrementItem('capturareRozatoare')}>-</button>
+            </div>
+            <div className="custody-item">
+              <span>stație de intoxicare exterior</span>
+              <button onClick={() => incrementItem('statieIntoxicare')}>+</button>
+              <span>{custodyItems.statieIntoxicare}</span>
+              <button onClick={() => decrementItem('statieIntoxicare')}>-</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="summary-section">
           <h4>Semnături</h4>
           <div className="signatures-container">
             <div className="signature-box client-signature">
@@ -310,19 +375,18 @@ const SummaryAndSignatureStep = () => {
               
             </div>
             <div className="observations-container">
-          <label htmlFor="observations">Observații:</label>
-          <textarea
-            id="observations"
-            value={observations}
-            onChange={(e) => setObservations(e.target.value)}
-            rows="4"
-            cols="50"
-            placeholder="Introduceți observațiile aici..."
-          /></div>
+              <label htmlFor="observations">Observații:</label>
+              <textarea
+                id="observations"
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                rows="4"
+                cols="50"
+                placeholder="Introduceți observațiile aici..."
+              />
+            </div>
           </div>
         </div>
-
-        
       </div>
 
       <div className="navigation-buttons">
@@ -331,7 +395,6 @@ const SummaryAndSignatureStep = () => {
           onClick={handleFinish}
           disabled={!employeeSignature || !receptionNumber || isFinalizeDisabled} // Disable button if already clicked
         >
-          
           Finalizează
         </button>
       </div>
