@@ -144,7 +144,7 @@ export const fillTemplate = async (templateUrl, request) => {
     console.log(request.observations);
 
     // Draw custody items from left to right with a distance of 120 between them
-    let xOffset = 220;
+    let xOffset = 100;
     if (request.custodyItems.ultrasuneteRozatoare > 0) {
       drawText(`Ultrasunete Rozatoare: ${request.custodyItems.ultrasuneteRozatoare}`, xOffset, height - 390);
       xOffset += 120;
