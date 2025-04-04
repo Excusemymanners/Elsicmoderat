@@ -172,7 +172,8 @@ const GestionareLucrari = () => {
             'Nume Angajat',
             'Proceduri (Deratizare, Dezinfectie, Dezinsectie)',
             'Denumire Produs',
-            'Lot si cantitate'
+            'Lot si cantitate',
+            'Concentratii'
         ];
 
         const processRow = async (lucrare) => {
@@ -182,12 +183,14 @@ const GestionareLucrari = () => {
             const products = [];
             const surfaces = [];
             const lotsAndQuantities = [];
+            const concentrations = [];
 
             if (lucrare.procedure1 !== null) {
                 procedures.push(lucrare.procedure1);
                 products.push(lucrare.product1_name);
                 surfaces.push(getSurface(client, lucrare.procedure1));
                 lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
+                concentrations.push(lucrare.concentration1 ?? 'null');
             }
 
             if (lucrare.procedure2 !== null) {
@@ -195,6 +198,7 @@ const GestionareLucrari = () => {
                 products.push(lucrare.product2_name);
                 surfaces.push(getSurface(client, lucrare.procedure2));
                 lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
+                concentrations.push(lucrare.concentration2 ?? 'null');
             }
 
             if (lucrare.procedure3 !== null) {
@@ -202,6 +206,7 @@ const GestionareLucrari = () => {
                 products.push(lucrare.product3_name);
                 surfaces.push(getSurface(client, lucrare.procedure3));
                 lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
+                concentrations.push(lucrare.concentration3 ?? 'null');
             }
 
             if (lucrare.procedure4 !== null) {
@@ -209,6 +214,7 @@ const GestionareLucrari = () => {
                 products.push(lucrare.product4_name);
                 surfaces.push(getSurface(client, lucrare.procedure4));
                 lotsAndQuantities.push(`${lucrare.product4_lot} - ${lucrare.product4_quantity}`);
+                concentrations.push(lucrare.concentration4 ?? 'null');
             }
 
             const row = [
@@ -220,8 +226,8 @@ const GestionareLucrari = () => {
                 lucrare.employee_name,
                 procedures.join('; '),
                 products.join('; '),
-                lotsAndQuantities.join('; ')
-
+                lotsAndQuantities.join('; '),
+                concentrations.join('; ')
             ];
 
             return row.map(escapeCSV).join(',');
@@ -387,10 +393,7 @@ const GestionareLucrari = () => {
                                         <div className="procedure">
                                             {(
                                                 <div className="concentration">
-                                                    <span>{lucrare.concentration1}</span>
-                                                    <span>{lucrare.concentration2}</span>
-                                                    <span>{lucrare.concentration3}</span>
-                                                    <span>{lucrare.concentration4}</span>
+                                                    <span>{lucrare.concentration1 ?? 'null'}; {lucrare.concentration2 ?? 'null'}; {lucrare.concentration3 ?? 'null'}; {lucrare.concentration4 ?? 'null'}</span>
                                                 </div>
                                             )}
                                         </div>
