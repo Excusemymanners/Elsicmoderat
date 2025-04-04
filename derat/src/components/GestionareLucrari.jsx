@@ -221,7 +221,7 @@ const GestionareLucrari = () => {
                 procedures.join('; '),
                 products.join('; '),
                 lotsAndQuantities.join('; ')
-               
+
             ];
 
             return row.map(escapeCSV).join(',');
@@ -342,6 +342,7 @@ const GestionareLucrari = () => {
                                 <th>Suprafață</th>
                                 <th>Angajat</th>
                                 <th>Proceduri și Produse</th>
+                                <th>Concentrații</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -378,6 +379,18 @@ const GestionareLucrari = () => {
                                                 <div className="procedure">
                                                     <strong>{lucrare.procedure4}:</strong>
                                                     <span>{lucrare.product4_name} (Lot: {lucrare.product4_lot}) - {lucrare.product4_quantity}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="procedure">
+                                            {(
+                                                <div className="concentration">
+                                                    <span>{lucrare.concentration1}</span>
+                                                    <span>{lucrare.concentration2}</span>
+                                                    <span>{lucrare.concentration3}</span>
+                                                    <span>{lucrare.concentration4}</span>
                                                 </div>
                                             )}
                                         </div>
