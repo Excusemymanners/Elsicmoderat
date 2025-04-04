@@ -93,8 +93,7 @@ const SummaryAndSignatureStep = () => {
         product4_name: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
         product4_lot: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
         product4_quantity: formData.operations[3] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null,
-        concentration4: formData.operations[3] ? formData.solutions[formData.operations[3]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration4
-        custodyItems // Add custody items to verbal process
+        concentration4: formData.operations[3] ? formData.solutions[formData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
       };
       console.log('Verbal process:', verbalProcess);
       await addVerbalProcess(verbalProcess);
@@ -159,11 +158,11 @@ const SummaryAndSignatureStep = () => {
       observations: data.observations,
       custodyItems: data.custodyItems // Add custody items to PDF request
     }
-    
+
     data.operations.forEach(operation => {
       const jobInfo = data.customer.jobs.find(job => job.value === operation);
       const surface = jobInfo ? jobInfo.surface : null;
-      
+
       request.operations.push({
         name: operation,
         solution: data.solutions[operation][0].label,
@@ -174,7 +173,7 @@ const SummaryAndSignatureStep = () => {
         surface: surface
       });
     })
-    
+
     const pdfBytes = await fillTemplate('/assets/template.pdf', request);
 
     let customerEmail = formData.customer.email;
@@ -190,12 +189,12 @@ const SummaryAndSignatureStep = () => {
           customerEmail
         })
       });
-      
+
       const responseData = await response.json();
       if (!responseData.success) {
         throw new Error(responseData.error);
       }
-      
+
       console.log('Email sent successfully');
       return responseData;
     } catch (error) {
@@ -336,9 +335,9 @@ const SummaryAndSignatureStep = () => {
             <div className="signature-box client-signature">
               <span className="signature-label">Semnătură Client:</span>
               <div className="signature-display">
-                <img 
-                  src={formData.clientSignature} 
-                  alt="Semnătură Client" 
+                <img
+                  src={formData.clientSignature}
+                  alt="Semnătură Client"
                   className="signature-image"
                 />
                 <span className="signature-name">
@@ -346,13 +345,13 @@ const SummaryAndSignatureStep = () => {
                 </span>
               </div>
             </div>
-            
+
 
             <div className="signature-box employee-signature">
               <span className="signature-label">Semnătura Dvs:</span>
               <div className="signature-pad-container">
-                <SignatureCanvas 
-                  ref={sigCanvas} 
+                <SignatureCanvas
+                  ref={sigCanvas}
                   onEnd={handleSignatureEnd}
                   canvasProps={{
                     className: 'signature-canvas',
@@ -370,9 +369,9 @@ const SummaryAndSignatureStep = () => {
                 <button className="clear-button" onClick={handleClear}>
                   Șterge semnătura
                 </button>
-                
+
               </div>
-              
+
             </div>
             <div className="observations-container">
               <label htmlFor="observations">Observații:</label>
@@ -391,7 +390,7 @@ const SummaryAndSignatureStep = () => {
 
       <div className="navigation-buttons">
         <button onClick={handleBack}>Înapoi</button>
-        <button 
+        <button
           onClick={handleFinish}
           disabled={!employeeSignature || !receptionNumber || isFinalizeDisabled} // Disable button if already clicked
         >
