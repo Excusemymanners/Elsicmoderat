@@ -1,5 +1,6 @@
+/* General container styling */
 .summary-step {
-  max-width: 800px;
+  max-width: 90%;
   margin: 0 auto;
   padding: 2rem;
   background-color: #ffffff;
@@ -17,11 +18,10 @@
 
 .form-content {
   width: 100%;
-  max-width: 700px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .summary-section {
@@ -29,11 +29,12 @@
   padding: 1.5rem;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .summary-section:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-3px);
 }
 
 .summary-section h4 {
@@ -41,13 +42,13 @@
   margin-bottom: 1.5rem;
   font-size: 1.2rem;
   font-weight: 600;
-  padding-bottom: 0.5rem;
   border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
 }
 
 .details-grid {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
@@ -89,7 +90,7 @@
 .signatures-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .signature-box {
@@ -113,7 +114,8 @@
 
 .signature-image {
   max-width: 100%;
-  height: 200px;
+  height: auto;
+  max-height: 200px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   background-color: white;
@@ -138,16 +140,17 @@
   background-color: white;
   border-radius: 6px;
   touch-action: none;
+  border: 1px solid #e2e8f0;
 }
 
 .clear-button {
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   background-color: #f1f5f9;
   color: #475569;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
   font-weight: 500;
 }
 
@@ -175,6 +178,9 @@
   font-size: 1rem;
   color: #1e293b;
   background-color: white;
+  resize: vertical;
+  min-height: 100px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .observations-container textarea::placeholder {
@@ -183,24 +189,29 @@
 
 .navigation-buttons {
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-top: 2rem;
 }
 
 .navigation-buttons button {
-  padding: 10px 20px;
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
   min-width: 120px;
 }
 
 .navigation-buttons button:first-child {
   background-color: #f1f5f9;
   color: #475569;
+}
+
+.navigation-buttons button:first-child:hover {
+  background-color: #e2e8f0;
 }
 
 .navigation-buttons button:last-child {
@@ -210,6 +221,7 @@
 
 .navigation-buttons button:last-child:hover:not(:disabled) {
   background-color: #535bf2;
+  transform: scale(1.05);
 }
 
 .navigation-buttons button:disabled {
@@ -249,13 +261,13 @@
 }
 
 .custody-item button {
-  padding: 6px 12px;
+  padding: 0.5rem 1rem;
   background-color: #f1f5f9;
   color: #475569;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
   font-weight: 500;
 }
 
@@ -263,6 +275,7 @@
   background-color: #e2e8f0;
 }
 
+/* Responsive styling */
 @media screen and (max-width: 768px) {
   .summary-step {
     padding: 1rem;

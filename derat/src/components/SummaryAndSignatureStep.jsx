@@ -17,6 +17,7 @@ const SummaryAndSignatureStep = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [observations, setObservations] = useState('');
   const [isFinalizeDisabled, setIsFinalizeDisabled] = useState(false); // State to disable finalize button
+  const [showPopup, setShowPopup] = useState(false);
 
   const [custodyItems, setCustodyItems] = useState({
     ultrasuneteRozatoare: 0,
@@ -101,7 +102,15 @@ const SummaryAndSignatureStep = () => {
         solutionId: formData.solutions[operation][0].id,
         quantity: Number.parseFloat(formData.quantities[operation]) || 0
       })));
-      navigate('/employee/completed');
+      
+      // Show the success popup
+      setShowPopup(true);
+
+      // Hide the popup after 3 seconds
+      setTimeout(() => {
+        setShowPopup(false);
+        navigate('/employee/completed');
+      }, 3000);
     } catch (error) {
       console.error('Error in handleFinish:', error);
       alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
@@ -397,6 +406,13 @@ const SummaryAndSignatureStep = () => {
           Finalizează
         </button>
       </div>
+
+      {/* Popup notification */}
+      {showPopup && (
+        <div className="popup-success">
+          <p>Proces trimis!</p>
+        </div>
+      )}
     </div>
   );
 };
