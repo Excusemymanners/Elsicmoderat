@@ -36,7 +36,7 @@ const SelectOperationStep = () => {
                 quantity_per_sqm: solution.quantity_per_sqm,
                 unit_of_measure: solution.unit_of_measure,
                 stock: solution.stock,
-                remaining_quantity: solution.remaining_quantity,
+                total_quantity: solution.total_quantity,
                 ...solution,
             })));
         }
@@ -116,15 +116,13 @@ const SelectOperationStep = () => {
                     const job = customerJobs.find(job => job.value === operation && job.active);
                     const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
                     
-                    if (solution.stock < quantityUsed) {
-                        throw new Error(`Stoc insuficient pentru soluția ${solution.label}`);
+                    if (solution.total_quantity < quantityUsed) {
+                        throw new Error(`Stoc insuficient pentru soluția ${solution.label}. Cantitatea totală ar deveni negativă.`);
                     }
 
                     const { error } = await supabase
                         .from('solutions')
                         .update({ 
-                            stock: solution.stock - quantityUsed,
-                            remaining_quantity: solution.remaining_quantity - quantityUsed,
                             total_quantity: solution.total_quantity - quantityUsed
                         })
                         .eq('id', solution.value);
@@ -182,7 +180,7 @@ const SelectOperationStep = () => {
                 const job = customerJobs.find(job => job.value === operation && job.active);
                 const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
                 
-                if (solution.stock < quantityUsed) {
+                if (solution.total_quantity < quantityUsed) {
                     errors.push(`Stoc insuficient pentru soluția ${solution.label}.`);
                 }
             }
