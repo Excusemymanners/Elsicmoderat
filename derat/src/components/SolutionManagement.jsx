@@ -241,8 +241,8 @@ const SolutionManagement = () => {
                 <th>Nume</th>
                 <th>Aviz/Lot</th>
                 <th>Concentrație</th>
-                <th>Stoc inițial</th>
-                <th>Cantitate Rămasă / Totală</th>
+                <th>Ultima inregistrare</th>
+                <th>Solutie </th>
                 <th>Procentaj rămas</th>
                 <th>Cantitate pe metru pătrat</th>
                 <th>Acțiuni</th>
@@ -258,7 +258,7 @@ const SolutionManagement = () => {
                     <td>{solution.concentration}</td>
                     <td>{solution.initial_stock} {solution.unit_of_measure}</td>
                     <td>
-                      {solution.remaining_quantity} {solution.unit_of_measure} / {solution.total_quantity} {solution.unit_of_measure}
+                     {solution.total_quantity} {solution.unit_of_measure}
                     </td>
                     <td>
                       <div className="progress-bar-container">
