@@ -35,9 +35,7 @@ export const updateRemainingQuantities = async (operations) => {
   }
 };
 
-// Restul componentelor și funcțiilor din SolutionManagement.jsx
 const SolutionManagement = () => {
-  // State-uri
   const [solutions, setSolutions] = useState([]);
   const [newSolution, setNewSolution] = useState({
     name: '',
@@ -55,7 +53,6 @@ const SolutionManagement = () => {
   const [showForm, setShowForm] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // Funcții
   const fetchSolutions = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -146,7 +143,10 @@ const SolutionManagement = () => {
   };
 
   const handleEditSolution = (solution) => {
-    setNewSolution(solution);
+    setNewSolution({
+      ...solution,
+      stock: solution.total_quantity // Setăm cantitatea totală actuală în câmpul 'stock'
+    });
     setEditingSolution(solution.id);
     setShowForm(true);
   };
@@ -160,7 +160,6 @@ const SolutionManagement = () => {
     solution.lot.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Render
   return (
     <div className="solution-management">
       <h2>Gestionare Soluții</h2>
@@ -196,7 +195,7 @@ const SolutionManagement = () => {
           />
           <input
             type="text"
-            placeholder={`Cantitate stoc (${newSolution.unit_of_measure})`}
+            placeholder={`Cantitate totală (${newSolution.unit_of_measure})`}
             value={newSolution.stock}
             onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
             required
