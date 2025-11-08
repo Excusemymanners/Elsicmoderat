@@ -104,7 +104,7 @@
 .client-details th, .client-details td {
   padding: 10px;
   border: 1px solid #ddd;
-  text-align: left;
+  text-align: center;
 }
 
 .client-details th {

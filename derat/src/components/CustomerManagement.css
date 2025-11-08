@@ -4,11 +4,19 @@
     margin: 0 auto;
 }
 
+.customer-management h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
 .customer-form, .search-container {
     margin-bottom: 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    justify-content: center;
 }
 
 .customer-form input, .search-container input {
@@ -33,6 +41,11 @@
     background-color: #45a049;
 }
 
+.customers-list {
+    display: flex;
+    justify-content: center;
+}
+
 .customers-list table {
     width: 100%;
     border-collapse: collapse;
@@ -41,8 +54,9 @@
 
 .customers-list th, .customers-list td {
     border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
 }
 
 .customers-list th {
@@ -76,12 +90,14 @@
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 20px;
+    justify-content: center;
 }
 
 .job-item {
     display: flex;
     align-items: center;
     gap: 10px;
+    justify-content: center;
 }
 
 .job-item button {

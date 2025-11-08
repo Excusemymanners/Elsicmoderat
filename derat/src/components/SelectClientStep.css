@@ -9,7 +9,7 @@
 
 .customer-management h2 {
   color: #1a1a1a;
-  text-align: left;
+  text-align: center;
   margin-bottom: 1.5rem;
   font-size: 1.8rem;
   font-weight: 600;
@@ -51,7 +51,7 @@ table {
 
 th, td {
   padding: 1rem;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid #e2e8f0;
   font-size: 0.95rem;
 }

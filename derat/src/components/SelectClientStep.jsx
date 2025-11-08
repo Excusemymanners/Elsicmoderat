@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import supabase from '../../supabaseClient';
@@ -11,6 +11,7 @@ const SelectClientStep = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const navigationButtonsRef = useRef(null);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -28,6 +29,20 @@ const SelectClientStep = () => {
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  const handleSelectCustomer = (customer) => {
+    setSelectedCustomer(customer);
+    
+    // Scroll to navigation buttons after a short delay
+    setTimeout(() => {
+      if (navigationButtonsRef.current) {
+        navigationButtonsRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 100);
+  };
 
   const handleNext = () => {
     updateFormData({ customer: selectedCustomer });
@@ -81,7 +96,7 @@ const SelectClientStep = () => {
                   <td>{customer.location}</td>
                   <td>
                     <button 
-                      onClick={() => setSelectedCustomer(customer)}
+                      onClick={() => handleSelectCustomer(customer)}
                       className={selectedCustomer.id === customer.id ? 'selected-button' : ''}
                     >
                       {selectedCustomer.id === customer.id ? 'Selectat' : 'Selectează'}
@@ -93,7 +108,7 @@ const SelectClientStep = () => {
           </table>
         )}
       </div>
-      <div className="navigation-buttons">
+      <div className="navigation-buttons" ref={navigationButtonsRef}>
         <button onClick={handleBack}>Back</button>
         <button onClick={handleNext} disabled={!selectedCustomer.id}>Next</button>
       </div>
