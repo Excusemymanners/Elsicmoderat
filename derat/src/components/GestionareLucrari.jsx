@@ -11,6 +11,9 @@ const GestionareLucrari = () => {
     const [clientsCache, setClientsCache] = useState({});
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmText, setConfirmText] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const itemsPerPage = 50;
 
     useEffect(() => {
         if (showConfirmModal) {
@@ -21,8 +24,8 @@ const GestionareLucrari = () => {
     }, [showConfirmModal]);
 
     useEffect(() => {
-        fetchLucrari();
-    }, []);
+        fetchLucrari(currentPage);
+    }, [currentPage]);
 
     const fetchClient = async (clientName) => {
         const { data, error } = await supabase
@@ -110,13 +113,26 @@ const GestionareLucrari = () => {
         return combinedSurfaces;
     };
 
-    const fetchLucrari = async () => {
+    const fetchLucrari = async (page = 1) => {
         setLoading(true);
         setSurfacesLoading(true);
+        
+        const from = (page - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+
+        // Get total count for pagination
+        const { count } = await supabase
+            .from('lucrari')
+            .select('*', { count: 'exact', head: true });
+
+        setTotalCount(count || 0);
+
+        // Fetch paginated data
         const { data, error } = await supabase
             .from('lucrari')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) {
             console.error('Error fetching lucrari:', error);
@@ -124,7 +140,7 @@ const GestionareLucrari = () => {
             console.log('Fetched lucrari:', data);
             setLucrari(data || []);
 
-            // Pre-calculate all surfaces
+            // Pre-calculate all surfaces for current page only
             const surfacesData = {};
             for (const lucrare of data || []) {
                 surfacesData[lucrare.id] = await getCombinedSurfaces(lucrare);
@@ -269,19 +285,150 @@ const GestionareLucrari = () => {
             return;
         }
 
-        // Șterge toate lucrările din baza de date
-        const { error } = await supabase
-            .from('lucrari')
-            .delete()
-            .neq('id', '00000000-0000-0000-0000-000000000000'); // Elimină toate înregistrările
+        try {
+            // Fetch all data before deleting
+            const { data: allData, error: fetchError } = await supabase
+                .from('lucrari')
+                .select('*');
 
-        if (error) {
-            console.error('Error deleting lucrari:', error);
-            alert('Eroare la ștergerea lucrărilor din baza de date!');
-        } else {
-            setLucrari([]);
-            alert('Toate lucrările au fost șterse din baza de date.');
+            if (fetchError) {
+                console.error('Error fetching data for backup:', fetchError);
+                alert('Eroare la preluarea datelor pentru backup!');
+                return;
+            }
+
+            // Generate CSV content
+            const escapeCSV = (value) => {
+                if (value === null || value === undefined) return '';
+                return `"${value.toString().replace(/"/g, '""')}"`;
+            };
+
+            const headers = [
+                'Nr. Proces Verbal',
+                'Data',
+                'Beneficiar',
+                'Locatie',
+                'Suprafata',
+                'Nume Angajat',
+                'Proceduri (Deratizare, Dezinfectie, Dezinsectie)',
+                'Denumire Produs',
+                'Lot si cantitate',
+                'Concentratii'
+            ];
+
+            const processRow = async (lucrare) => {
+                const client = await fetchClient(lucrare.client_name);
+
+                const procedures = [];
+                const products = [];
+                const surfaces = [];
+                const lotsAndQuantities = [];
+                const concentrations = [];
+
+                if (lucrare.procedure1 !== null) {
+                    procedures.push(lucrare.procedure1);
+                    products.push(lucrare.product1_name);
+                    surfaces.push(getSurface(client, lucrare.procedure1));
+                    lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
+                    concentrations.push(lucrare.concentration1 ?? 'null');
+                }
+
+                if (lucrare.procedure2 !== null) {
+                    procedures.push(lucrare.procedure2);
+                    products.push(lucrare.product2_name);
+                    surfaces.push(getSurface(client, lucrare.procedure2));
+                    lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
+                    concentrations.push(lucrare.concentration2 ?? 'null');
+                }
+
+                if (lucrare.procedure3 !== null) {
+                    procedures.push(lucrare.procedure3);
+                    products.push(lucrare.product3_name);
+                    surfaces.push(getSurface(client, lucrare.procedure3));
+                    lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
+                    concentrations.push(lucrare.concentration3 ?? 'null');
+                }
+
+                if (lucrare.procedure4 !== null) {
+                    procedures.push(lucrare.procedure4);
+                    products.push(lucrare.product4_name);
+                    surfaces.push(getSurface(client, lucrare.procedure4));
+                    lotsAndQuantities.push(`${lucrare.product4_lot} - ${lucrare.product4_quantity}`);
+                    concentrations.push(lucrare.concentration4 ?? 'null');
+                }
+
+                const row = [
+                    lucrare.numar_ordine - 1,
+                    new Date(lucrare.created_at).toLocaleString('ro-RO'),
+                    lucrare.client_name,
+                    lucrare.client_location,
+                    surfaces.join('; '),
+                    lucrare.employee_name,
+                    procedures.join('; '),
+                    products.join('; '),
+                    lotsAndQuantities.join('; '),
+                    concentrations.join('; ')
+                ];
+
+                return row.map(escapeCSV).join(',');
+            };
+
+            const processedRows = await Promise.all(allData.map(processRow));
+
+            processedRows.sort((a, b) => {
+                const numA = parseInt(a.split(',')[0].replace(/"/g, ''));
+                const numB = parseInt(b.split(',')[0].replace(/"/g, ''));
+                return numA - numB;
+            });
+
+            const csv = [
+                headers.map(escapeCSV).join(','),
+                ...processedRows
+            ].join('\n');
+
+            const BOM = '\uFEFF';
+            const csvContent = BOM + csv;
+
+            // Send email with CSV
+            const response = await fetch('/api/send-csv-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    csvContent: csvContent,
+                    recipientEmail: '1285849adm@gmail.com'
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                console.error('Error sending email:', result.error);
+                alert('Eroare la trimiterea emailului cu backup-ul! Ștergerea a fost anulată.');
+                setShowConfirmModal(false);
+                setConfirmText('');
+                return;
+            }
+
+            // If email sent successfully, proceed with deletion
+            const { error } = await supabase
+                .from('lucrari')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000');
+
+            if (error) {
+                console.error('Error deleting lucrari:', error);
+                alert('Eroare la ștergerea lucrărilor din baza de date!');
+            } else {
+                setLucrari([]);
+                alert('Backup-ul a fost trimis pe email și toate lucrările au fost șterse din baza de date.');
+            }
+        } catch (error) {
+            console.error('Error in clear process:', error);
+            alert('Eroare la procesul de ștergere!');
         }
+
         setShowConfirmModal(false);
         setConfirmText('');
     };
@@ -296,6 +443,15 @@ const GestionareLucrari = () => {
         lucrare.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lucrare.numar_ordine?.toString().includes(searchTerm)
     );
+
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     return (
         <div className="lucrari-management">
@@ -331,6 +487,12 @@ const GestionareLucrari = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+            </div>
+
+            {/* Pagination Info */}
+            <div className="pagination-info">
+                <p>Total lucrări: <strong>{totalCount}</strong> | Pagina <strong>{currentPage}</strong> din <strong>{totalPages}</strong></p>
+                <p>Afișare lucrări {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)}</p>
             </div>
 
             <div className="lucrari-list">
@@ -404,6 +566,69 @@ const GestionareLucrari = () => {
                     </table>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {!loading && totalPages > 1 && (
+                <div className="pagination-controls">
+                    <button 
+                        onClick={() => handlePageChange(1)} 
+                        disabled={currentPage === 1}
+                        title="Prima pagină"
+                    >
+                        ⏮️ Prima
+                    </button>
+                    <button 
+                        onClick={() => handlePageChange(currentPage - 1)} 
+                        disabled={currentPage === 1}
+                        title="Pagina anterioară"
+                    >
+                        ◀️ Anterior
+                    </button>
+                    
+                    <div className="page-numbers">
+                        {[...Array(totalPages)].map((_, index) => {
+                            const pageNum = index + 1;
+                            // Show only nearby pages to avoid too many buttons
+                            if (
+                                pageNum === 1 || 
+                                pageNum === totalPages || 
+                                (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
+                            ) {
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => handlePageChange(pageNum)}
+                                        className={currentPage === pageNum ? 'active' : ''}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
+                            } else if (
+                                pageNum === currentPage - 3 || 
+                                pageNum === currentPage + 3
+                            ) {
+                                return <span key={pageNum}>...</span>;
+                            }
+                            return null;
+                        })}
+                    </div>
+
+                    <button 
+                        onClick={() => handlePageChange(currentPage + 1)} 
+                        disabled={currentPage === totalPages}
+                        title="Pagina următoare"
+                    >
+                        Următor ▶️
+                    </button>
+                    <button 
+                        onClick={() => handlePageChange(totalPages)} 
+                        disabled={currentPage === totalPages}
+                        title="Ultima pagină"
+                    >
+                        Ultima ⏭️
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

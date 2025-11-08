@@ -108,6 +108,51 @@
   gap: 0.5rem;
   font-size: 0.95rem;
   color: #4a5568;
+  font-weight: 500;
+}
+
+.quantity-display .quantity-value {
+  color: #646cff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Stock info display */
+.stock-info {
+  width: 100%;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.stock-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+}
+
+.stock-label {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.stock-value {
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.stock-value.reserve {
+  color: #f59e0b;
 }
 
 /* Butoane de navigare */
@@ -167,6 +212,35 @@
   background: #fee2e2;
   border-radius: 8px;
   border: 1px solid #fecaca;
+  font-weight: 500;
+}
+
+/* Stock errors container */
+.stock-errors {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
+}
+
+.stock-errors p {
+  margin: 0.5rem 0;
+  color: #92400e;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  border-left: 3px solid #f59e0b;
+}
+
+.stock-errors p:first-child {
+  margin-top: 0;
+}
+
+.stock-errors p:last-child {
+  margin-bottom: 0;
 }
 
 /* Responsive Design */

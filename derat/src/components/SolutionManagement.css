@@ -1,7 +1,131 @@
 .solution-management {
-    padding: 20px;
-    max-width: 1000px;
+    padding: 15px;
+    max-width: 100%;
     margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.solution-management h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+/* Statistics Dashboard */
+.statistics-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .stat-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.stat-card .stat-content {
+    flex: 1;
+}
+
+.stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 3px;
+}
+
+.stat-card .stat-label {
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-card.total .stat-value {
+    color: #2196F3;
+}
+
+.stat-card.active .stat-value {
+    color: #4CAF50;
+}
+
+.stat-card.inactive .stat-value {
+    color: #9E9E9E;
+}
+
+.stat-card.low .stat-value {
+    color: #FF9800;
+}
+
+.stat-card.critical .stat-value {
+    color: #F44336;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.action-buttons button {
+    padding: 10px 18px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-buttons button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.action-buttons .export-button {
+    background-color: #2196F3;
+}
+
+.action-buttons .export-button:hover:not(:disabled) {
+    background-color: #0b7dda;
+}
+
+.action-buttons .fix-button {
+    background-color: #FF9800;
+}
+
+.action-buttons .fix-button:hover:not(:disabled) {
+    background-color: #F57C00;
 }
 
 .header-info {
@@ -22,89 +146,281 @@
 }
 
 .solution-form, .search-container {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
 }
 
 .solution-form input,
 .solution-form select,
 .search-container input {
-    flex: 1 1 200px;
+    flex: 1 1 180px;
     padding: 8px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 0.9rem;
 }
 
 .solution-form button {
-    padding: 10px 20px;
+    padding: 10px 24px;
     background-color: #4CAF50;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    flex: 0 0 auto;
 }
 
 .solution-form button:hover {
     background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.solutions-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: visible;
 }
 
 .solutions-list table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.7rem;
+    table-layout: fixed;
 }
 
 .solutions-list th, .solutions-list td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
+    border: 1px solid #e0e0e0;
+    padding: 6px 3px;
+    text-align: center;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
 }
 
+/* Lățimi specifice pentru coloane - optimizat pentru a încăpea tot */
+.solutions-list th:nth-child(1), .solutions-list td:nth-child(1) { width: 6%; } /* Status */
+.solutions-list th:nth-child(2), .solutions-list td:nth-child(2) { width: 12%; } /* Nume */
+.solutions-list th:nth-child(3), .solutions-list td:nth-child(3) { width: 14%; } /* Aviz/Lot */
+.solutions-list th:nth-child(4), .solutions-list td:nth-child(4) { width: 6%; } /* Concentrație */
+.solutions-list th:nth-child(5), .solutions-list td:nth-child(5) { width: 8%; } /* Ultima înregistrare */
+.solutions-list th:nth-child(6), .solutions-list td:nth-child(6) { width: 8%; } /* Soluție */
+.solutions-list th:nth-child(7), .solutions-list td:nth-child(7) { width: 8%; } /* Rezervă minimă */
+.solutions-list th:nth-child(8), .solutions-list td:nth-child(8) { width: 9%; } /* Procentaj */
+.solutions-list th:nth-child(9), .solutions-list td:nth-child(9) { width: 7%; } /* Cantitate/mp */
+.solutions-list th:nth-child(10), .solutions-list td:nth-child(10) { width: 22%; } /* Acțiuni */
+
 .solutions-list th {
-    background-color: #f2f2f2;
+    background-color: #646cff;
+    color: white;
+    font-weight: 600;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1px;
+    padding: 8px 3px;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.1;
 }
 
 .solutions-list tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-.solutions-list tr:hover {
-    background-color: #ddd;
+.solutions-list tbody tr:hover {
+    background-color: #e8f4f8;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
 }
 
-.solutions-list button {
-    padding: 5px 10px;
-    margin-right: 5px;
-    background-color: #008CBA;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.solutions-list button:hover {
-    background-color: #007bb5;
+.solutions-list td button:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
 }
 
 .progress-bar-container {
     width: 100%;
+    margin: 0 auto;
     background-color: #f1f1f1;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
 }
 
 .progress-bar {
-    height: 20px;
+    height: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: rgb(0, 0, 0);
-    font-size: 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+/* Status Badge Styles */
+.status-badge {
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.status-badge.active {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-badge.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Inactive Row Style */
+.inactive-row {
+    background-color: #f8f9fa !important;
+    opacity: 0.7;
+}
+
+.inactive-row:hover {
+    opacity: 0.85;
+}
+
+/* Reserve Warning Styles */
+.near-reserve-row {
+    background-color: #fff3cd !important;
+}
+
+.at-reserve-row {
+    background-color: #f8d7da !important;
+}
+
+.reserve-indicator {
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 500;
+    display: inline-block;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.reserve-indicator.near-reserve {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.reserve-indicator.at-reserve {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Button Styles in table cells */
+.solutions-list td {
+    text-align: center;
+}
+
+.solutions-list td button {
+    padding: 5px 8px;
+    margin: 1px 0;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+/* Acțiuni în coloană */
+
+.btn-activate {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-activate:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.btn-deactivate {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-deactivate:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #5a6268;
 }
 
 @media (max-width: 768px) {
+    .statistics-dashboard {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 15px;
+        gap: 10px;
+    }
+
+    .stat-card .stat-icon {
+        font-size: 2rem;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.75rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons button {
+        width: 100%;
+    }
+
     .header-info {
         flex-direction: column;
         align-items: flex-start;
@@ -144,11 +460,13 @@
         font-weight: bold;
     }
 
-    .solutions-list td:nth-of-type(1):before { content: "Nume"; }
-    .solutions-list td:nth-of-type(2):before { content: "Aviz/Lot"; }
-    .solutions-list td:nth-of-type(3):before { content: "Concentrație"; }
-    .solutions-list td:nth-of-type(4):before { content: "Ultima Inregistrare"; }
-    .solutions-list td:nth-of-type(5):before { content: "Solutie"; }
-    .solutions-list td:nth-of-type(6):before { content: "Procentaj rămas"; }
-    .solutions-list td:nth-of-type(7):before { content: "Cantitate pe metru pătrat"; }
+    .solutions-list td:nth-of-type(1):before { content: "Status"; }
+    .solutions-list td:nth-of-type(2):before { content: "Nume"; }
+    .solutions-list td:nth-of-type(3):before { content: "Aviz/Lot"; }
+    .solutions-list td:nth-of-type(4):before { content: "Concentrație"; }
+    .solutions-list td:nth-of-type(5):before { content: "Ultima Inregistrare"; }
+    .solutions-list td:nth-of-type(6):before { content: "Solutie"; }
+    .solutions-list td:nth-of-type(7):before { content: "Rezervă minimă"; }
+    .solutions-list td:nth-of-type(8):before { content: "Procentaj rămas"; }
+    .solutions-list td:nth-of-type(9):before { content: "Cantitate pe metru pătrat"; }
 }

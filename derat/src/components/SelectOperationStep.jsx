@@ -30,15 +30,41 @@ const SelectOperationStep = () => {
             setErrorMessage('Failed to fetch solutions from database');
             console.error(error);
         } else {
-            setSolutions(data.map(solution => ({
-                value: solution.id,
-                label: solution.name,
-                quantity_per_sqm: solution.quantity_per_sqm,
-                unit_of_measure: solution.unit_of_measure,
-                stock: solution.stock,
-                total_quantity: solution.total_quantity,
-                ...solution,
-            })));
+            // Filtrează doar soluțiile active și cu stoc disponibil peste rezerva minimă
+            const activeSolutions = data
+                .filter(solution => {
+                    const isActive = solution.is_active !== false; // Default true dacă nu există câmpul
+                    const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
+                    const minimumReserve = solution.minimum_reserve || 0;
+                    const hasAvailableStock = remainingQuantity > minimumReserve;
+                    
+                    return isActive && hasAvailableStock;
+                })
+                .map(solution => {
+                    const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
+                    const minimumReserve = solution.minimum_reserve || 0;
+                    const availableQuantity = remainingQuantity - minimumReserve;
+                    
+                    return {
+                        value: solution.id,
+                        label: `${solution.name} (Disponibil: ${availableQuantity.toFixed(2)} ${solution.unit_of_measure || 'ml'})`,
+                        quantity_per_sqm: solution.quantity_per_sqm,
+                        unit_of_measure: solution.unit_of_measure,
+                        stock: solution.stock,
+                        total_quantity: solution.total_quantity,
+                        remaining_quantity: remainingQuantity,
+                        minimum_reserve: minimumReserve,
+                        available_quantity: availableQuantity,
+                        ...solution,
+                    };
+                });
+            
+            setSolutions(activeSolutions);
+            
+            // Dacă nu există soluții active, afișează un mesaj
+            if (activeSolutions.length === 0) {
+                setErrorMessage('Nu există soluții active disponibile. Vă rugăm să contactați administratorul.');
+            }
         }
     };
 
@@ -116,19 +142,53 @@ const SelectOperationStep = () => {
                     const job = customerJobs.find(job => job.value === operation && job.active);
                     const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
                     
-                    if (solution.total_quantity < quantityUsed) {
-                        throw new Error(`Stoc insuficient pentru soluția ${solution.label}. Cantitatea totală ar deveni negativă.`);
+                    const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
+                    const minimumReserve = solution.minimum_reserve || 0;
+                    const availableQuantity = remainingQuantity - minimumReserve;
+                    
+                    // Verifică dacă există suficient stoc disponibil (peste rezerva minimă)
+                    if (availableQuantity < quantityUsed) {
+                        throw new Error(
+                            `Stoc insuficient pentru "${solution.name}". ` +
+                            `Necesită ${quantityUsed.toFixed(2)} ${solution.unit_of_measure}, ` +
+                            `dar sunt disponibile doar ${availableQuantity.toFixed(2)} ${solution.unit_of_measure}. ` +
+                            `(Rezerva minimă de ${minimumReserve.toFixed(2)} ${solution.unit_of_measure} trebuie păstrată)`
+                        );
+                    }
+
+                    const newRemainingQuantity = remainingQuantity - quantityUsed;
+                    const newTotalQuantity = solution.total_quantity - quantityUsed;
+                    
+                    // Verifică dacă noua cantitate rămasă va atinge rezerva minimă
+                    const shouldDeactivate = newRemainingQuantity <= minimumReserve;
+                    
+                    const updateData = {
+                        total_quantity: newTotalQuantity,
+                        remaining_quantity: newRemainingQuantity
+                    };
+                    
+                    // Dacă atinge rezerva minimă, dezactivează automat
+                    if (shouldDeactivate) {
+                        updateData.is_active = false;
                     }
 
                     const { error } = await supabase
                         .from('solutions')
-                        .update({ 
-                            total_quantity: solution.total_quantity - quantityUsed
-                        })
+                        .update(updateData)
                         .eq('id', solution.value);
 
                     if (error) {
-                        throw new Error(`Eroare la actualizarea stocului pentru ${solution.label}: ${error.message}`);
+                        throw new Error(`Eroare la actualizarea stocului pentru "${solution.name}": ${error.message}`);
+                    }
+                    
+                    // Notifică utilizatorul dacă soluția a fost dezactivată
+                    if (shouldDeactivate) {
+                        console.warn(`⚠️ Soluția "${solution.name}" a fost dezactivată automat deoarece a atins rezerva minimă!`);
+                        alert(
+                            `⚠️ ATENȚIE: Soluția "${solution.name}" a atins rezerva minimă ` +
+                            `(${minimumReserve.toFixed(2)} ${solution.unit_of_measure}) ` +
+                            `și a fost dezactivată automat!`
+                        );
                     }
                 }
             }
@@ -180,8 +240,26 @@ const SelectOperationStep = () => {
                 const job = customerJobs.find(job => job.value === operation && job.active);
                 const quantityUsed = job ? job.surface * solution.quantity_per_sqm : 0;
                 
-                if (solution.total_quantity < quantityUsed) {
-                    errors.push(`Stoc insuficient pentru soluția ${solution.label}.`);
+                const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
+                const minimumReserve = solution.minimum_reserve || 0;
+                const availableQuantity = remainingQuantity - minimumReserve;
+                
+                // Verifică dacă cantitatea necesară depășește cantitatea disponibilă (peste rezerva minimă)
+                if (availableQuantity < quantityUsed) {
+                    errors.push(
+                        `⚠️ Stoc insuficient pentru "${solution.name}": ` +
+                        `Necesită ${quantityUsed.toFixed(2)} ${solution.unit_of_measure}, ` +
+                        `dar sunt disponibile doar ${availableQuantity.toFixed(2)} ${solution.unit_of_measure} ` +
+                        `(Rezervă minimă: ${minimumReserve.toFixed(2)} ${solution.unit_of_measure})`
+                    );
+                }
+                
+                // Avertisment dacă folosirea ar lăsa foarte puțin stoc disponibil
+                const remainingAfterUse = availableQuantity - quantityUsed;
+                if (remainingAfterUse > 0 && remainingAfterUse < availableQuantity * 0.2) {
+                    errors.push(
+                        `⚡ Atenție: După utilizare, "${solution.name}" va avea doar ${remainingAfterUse.toFixed(2)} ${solution.unit_of_measure} disponibili.`
+                    );
                 }
             }
         }
@@ -211,15 +289,33 @@ const SelectOperationStep = () => {
                                     isMulti={false}
                                     value={selectedSolutions[job.value]?.[0] || null}
                                     onChange={(selectedOption) => handleSolutionChange(job.value, selectedOption)}
-                                    placeholder={`Selectează o soluție pentru ${job.label}...`}
+                                    placeholder={
+                                        solutions.length === 0 
+                                            ? "Nu există soluții active disponibile" 
+                                            : `Selectează o soluție pentru ${job.label}...`
+                                    }
+                                    isDisabled={solutions.length === 0}
+                                    noOptionsMessage={() => "Nu există soluții disponibile"}
                                 />
                                 <div className="quantity-display">
                                     <label>Cantitate necesară: </label>
-                                    <span>{quantities[job.value]?.toFixed(2) || 0}</span>
+                                    <span className="quantity-value">{quantities[job.value]?.toFixed(2) || 0}</span>
                                     {selectedSolutions[job.value] && selectedSolutions[job.value].length > 0 && (
                                         <span> {selectedSolutions[job.value][0].unit_of_measure}</span>
                                     )}
                                 </div>
+                                {selectedSolutions[job.value] && selectedSolutions[job.value].length > 0 && (
+                                    <div className="stock-info">
+                                        <div className="stock-detail">
+                                            <span className="stock-label">Stoc disponibil:</span>
+                                            <span className="stock-value">{selectedSolutions[job.value][0].available_quantity?.toFixed(2) || 0} {selectedSolutions[job.value][0].unit_of_measure}</span>
+                                        </div>
+                                        <div className="stock-detail">
+                                            <span className="stock-label">Rezervă minimă:</span>
+                                            <span className="stock-value reserve">{selectedSolutions[job.value][0].minimum_reserve?.toFixed(2) || 0} {selectedSolutions[job.value][0].unit_of_measure}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
