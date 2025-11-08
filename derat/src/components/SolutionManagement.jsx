@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import supabase from '../../supabaseClient';
-import * as XLSX from 'xlsx';
 import './SolutionManagement.css';
 
 export const updateRemainingQuantities = async (operations) => {
@@ -285,33 +284,19 @@ const SolutionManagement = () => {
     return ((remainingQuantity / initialStock) * 100).toFixed(2);
   };
 
-  const exportToExcel = () => {
-    // Pregătește datele pentru export
-    const exportData = solutions.map((solution, index) => {
-      const percentage = calculateRemainingPercentage(solution.initial_stock, solution.remaining_quantity);
-      const isActive = solution.is_active !== false;
-      const minimumReserve = solution.minimum_reserve || 0;
-      const remainingQuantity = solution.remaining_quantity || 0;
-      const availableQuantity = remainingQuantity - minimumReserve;
-      
-      return {
-        'Nr. Crt.': index + 1,
-        'Status': isActive ? 'Activ' : 'Inactiv',
-        'Nume Substanță': solution.name,
-        'Aviz/Lot': solution.lot,
-        'Concentrație': solution.concentration,
-        'Stoc Inițial': `${solution.initial_stock} ${solution.unit_of_measure}`,
-        'Cantitate Totală': `${solution.total_quantity} ${solution.unit_of_measure}`,
-        'Cantitate Rămasă': `${remainingQuantity} ${solution.unit_of_measure}`,
-        'Cantitate Disponibilă': `${availableQuantity.toFixed(2)} ${solution.unit_of_measure}`,
-        'Rezervă Minimă': `${minimumReserve} ${solution.unit_of_measure}`,
-        'Procentaj Rămas': `${percentage}%`,
-        'Cantitate/mp': `${solution.quantity_per_sqm} ${solution.unit_of_measure}`,
-        'Unitate Măsură': solution.unit_of_measure,
-      };
-    });
+  const exportToCSV = () => {
+    // Helper function to escape CSV values
+    const escapeCSV = (value) => {
+      if (value === null || value === undefined) return '';
+      const stringValue = value.toString();
+      // Escape quotes and wrap in quotes if contains comma, quote, or newline
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
 
-    // Adaugă informații suplimentare în header
+    // Pregătește datele pentru export
     const currentDate = new Date().toLocaleString('ro-RO', {
       year: 'numeric',
       month: '2-digit',
@@ -321,49 +306,77 @@ const SolutionManagement = () => {
       second: '2-digit'
     });
 
-    // Creează un workbook
-    const wb = XLSX.utils.book_new();
+    // Headers CSV
+    const headers = [
+      'Nr. Crt.',
+      'Status',
+      'Nume Substanță',
+      'Aviz/Lot',
+      'Concentrație',
+      'Stoc Inițial',
+      'Cantitate Totală',
+      'Cantitate Rămasă',
+      'Cantitate Disponibilă',
+      'Rezervă Minimă',
+      'Procentaj Rămas',
+      'Cantitate/mp',
+      'Unitate Măsură'
+    ];
 
-    // Adaugă informații generale
-    const headerInfo = [
+    // Informații generale
+    const infoLines = [
       ['FIȘĂ DE MAGAZIE - GESTIONARE SOLUȚII'],
-      ['Data generării:', currentDate],
-      ['Total soluții:', solutions.length],
-      ['Soluții active:', solutions.filter(s => s.is_active !== false).length],
-      ['Soluții inactive:', solutions.filter(s => s.is_active === false).length],
+      [`Data generării: ${currentDate}`],
+      [`Total soluții: ${solutions.length}`],
+      [`Soluții active: ${solutions.filter(s => s.is_active !== false).length}`],
+      [`Soluții inactive: ${solutions.filter(s => s.is_active === false).length}`],
       [''],
+      headers
     ];
 
-    // Convertește datele în sheet
-    const ws = XLSX.utils.aoa_to_sheet(headerInfo);
-    XLSX.utils.sheet_add_json(ws, exportData, { origin: -1 });
+    // Date soluții
+    const dataRows = solutions.map((solution, index) => {
+      const percentage = calculateRemainingPercentage(solution.initial_stock, solution.remaining_quantity);
+      const isActive = solution.is_active !== false;
+      const minimumReserve = solution.minimum_reserve || 0;
+      const remainingQuantity = solution.remaining_quantity || 0;
+      const availableQuantity = remainingQuantity - minimumReserve;
+      
+      return [
+        index + 1,
+        isActive ? 'Activ' : 'Inactiv',
+        solution.name,
+        solution.lot,
+        solution.concentration,
+        `${solution.initial_stock} ${solution.unit_of_measure}`,
+        `${solution.total_quantity} ${solution.unit_of_measure}`,
+        `${remainingQuantity} ${solution.unit_of_measure}`,
+        `${availableQuantity.toFixed(2)} ${solution.unit_of_measure}`,
+        `${minimumReserve} ${solution.unit_of_measure}`,
+        `${percentage}%`,
+        `${solution.quantity_per_sqm} ${solution.unit_of_measure}`,
+        solution.unit_of_measure
+      ];
+    });
 
-    // Setează lățimea coloanelor
-    const columnWidths = [
-      { wch: 8 },  // Nr. Crt.
-      { wch: 10 }, // Status
-      { wch: 25 }, // Nume Substanță
-      { wch: 35 }, // Aviz/Lot
-      { wch: 12 }, // Concentrație
-      { wch: 18 }, // Stoc Inițial
-      { wch: 18 }, // Cantitate Totală
-      { wch: 18 }, // Cantitate Rămasă
-      { wch: 20 }, // Cantitate Disponibilă
-      { wch: 18 }, // Rezervă Minimă
-      { wch: 15 }, // Procentaj Rămas
-      { wch: 15 }, // Cantitate/mp
-      { wch: 15 }, // Unitate Măsură
-    ];
-    ws['!cols'] = columnWidths;
+    // Combină toate rândurile
+    const allRows = [...infoLines, ...dataRows];
 
-    // Adaugă worksheet la workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Fișa de Magazie');
+    // Convertește în CSV
+    const csv = allRows.map(row => 
+      Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)
+    ).join('\n');
 
-    // Generează numele fișierului cu data curentă
-    const fileName = `Fisa_Magazie_${new Date().toISOString().split('T')[0]}_${Date.now()}.xlsx`;
-
-    // Salvează fișierul
-    XLSX.writeFile(wb, fileName);
+    // Add BOM for Excel to properly detect UTF-8
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const fileName = `Fisa_Magazie_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
 
     alert(`Fișa de magazie a fost exportată cu succes!\nFișier: ${fileName}`);
   };
@@ -443,11 +456,11 @@ const SolutionManagement = () => {
         </button>
         <button 
           className="export-button"
-          onClick={exportToExcel} 
+          onClick={exportToCSV} 
           disabled={loading || solutions.length === 0}
-          title="Exportă fișa de magazie în format Excel"
+          title="Exportă fișa de magazie în format CSV"
         >
-          📊 Exportă Fișă de Magazie (Excel)
+          📊 Exportă Fișă de Magazie (CSV)
         </button>
       </div>
 
