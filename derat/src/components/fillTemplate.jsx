@@ -137,7 +137,7 @@ export const fillTemplate = async (templateUrl, request) => {
     // Afișează DOAR numele substanței, fără (Disponibil...) sau alte detalii
     const solutionName = operation.solution.split(' (Disponibil')[0];
     drawText(solutionName, solutionXPosition, yPosition);
-    // drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${await fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
+  drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${await fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
