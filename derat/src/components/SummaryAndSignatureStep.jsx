@@ -177,14 +177,17 @@ const SummaryAndSignatureStep = () => {
       if (Array.isArray(finalData.operations) && finalData.operations.length > 0) {
         opsToUpdate = finalData.operations.map(operation => {
           const sol = finalData.solutions[operation] && finalData.solutions[operation][0];
+          const rawQty = finalData.quantities ? finalData.quantities[operation] : undefined;
+          const parsed = Number.parseFloat(rawQty);
+          const qtyVal = Number.isFinite(parsed) ? parsed : 0;
           return {
             solutionId: sol ? sol.id : null,
-            quantity: Number.parseFloat(finalData.quantities[operation]) || 0,
+            quantity: qtyVal,
             beneficiar: finalData.customer?.name || null,
             lot: sol ? sol.lot : null,
             created_at: new Date().toISOString()
           };
-        }).filter(op => op.solutionId !== null && op.quantity > 0);
+        }).filter(op => op.solutionId !== null);
       }
 
       // Fallback: parse the verbalProcess product fields (product1..product4) if no ops were selected
@@ -196,8 +199,10 @@ const SummaryAndSignatureStep = () => {
           const name = vp[`product${i}_name`];
           const qty = vp[`product${i}_quantity`];
           const lot = vp[`product${i}_lot`];
-          if (name && qty && Number.parseFloat(qty) > 0) {
-            fallback.push({ name, qty: Number.parseFloat(qty), lot });
+          if (name) {
+            const parsed = Number.parseFloat(qty);
+            const qtyVal = Number.isFinite(parsed) ? parsed : 0;
+            fallback.push({ name, qty: qtyVal, lot });
           }
         }
 
@@ -226,6 +231,36 @@ const SummaryAndSignatureStep = () => {
             }
           } catch (e) {
             console.error('Error resolving solution for fallback exit:', e);
+          }
+        }
+      }
+
+      // If still no opsToUpdate, try to derive from finalData.solutions (keys may exist even if finalData.operations is empty)
+      if (opsToUpdate.length === 0 && finalData.solutions && Object.keys(finalData.solutions).length > 0) {
+        for (const key of Object.keys(finalData.solutions)) {
+          const arr = finalData.solutions[key];
+          if (Array.isArray(arr) && arr.length > 0) {
+            const sol = arr[0];
+            // try quantity from finalData.quantities, else compute from customer job surface * quantity_per_sqm
+            let qty = 0;
+            if (finalData.quantities && finalData.quantities[key] !== undefined) {
+              const p = Number.parseFloat(finalData.quantities[key]);
+              qty = Number.isFinite(p) ? p : 0;
+            } else {
+              const job = finalData.customer?.jobs?.find(j => j.value === key);
+              const surface = job ? job.surface : 0;
+              const qps = sol.quantity_per_sqm || 0;
+              const computed = Number.parseFloat(surface || 0) * Number.parseFloat(qps || 0);
+              qty = Number.isFinite(computed) ? computed : 0;
+            }
+
+            opsToUpdate.push({
+              solutionId: sol.id,
+              quantity: qty,
+              beneficiar: finalData.customer?.name || null,
+              lot: sol.lot || null,
+              created_at: new Date().toISOString()
+            });
           }
         }
       }
