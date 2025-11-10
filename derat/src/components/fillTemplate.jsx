@@ -134,8 +134,9 @@ export const fillTemplate = async (templateUrl, request) => {
       const lotXPosition = concentrationXPosition + 53;
 
       drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
-      drawText(`${operation.solution}`, solutionXPosition, yPosition);
-      drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${await fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
+    // Afișează DOAR numele substanței, fără cantitate disponibilă
+    drawText(`${operation.solution}`, solutionXPosition, yPosition);
+    // drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${await fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
