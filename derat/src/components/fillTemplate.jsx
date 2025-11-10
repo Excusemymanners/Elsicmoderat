@@ -133,9 +133,10 @@ export const fillTemplate = async (templateUrl, request) => {
       const concentrationXPosition = quantityXPosition + 140;
       const lotXPosition = concentrationXPosition + 53;
 
-      drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
-    // Afișează DOAR numele substanței, fără cantitate disponibilă
-    drawText(`${operation.solution}`, solutionXPosition, yPosition);
+    drawText(`${operation.surface}mp`, surfaceXPosition, yPosition);
+    // Afișează DOAR numele substanței, fără (Disponibil...) sau alte detalii
+    const solutionName = operation.solution.split(' (Disponibil')[0];
+    drawText(solutionName, solutionXPosition, yPosition);
     // drawText(`${parseFloat(Number(operation.quantity)).toFixed(2)} ${await fetchSolutionUnitOfMeasure(operation.solutionId)}`, quantityXPosition, yPosition);
       drawText(`${operation.concentration}%`, concentrationXPosition, yPosition);
       drawText(`${operation.lot}`, lotXPosition, yPosition);
