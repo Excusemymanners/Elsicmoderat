@@ -725,26 +725,26 @@ const SolutionManagement = () => {
 
                 return (
                   <tr key={solution.id} className={`${!isActive ? 'inactive-row' : ''} ${isAtReserve ? 'at-reserve-row' : isNearReserve ? 'near-reserve-row' : ''}`}>
-                    <td>
+                    <td data-label="Status">
                       <span className={`status-badge ${isActive ? 'active' : 'inactive'}`}>
                         {isActive ? '✓ Activ' : '✗ Inactiv'}
                       </span>
                     </td>
-                    <td>{solution.name}</td>
-                    <td>{solution.lot}</td>
-                    <td>{solution.concentration}</td>
-                    <td>{solution.initial_stock} {solution.unit_of_measure}</td>
-                    <td>
+                    <td data-label="Nume">{solution.name}</td>
+                    <td data-label="Aviz/Lot">{solution.lot}</td>
+                    <td data-label="Concentrație">{solution.concentration}</td>
+                    <td data-label="Ultima înregistrare">{solution.initial_stock} {solution.unit_of_measure}</td>
+                    <td data-label="Solutie">
                       {solution.total_quantity} {solution.unit_of_measure}
                     </td>
-                    <td>
+                    <td data-label="Rezervă minimă">
                       <span className={`reserve-indicator ${isAtReserve ? 'at-reserve' : isNearReserve ? 'near-reserve' : ''}`}>
                         {minimumReserve} {solution.unit_of_measure}
                         {isAtReserve && ' ⚠️'}
                         {isNearReserve && ' ⚡'}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Procentaj rămas">
                       <div className="progress-bar-container">
                         <div
                           className="progress-bar"
@@ -757,31 +757,71 @@ const SolutionManagement = () => {
                         </div>
                       </div>
                     </td>
-                    <td>{solution.quantity_per_sqm} {solution.unit_of_measure}</td>
-                    <td>
-                      <button
-                        className={isActive ? 'btn-deactivate' : 'btn-activate'}
-                        onClick={() => handleToggleActive(solution.id, isActive)}
-                        title={isActive ? 'Dezactivează substanța' : 'Activează substanța'}
-                      >
-                        {isActive ? '🔴 Dezactivează' : '🟢 Activează'}
-                      </button>
-                      <button onClick={() => handleEditSolution(solution)}>
-                        ✏️ Editează
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDeleteSolution(solution.id)}
-                      >
-                        🗑️ Șterge
-                      </button>
-                      <button
-                        className="btn-export-single"
-                        onClick={() => exportSingleSolutionCSV(solution)}
-                        title="Exportă fișa de magazie pentru această soluție"
-                      >
-                        📄 Exportă fișa de magazie
-                      </button>
+                    <td data-label="Cantitate pe metru pătrat">{solution.quantity_per_sqm} {solution.unit_of_measure}</td>
+                    <td data-label="Acțiuni">
+                      <div className="action-buttons-cell">
+                        <button
+                          className={isActive ? 'btn-deactivate' : 'btn-activate'}
+                          onClick={() => handleToggleActive(solution.id, isActive)}
+                          title={isActive ? 'Dezactivează substanța' : 'Activează substanța'}
+                        >
+                          {isActive ? '🔴 Dezactivează' : '🟢 Activează'}
+                        </button>
+                        <button onClick={() => handleEditSolution(solution)}>
+                          ✏️ Editează
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => handleDeleteSolution(solution.id)}
+                        >
+                          🗑️ Șterge
+                        </button>
+                        <button
+                          className="btn-export-single"
+                          onClick={() => exportSingleSolutionCSV(solution)}
+                          title="Exportă fișa de magazie pentru această soluție"
+                        >
+                          📄 Exportă fișa de magazie
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* Mobile-only two-column card: labels left, values+buttons right */}
+                    <td className="mobile-card" aria-hidden="true">
+                      <div className="mobile-grid">
+                        <div className="mobile-left">
+                          <div>Status</div>
+                          <div>Nume</div>
+                          <div>Aviz/Lot</div>
+                          <div>Concentrație</div>
+                          <div>Ultima înregistrare</div>
+                          <div>Soluție</div>
+                          <div>Rezervă minimă</div>
+                          <div>Procentaj rămas</div>
+                          <div>Cantitate/mp</div>
+                        </div>
+                        <div className="mobile-right">
+                          <div><span className={`status-badge ${isActive ? 'active' : 'inactive'}`}>{isActive ? '✓ Activ' : '✗ Inactiv'}</span></div>
+                          <div>{solution.name}</div>
+                          <div>{solution.lot}</div>
+                          <div>{solution.concentration}</div>
+                          <div>{solution.initial_stock} {solution.unit_of_measure}</div>
+                          <div>{solution.total_quantity} {solution.unit_of_measure}</div>
+                          <div><span className={`reserve-indicator ${isAtReserve ? 'at-reserve' : isNearReserve ? 'near-reserve' : ''}`}>{minimumReserve} {solution.unit_of_measure}</span></div>
+                          <div>
+                            <div className="progress-bar-container">
+                              <div className="progress-bar" style={{width: `${percentage}%`, backgroundColor: percentage > 50 ? '#4CAF50' : percentage > 20 ? '#FFA500' : '#FF0000'}}>{percentage}%</div>
+                            </div>
+                          </div>
+                          <div>{solution.quantity_per_sqm} {solution.unit_of_measure}</div>
+                          <div className="mobile-actions">
+                            <button className={isActive ? 'btn-deactivate' : 'btn-activate'} onClick={() => handleToggleActive(solution.id, isActive)}>{isActive ? '🔴 Dezactivează' : '🟢 Activează'}</button>
+                            <button onClick={() => handleEditSolution(solution)}>✏️ Editează</button>
+                            <button className="btn-delete" onClick={() => handleDeleteSolution(solution.id)}>🗑️ Șterge</button>
+                            <button className="btn-export-single" onClick={() => exportSingleSolutionCSV(solution)}>📄 Exportă</button>
+                          </div>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 );

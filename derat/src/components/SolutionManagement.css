@@ -359,6 +359,14 @@
     white-space: nowrap;
 }
 
+.action-buttons-cell {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
 /* Acțiuni în coloană */
 
 .btn-activate {
@@ -390,83 +398,38 @@
     background-color: #5a6268;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .statistics-dashboard {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
     }
 
-    .stat-card {
-        padding: 15px;
-        gap: 10px;
-    }
+    .stat-card .stat-icon { font-size: 1.6rem; }
+    .stat-card .stat-value { font-size: 1.25rem; }
 
-    .stat-card .stat-icon {
-        font-size: 2rem;
-    }
+    .action-buttons { flex-direction: column; }
+    .action-buttons button { width: 100%; }
 
-    .stat-card .stat-value {
-        font-size: 1.5rem;
-    }
+    .header-info { flex-direction: column; align-items: flex-start; gap: 6px; }
 
-    .stat-card .stat-label {
-        font-size: 0.75rem;
-    }
+    /* reduce table font slightly */
+    .solutions-list { font-size: 0.85rem; }
+}
 
-    .action-buttons {
-        flex-direction: column;
-    }
+/* Mobile-only two-column card layout: hide original cells, show .mobile-card */
+@media (max-width: 900px) {
+    .solutions-list thead, .solutions-list thead th { display: none; }
+    .solutions-list td:not(.mobile-card) { display: none !important; }
+    .solutions-list td.mobile-card { display: table-cell !important; padding: 8px; }
+    .mobile-card .mobile-grid { display: grid; grid-template-columns: 36% 64%; gap: 8px; align-items: start; }
+    .mobile-card .mobile-left { color: #555; font-weight: 700; display: flex; flex-direction: column; gap: 8px; }
+    .mobile-card .mobile-right { display: flex; flex-direction: column; gap: 8px; }
+    .mobile-card .mobile-right .mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mobile-card .mobile-right .mobile-actions button { flex: 1 1 48%; }
+    .mobile-card .mobile-right .status-badge { display: inline-block; }
+}
 
-    .action-buttons button {
-        width: 100%;
-    }
-
-    .header-info {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 5px;
-    }
-
-    .solutions-list table, 
-    .solutions-list thead, 
-    .solutions-list tbody, 
-    .solutions-list th, 
-    .solutions-list td, 
-    .solutions-list tr {
-        display: block;
-    }
-
-    .solutions-list thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-
-    .solutions-list td {
-        border: none;
-        position: relative;
-        padding-left: 50%;
-        text-align: right;
-    }
-
-    .solutions-list td:before {
-        position: absolute;
-        top: 6px;
-        left: 6px;
-        width: 45%;
-        padding-right: 10px;
-        white-space: nowrap;
-        text-align: left;
-        font-weight: bold;
-    }
-
-    .solutions-list td:nth-of-type(1):before { content: "Status"; }
-    .solutions-list td:nth-of-type(2):before { content: "Nume"; }
-    .solutions-list td:nth-of-type(3):before { content: "Aviz/Lot"; }
-    .solutions-list td:nth-of-type(4):before { content: "Concentrație"; }
-    .solutions-list td:nth-of-type(5):before { content: "Ultima Inregistrare"; }
-    .solutions-list td:nth-of-type(6):before { content: "Solutie"; }
-    .solutions-list td:nth-of-type(7):before { content: "Rezervă minimă"; }
-    .solutions-list td:nth-of-type(8):before { content: "Procentaj rămas"; }
-    .solutions-list td:nth-of-type(9):before { content: "Cantitate pe metru pătrat"; }
+/* Desktop: hide mobile-card cell */
+@media (min-width: 901px) {
+    .solutions-list td.mobile-card { display: none; }
 }
