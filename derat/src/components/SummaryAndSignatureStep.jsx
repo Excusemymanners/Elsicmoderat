@@ -74,35 +74,35 @@ const SummaryAndSignatureStep = () => {
           console.warn('Could not persist finalData to context:', e);
         }
 
-  console.log('formData.operations BEFORE building verbalProcess:', formData.operations);
-  console.log('formData.quantities BEFORE building verbalProcess:', formData.quantities);
+  console.log('finalData.operations BEFORE building verbalProcess:', finalData.operations);
+  console.log('finalData.quantities BEFORE building verbalProcess:', finalData.quantities);
 
   const verbalProcess = {
         numar_ordine: receptionNumber,
-        client_name: formData.customer.name,
-        client_contract: formData.customer.contract_number,
-        client_location: formData.customer.location,
-        employee_name: formData.employeeName,
-        procedure1: formData.operations[0],
-        product1_name: formData.solutions[formData.operations[0]]?.map(sol => sol.name).join(', '),
-        product1_lot: formData.solutions[formData.operations[0]]?.map(sol => sol.lot).join(', '),
-        product1_quantity: Number.parseFloat(formData.quantities[formData.operations[0]]) || 0,
-        concentration1: formData.solutions[formData.operations[0]]?.map(sol => sol.concentration).join(', '), // Add concentration1
-        procedure2: formData.operations[1] || null,
-        product2_name: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.name).join(', ') : null,
-        product2_lot: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
-        product2_quantity: formData.operations[1] ? Number.parseFloat(formData.quantities[formData.operations[1]]) || 0 : null,
-        concentration2: formData.operations[1] ? formData.solutions[formData.operations[1]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration2
-        procedure3: formData.operations[2] || null,
-        product3_name: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
-        product3_lot: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product3_quantity: formData.operations[2] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null,
-        concentration3: formData.operations[2] ? formData.solutions[formData.operations[2]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration3
-        procedure4: formData.operations[3] || null,
-        product4_name: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.name).join(', ') : null,
-        product4_lot: formData.operations[3] ? formData.solutions[formData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product4_quantity: formData.operations[3] ? Number.parseFloat(formData.quantities[formData.operations[2]]) || 0 : null,
-        concentration4: formData.operations[3] ? formData.solutions[formData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
+        client_name: finalData.customer.name,
+        client_contract: finalData.customer.contract_number,
+        client_location: finalData.customer.location,
+        employee_name: finalData.employeeName,
+        procedure1: finalData.operations[0],
+        product1_name: finalData.solutions[finalData.operations[0]]?.map(sol => sol.name).join(', '),
+        product1_lot: finalData.solutions[finalData.operations[0]]?.map(sol => sol.lot).join(', '),
+        product1_quantity: Number.parseFloat(finalData.quantities[finalData.operations[0]]) || 0,
+        concentration1: finalData.solutions[finalData.operations[0]]?.map(sol => sol.concentration).join(', '), // Add concentration1
+        procedure2: finalData.operations[1] || null,
+        product2_name: finalData.operations[1] ? finalData.solutions[finalData.operations[1]]?.map(sol => sol.name).join(', ') : null,
+        product2_lot: finalData.operations[1] ? finalData.solutions[finalData.operations[1]]?.map(sol => sol.lot).join(', ') : null,
+        product2_quantity: finalData.operations[1] ? Number.parseFloat(finalData.quantities[finalData.operations[1]]) || 0 : null,
+        concentration2: finalData.operations[1] ? finalData.solutions[finalData.operations[1]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration2
+        procedure3: finalData.operations[2] || null,
+        product3_name: finalData.operations[2] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.name).join(', ') : null,
+        product3_lot: finalData.operations[2] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
+        product3_quantity: finalData.operations[2] ? Number.parseFloat(finalData.quantities[finalData.operations[2]]) || 0 : null,
+        concentration3: finalData.operations[2] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration3
+        procedure4: finalData.operations[3] || null,
+        product4_name: finalData.operations[3] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.name).join(', ') : null,
+        product4_lot: finalData.operations[3] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
+        product4_quantity: finalData.operations[3] ? Number.parseFloat(finalData.quantities[finalData.operations[2]]) || 0 : null,
+        concentration4: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
       };
       console.log('Verbal process:', verbalProcess);
       await addVerbalProcess(verbalProcess);
@@ -110,32 +110,32 @@ const SummaryAndSignatureStep = () => {
       const pdfRequest = {
         receptionNumber: receptionNumber,
         client: {
-          name: formData.customer.name,
-          contract_number: formData.customer.contract_number,
-          location: formData.customer.location,
-          surface: formData.clientSurface
+          name: finalData.customer.name,
+          contract_number: finalData.customer.contract_number,
+          location: finalData.customer.location,
+          surface: finalData.clientSurface
         },
-        clientRepresentative: formData.clientRepresentative,
-        clientSignature: formData.clientSignature,
-        employeeName: formData.employeeName,
-        employeeIDSeries: formData.employeeIDSeries,
-        employeeSignature: formData.employeeSignature,
+        clientRepresentative: finalData.clientRepresentative,
+        clientSignature: finalData.clientSignature,
+        employeeName: finalData.employeeName,
+        employeeIDSeries: finalData.employeeIDSeries,
+        employeeSignature: finalData.employeeSignature,
         operations: [],
-        observations: formData.observations,
-        custodyItems: formData.custodyItems
+        observations: finalData.observations,
+        custodyItems: finalData.custodyItems || custodyItems
       };
 
-      (formData.operations || []).forEach(operation => {
-        const jobInfo = formData.customer.jobs.find(job => job.value === operation);
+      (finalData.operations || []).forEach(operation => {
+        const jobInfo = finalData.customer.jobs.find(job => job.value === operation);
         const surface = jobInfo ? jobInfo.surface : null;
 
         pdfRequest.operations.push({
           name: operation,
-          solution: formData.solutions[operation][0].label,
-          solutionId: formData.solutions[operation][0].id,
-          quantity: formData.quantities[operation],
-          concentration: formData.solutions[operation][0].concentration,
-          lot: formData.solutions[operation][0].lot,
+          solution: finalData.solutions[operation][0].label,
+          solutionId: finalData.solutions[operation][0].id,
+          quantity: finalData.quantities[operation],
+          concentration: finalData.solutions[operation][0].concentration,
+          lot: finalData.solutions[operation][0].lot,
           surface: surface
         });
       });
@@ -173,14 +173,14 @@ const SummaryAndSignatureStep = () => {
       // Prepare operations with extra context so we can record intrari_solutie (ieșiri)
       let opsToUpdate = [];
 
-      // Primary source: formData.operations (selected in the flow)
-      if (Array.isArray(formData.operations) && formData.operations.length > 0) {
-        opsToUpdate = formData.operations.map(operation => {
-          const sol = formData.solutions[operation] && formData.solutions[operation][0];
+      // Primary source: finalData.operations (selected in the flow)
+      if (Array.isArray(finalData.operations) && finalData.operations.length > 0) {
+        opsToUpdate = finalData.operations.map(operation => {
+          const sol = finalData.solutions[operation] && finalData.solutions[operation][0];
           return {
             solutionId: sol ? sol.id : null,
-            quantity: Number.parseFloat(formData.quantities[operation]) || 0,
-            beneficiar: formData.customer?.name || null,
+            quantity: Number.parseFloat(finalData.quantities[operation]) || 0,
+            beneficiar: finalData.customer?.name || null,
             lot: sol ? sol.lot : null,
             created_at: new Date().toISOString()
           };
@@ -217,7 +217,7 @@ const SummaryAndSignatureStep = () => {
               opsToUpdate.push({
                 solutionId: solId,
                 quantity: item.qty,
-                beneficiar: formData.customer?.name || null,
+                beneficiar: finalData.customer?.name || null,
                 lot: item.lot || null,
                 created_at: new Date().toISOString()
               });
