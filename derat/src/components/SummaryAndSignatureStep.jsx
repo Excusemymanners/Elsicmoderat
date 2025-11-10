@@ -7,9 +7,10 @@ import { fetchReceptionNumber, incrementReceptionNumber } from './receptionNumbe
 import './SummaryAndSignatureStep.css';
 import { addVerbalProcess } from './verbalProcess';
 import { updateRemainingQuantities } from './SolutionManagement';
+import supabase from '../../supabaseClient';
 
 const SummaryAndSignatureStep = () => {
-  const { formData } = useEmployeeForm();
+  const { formData, updateFormData } = useEmployeeForm();
   const sigCanvas = useRef(null);
   const navigate = useNavigate();
   const [employeeSignature, setEmployeeSignature] = useState('');
@@ -66,10 +67,17 @@ const SummaryAndSignatureStep = () => {
         custodyItems // Add custody items to final data
       };
 
-      await generateAndSendPDF(finalData);
-      await incrementReceptionNumber();
+        // persist finalData to the form context so it's stored
+        try {
+          updateFormData(finalData);
+        } catch (e) {
+          console.warn('Could not persist finalData to context:', e);
+        }
 
-      const verbalProcess = {
+  console.log('formData.operations BEFORE building verbalProcess:', formData.operations);
+  console.log('formData.quantities BEFORE building verbalProcess:', formData.quantities);
+
+  const verbalProcess = {
         numar_ordine: receptionNumber,
         client_name: formData.customer.name,
         client_contract: formData.customer.contract_number,
@@ -98,10 +106,132 @@ const SummaryAndSignatureStep = () => {
       };
       console.log('Verbal process:', verbalProcess);
       await addVerbalProcess(verbalProcess);
-      await updateRemainingQuantities(formData.operations.map(operation => ({
-        solutionId: formData.solutions[operation][0].id,
-        quantity: Number.parseFloat(formData.quantities[operation]) || 0
-      })));
+      // Build pdf request payload (same as generateAndSendPDF uses)
+      const pdfRequest = {
+        receptionNumber: receptionNumber,
+        client: {
+          name: formData.customer.name,
+          contract_number: formData.customer.contract_number,
+          location: formData.customer.location,
+          surface: formData.clientSurface
+        },
+        clientRepresentative: formData.clientRepresentative,
+        clientSignature: formData.clientSignature,
+        employeeName: formData.employeeName,
+        employeeIDSeries: formData.employeeIDSeries,
+        employeeSignature: formData.employeeSignature,
+        operations: [],
+        observations: formData.observations,
+        custodyItems: formData.custodyItems
+      };
+
+      (formData.operations || []).forEach(operation => {
+        const jobInfo = formData.customer.jobs.find(job => job.value === operation);
+        const surface = jobInfo ? jobInfo.surface : null;
+
+        pdfRequest.operations.push({
+          name: operation,
+          solution: formData.solutions[operation][0].label,
+          solutionId: formData.solutions[operation][0].id,
+          quantity: formData.quantities[operation],
+          concentration: formData.solutions[operation][0].concentration,
+          lot: formData.solutions[operation][0].lot,
+          surface: surface
+        });
+      });
+
+      // Generate PDF always; if simulateSend is true, skip sending the email but still generate PDF
+      try {
+        const pdfBytes = await fillTemplate('/assets/template.pdf', pdfRequest);
+        try {
+          const response = await fetch('/derat/api/send-email.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              pdfBytes,
+              customerEmail: finalData.customer.email
+            })
+          });
+
+          const responseData = await response.json();
+          if (!responseData.success) {
+            console.error('Email send failed:', responseData.error);
+          } else {
+            console.log('Email sent successfully');
+          }
+        } catch (err) {
+          console.error('Error sending email:', err);
+        }
+      } catch (e) {
+        console.error('Error generating PDF (continuing with DB updates):', e);
+      }
+
+      // increment reception number now that PDF was generated/sent (or skipped)
+      await incrementReceptionNumber();
+      // Prepare operations with extra context so we can record intrari_solutie (ieșiri)
+      let opsToUpdate = [];
+
+      // Primary source: formData.operations (selected in the flow)
+      if (Array.isArray(formData.operations) && formData.operations.length > 0) {
+        opsToUpdate = formData.operations.map(operation => {
+          const sol = formData.solutions[operation] && formData.solutions[operation][0];
+          return {
+            solutionId: sol ? sol.id : null,
+            quantity: Number.parseFloat(formData.quantities[operation]) || 0,
+            beneficiar: formData.customer?.name || null,
+            lot: sol ? sol.lot : null,
+            created_at: new Date().toISOString()
+          };
+        }).filter(op => op.solutionId !== null && op.quantity > 0);
+      }
+
+      // Fallback: parse the verbalProcess product fields (product1..product4) if no ops were selected
+      if (opsToUpdate.length === 0) {
+        // build from verbalProcess fields we already prepared above
+        const vp = verbalProcess;
+        const fallback = [];
+        for (let i = 1; i <= 4; i++) {
+          const name = vp[`product${i}_name`];
+          const qty = vp[`product${i}_quantity`];
+          const lot = vp[`product${i}_lot`];
+          if (name && qty && Number.parseFloat(qty) > 0) {
+            fallback.push({ name, qty: Number.parseFloat(qty), lot });
+          }
+        }
+
+        // Resolve solution IDs for each fallback item by querying DB (match by name and lot when possible)
+        for (const item of fallback) {
+          try {
+            // Try exact match by name and lot first
+            let query = supabase.from('solutions').select('id, remaining_quantity').ilike('name', item.name);
+            if (item.lot) query = query.eq('lot', item.lot);
+            const { data: sols, error: solsErr } = await query.limit(1).maybeSingle();
+            if (solsErr) {
+              console.error('Error finding solution for fallback exit:', solsErr);
+              continue;
+            }
+            const solId = sols && sols.id ? sols.id : null;
+            if (solId) {
+              opsToUpdate.push({
+                solutionId: solId,
+                quantity: item.qty,
+                beneficiar: formData.customer?.name || null,
+                lot: item.lot || null,
+                created_at: new Date().toISOString()
+              });
+            } else {
+              console.warn('No matching solution found for exit fallback:', item.name, item.lot);
+            }
+          } catch (e) {
+            console.error('Error resolving solution for fallback exit:', e);
+          }
+        }
+      }
+
+  console.log('opsToUpdate to send to updateRemainingQuantities:', opsToUpdate);
+      if (opsToUpdate.length > 0) await updateRemainingQuantities(opsToUpdate);
       
       // Show the success popup
       setShowPopup(true);
@@ -130,6 +260,8 @@ const SummaryAndSignatureStep = () => {
   const handleSignatureEnd = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
   };
+
+  
 
   const incrementItem = (item) => {
     setCustodyItems(prev => ({
@@ -185,7 +317,7 @@ const SummaryAndSignatureStep = () => {
 
     const pdfBytes = await fillTemplate('/assets/template.pdf', request);
 
-    let customerEmail = formData.customer.email;
+  let customerEmail = data.customer.email;
 
     try {
       const response = await fetch('/derat/api/send-email.js', {
