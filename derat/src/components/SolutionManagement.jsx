@@ -54,14 +54,18 @@ export const updateRemainingQuantities = async (operations) => {
         };
 
         // Try inserting with post_stock first. If the column doesn't exist, retry without it
-        let res = await supabase.from('intrari_solutie').insert([intrareRecord]);
+        console.log('Inserting intrari_solutie record:', intrareRecord);
+        const res = await supabase.from('intrari_solutie').insert([intrareRecord]);
+        console.log('Supabase insert result:', res);
         if (res.error) {
           const msg = String(res.error.message || res.error);
           // detect missing column error (Postgres error text may vary)
           if (msg.toLowerCase().includes('column "post_stock"') || msg.toLowerCase().includes('column post_stock')) {
             // remove post_stock and retry
             const { post_stock, ...withoutPost } = intrareRecord;
+            console.log('Retrying insert without post_stock:', withoutPost);
             const retry = await supabase.from('intrari_solutie').insert([withoutPost]);
+            console.log('Supabase retry result:', retry);
             if (retry.error) {
               console.error('Retry insert without post_stock failed:', retry.error);
             } else {

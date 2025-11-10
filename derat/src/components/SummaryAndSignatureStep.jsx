@@ -180,14 +180,15 @@ const SummaryAndSignatureStep = () => {
           const rawQty = finalData.quantities ? finalData.quantities[operation] : undefined;
           const parsed = Number.parseFloat(rawQty);
           const qtyVal = Number.isFinite(parsed) ? parsed : 0;
+          const solId = sol ? (sol.id ?? sol.value ?? null) : null;
           return {
-            solutionId: sol ? sol.id : null,
+            solutionId: solId,
             quantity: qtyVal,
             beneficiar: finalData.customer?.name || null,
-            lot: sol ? sol.lot : null,
+            lot: sol ? (sol.lot || null) : null,
             created_at: new Date().toISOString()
           };
-        }).filter(op => op.solutionId !== null);
+        }).filter(op => op.solutionId !== null && op.solutionId !== undefined);
       }
 
       // Fallback: parse the verbalProcess product fields (product1..product4) if no ops were selected
