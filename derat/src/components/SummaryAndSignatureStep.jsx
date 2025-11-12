@@ -126,6 +126,35 @@ const SummaryAndSignatureStep = () => {
         concentration4: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
       };
       console.log('Verbal process:', verbalProcess);
+
+      // Check for duplicate work (same day, same client location / unitate de lucru)
+      try {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+        const { data: existing, error: existingErr } = await supabase
+          .from('lucrari')
+          .select('id, created_at, client_location, client_name')
+          .eq('client_location', finalData.customer.location)
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .limit(1);
+
+        if (existingErr) {
+          console.warn('Could not check existing lucrari for duplicates:', existingErr);
+        }
+
+        if (existing && existing.length > 0) {
+          console.warn('Duplicate work detected for this unit today, aborting verbal process and stock update:', existing[0]);
+          alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Procesul verbal nu va fi creat și stocurile nu vor fi modificate.');
+          setIsFinalizeDisabled(false);
+          return; // abort finalize: do not create verbalProcess or update stock
+        }
+      } catch (checkErr) {
+        console.error('Error checking for duplicate lucrari:', checkErr);
+      }
+
       await addVerbalProcess(verbalProcess);
       // Build pdf request payload (same as generateAndSendPDF uses)
       const pdfRequest = {
@@ -493,6 +522,8 @@ const SummaryAndSignatureStep = () => {
                   <SignatureCanvas
                     ref={clientSigCanvas}
                     onEnd={() => setClientSignatureLocal(clientSigCanvas.current.toDataURL())}
+                    penColor={'#000000'}
+                    velocityFilterWeight={0.7}
                     canvasProps={{
                       className: 'signature-canvas',
                       width: window.innerWidth < 768 ? 300 : 400,
@@ -588,6 +619,8 @@ const SummaryAndSignatureStep = () => {
                 <SignatureCanvas
                   ref={sigCanvas}
                   onEnd={handleSignatureEnd}
+                  penColor={'#000000'}
+                  velocityFilterWeight={0.7}
                   canvasProps={{
                     className: 'signature-canvas',
                     width: window.innerWidth < 768 ? 300 : 500,
