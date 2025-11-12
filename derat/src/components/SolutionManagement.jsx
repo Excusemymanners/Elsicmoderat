@@ -351,8 +351,17 @@ const SolutionManagement = () => {
       return s;
     };
 
-  const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
-    const rows = [headers];
+     const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
+     const rows = [];
+     // Insert solution name line + two blank lines at top as requested
+     rows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
+     rows.push(['', '', '', '', '', '', '', '']);
+     rows.push(['', '', '', '', '', '', '', '']);
+     rows.push(headers);
+  // Insert solution name line + two blank lines at top as requested
+  rows.push([solution.name || '', '', '', '', '', '', '', '']);
+  rows.push(['', '', '', '', '', '', '', '']);
+  rows.push(['', '', '', '', '', '', '', '']);
 
     try {
       // fetch all movements (intrari + iesiri) for this solution
@@ -488,11 +497,16 @@ const SolutionManagement = () => {
 
     let allRows = [...infoLines, ...dataRows];
 
-    // add magazie details per solution
-  const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
-    allRows.push(magazieHeader);
+    // add magazie details per solution (header declared once; we'll insert it per-solution)
+    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
+
+    // For each solution block, add solution name row + two blank rows before movements
 
     for (const solution of solutions) {
+      // add solution name + two blank rows before this solution's movements
+      allRows.push([solution.name || '', '', '', '', '', '', '', '']);
+      allRows.push(['', '', '', '', '', '', '', '']);
+      allRows.push(['', '', '', '', '', '', '', '']);
       try {
         const { data: intrari, error } = await supabase
           .from('intrari_solutie')
@@ -537,8 +551,6 @@ const SolutionManagement = () => {
 
     const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)).join('\n');
     const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `Fisa_Magazie_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
