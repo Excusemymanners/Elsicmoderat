@@ -219,7 +219,8 @@ const SelectOperationStep = () => {
             };
             
             updateFormData(newFormData);
-            navigate('/employee/step4');
+            // Skip the separate client representative step and go directly to the summary
+            navigate('/employee/step5');
         } catch (error) {
             console.error('Error in handleNext:', error);
             setErrorMessage('A apărut o eroare la salvarea datelor. Vă rugăm să încercați din nou.');

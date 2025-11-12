@@ -27,6 +27,11 @@ const SummaryAndSignatureStep = () => {
     capturareRozatoare: 0,
     statieIntoxicare: 0
   });
+  // local state for client representative + signature (moved here from ClientRepresentativeStep)
+  const [clientRepresentativeLocal, setClientRepresentativeLocal] = useState(formData.clientRepresentative || '');
+  const clientSigCanvas = useRef(null);
+  const [clientSignatureLocal, setClientSignatureLocal] = useState(formData.clientSignature || '');
+
 
   useEffect(() => {
     const initializeData = async () => {
@@ -48,16 +53,32 @@ const SummaryAndSignatureStep = () => {
   }, [formData, navigate]);
 
   const handleFinish = async () => {
+    // require client signature/representative and employee signature before finishing
+    if (!clientRepresentativeLocal && !formData.clientRepresentative) {
+      alert('Vă rugăm să introduceți numele reprezentantului client.');
+      return;
+    }
+
+    if (!clientSignatureLocal && !formData.clientSignature) {
+      alert('Vă rugăm să adăugați semnătura clientului.');
+      return;
+    }
+
     if (!employeeSignature) {
-      alert('Vă rugăm să adăugați semnătura.');
+      alert('Vă rugăm să adăugați semnătura angajatului.');
       return;
     }
 
     setIsFinalizeDisabled(true); // Disable finalize button after it's clicked
 
     try {
+  const clientSignatureData = clientSignatureLocal || (clientSigCanvas.current ? clientSigCanvas.current.toDataURL() : formData.clientSignature || '');
+
       const finalData = {
         ...formData,
+        // persist both client and employee signature + representative from this step
+        clientRepresentative: clientRepresentativeLocal || formData.clientRepresentative || '',
+        clientSignature: clientSignatureData || formData.clientSignature || '',
         employeeSignature,
         signatureDateTime: new Date().toLocaleString('ro-RO'),
         userLogin: 'Excusemymanners',
@@ -125,7 +146,7 @@ const SummaryAndSignatureStep = () => {
         custodyItems: finalData.custodyItems || custodyItems
       };
 
-      (finalData.operations || []).forEach(operation => {
+  (finalData.operations || []).forEach(operation => {
         const jobInfo = finalData.customer.jobs.find(job => job.value === operation);
         const surface = jobInfo ? jobInfo.surface : null;
 
@@ -274,6 +295,16 @@ const SummaryAndSignatureStep = () => {
   console.log('opsToUpdate to send to updateRemainingQuantities:', opsToUpdate);
       if (opsToUpdate.length > 0) await updateRemainingQuantities(opsToUpdate);
       
+      // persist clientRepresentative and clientSignature into the shared form context
+      try {
+        updateFormData({
+          clientRepresentative: finalData.clientRepresentative,
+          clientSignature: finalData.clientSignature
+        });
+      } catch (e) {
+        console.warn('Could not persist client signature to context:', e);
+      }
+
       // Show the success popup
       setShowPopup(true);
 
@@ -290,7 +321,8 @@ const SummaryAndSignatureStep = () => {
   };
 
   const handleBack = () => {
-    navigate('/employee/step4');
+    // step4 was removed; go back to operations selection
+    navigate('/employee/step3');
   };
 
   const handleClear = () => {
@@ -443,6 +475,37 @@ const SummaryAndSignatureStep = () => {
           </div>
         </div>
 
+          <div className="summary-section">
+            <h4>Reprezentant Client și Semnătură</h4>
+            <div className="details-grid">
+              <div className="detail-item">
+                <label className="label">Nume reprezentant:</label>
+                <input
+                  type="text"
+                  value={clientRepresentativeLocal}
+                  onChange={(e) => setClientRepresentativeLocal(e.target.value)}
+                  placeholder="Introduceți numele reprezentantului"
+                />
+              </div>
+              <div className="detail-item signature-box client-signature-inline">
+                <span className="signature-label">Semnătură Client:</span>
+                <div className="signature-pad-container">
+                  <SignatureCanvas
+                    ref={clientSigCanvas}
+                    onEnd={() => setClientSignatureLocal(clientSigCanvas.current.toDataURL())}
+                    canvasProps={{
+                      className: 'signature-canvas',
+                      width: window.innerWidth < 768 ? 300 : 400,
+                      height: window.innerWidth < 768 ? 100 : 150,
+                      style: { cursor: 'crosshair', touchAction: 'none', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px' }
+                    }}
+                  />
+                  <button className="clear-button" onClick={() => { clientSigCanvas.current.clear(); setClientSignatureLocal(''); }}>Șterge semnătura</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         <div className="summary-section">
           <h4>Operațiuni Efectuate</h4>
           <div className="operations-list">
@@ -514,19 +577,9 @@ const SummaryAndSignatureStep = () => {
         <div className="summary-section">
           <h4>Semnături</h4>
           <div className="signatures-container">
-            <div className="signature-box client-signature">
-              <span className="signature-label">Semnătură Client:</span>
-              <div className="signature-display">
-                <img
-                  src={formData.clientSignature}
-                  alt="Semnătură Client"
-                  className="signature-image"
-                />
-                <span className="signature-name">
-                  {formData.clientRepresentative}
-                </span>
-              </div>
-            </div>
+            {/* Client signature display intentionally removed from here per UX request.
+                Client signature is still captured earlier in the form (Reprezentant Client și Semnătură)
+                and persisted, but we don't show the image above the employee signature. */}
 
 
             <div className="signature-box employee-signature">

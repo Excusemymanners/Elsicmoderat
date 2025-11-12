@@ -4,7 +4,7 @@ import { EmployeeFormProvider } from './EmployeeFormProvider';
 import EmployeeNameStep from './EmployeeNameStep';
 import SelectClientStep from './SelectClientStep';
 import SelectOperationStep from './SelectOperationStep';
-import ClientRepresentativeStep from './ClientRepresentativeStep';
+// ClientRepresentativeStep removed: its inputs are now in SummaryAndSignatureStep
 import SummaryAndSignatureStep from './SummaryAndSignatureStep';
 import ConfirmationStep from './ConfirmationStep';
 import './EmployeeView.css';
@@ -19,7 +19,7 @@ const EmployeeView = () => {
           <Route path="step1" element={<EmployeeNameStep />} />
           <Route path="step2" element={<SelectClientStep />} />
           <Route path="step3" element={<SelectOperationStep />} />
-          <Route path="step4" element={<ClientRepresentativeStep />} />
+          {/* step4 removed - skip directly to summary */}
           <Route path="step5" element={<SummaryAndSignatureStep />} />
           <Route path="confirmation" element={<ConfirmationStep />} />
         </Routes>
