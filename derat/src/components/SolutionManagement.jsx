@@ -357,11 +357,7 @@ const SolutionManagement = () => {
      rows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
      rows.push(['', '', '', '', '', '', '', '']);
      rows.push(['', '', '', '', '', '', '', '']);
-     rows.push(headers);
-  // Insert solution name line + two blank lines at top as requested
-  rows.push([solution.name || '', '', '', '', '', '', '', '']);
-  rows.push(['', '', '', '', '', '', '', '']);
-  rows.push(['', '', '', '', '', '', '', '']);
+    rows.push(headers);
 
     try {
       // fetch all movements (intrari + iesiri) for this solution
@@ -501,12 +497,12 @@ const SolutionManagement = () => {
     const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
 
     // For each solution block, add solution name row + two blank rows before movements
-
     for (const solution of solutions) {
-      // add solution name + two blank rows before this solution's movements
-      allRows.push([solution.name || '', '', '', '', '', '', '', '']);
+      // add solution label row + two blank rows before this solution's movements, then the magazie header
+      allRows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
       allRows.push(['', '', '', '', '', '', '', '']);
       allRows.push(['', '', '', '', '', '', '', '']);
+      allRows.push(magazieHeader);
       try {
         const { data: intrari, error } = await supabase
           .from('intrari_solutie')
@@ -549,14 +545,16 @@ const SolutionManagement = () => {
       }
     }
 
-    const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)).join('\n');
-    const BOM = '\uFEFF';
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Fisa_Magazie_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    alert(`Fișa de magazie a fost exportată cu succes!`);
+  const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)).join('\n');
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Fisa_Magazie_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert(`Fișa de magazie a fost exportată cu succes!`);
   };
 
   const handleToggleActive = async (id, currentlyActive) => {
