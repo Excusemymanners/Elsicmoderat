@@ -50,29 +50,49 @@ export const updateRemainingQuantities = async (operations) => {
           tip: 'Ieșire',
           beneficiar: beneficiar || null,
           lot: lot || null,
+          numar_ordine: operation?.numar_ordine || null,
           created_at: created_at || new Date().toISOString()
         };
 
-        // Try inserting with post_stock first. If the column doesn't exist, retry without it
+        // Attempt insert. If DB doesn't have some optional columns, retry removing them.
         console.log('Inserting intrari_solutie record:', intrareRecord);
-        const res = await supabase.from('intrari_solutie').insert([intrareRecord]);
+        let res = await supabase.from('intrari_solutie').insert([intrareRecord]);
         console.log('Supabase insert result:', res);
+
         if (res.error) {
-          const msg = String(res.error.message || res.error);
-          // detect missing column error (Postgres error text may vary)
-          if (msg.toLowerCase().includes('column "post_stock"') || msg.toLowerCase().includes('column post_stock')) {
-            // remove post_stock and retry
-            const { post_stock, ...withoutPost } = intrareRecord;
-            console.log('Retrying insert without post_stock:', withoutPost);
-            const retry = await supabase.from('intrari_solutie').insert([withoutPost]);
-            console.log('Supabase retry result:', retry);
-            if (retry.error) {
-              console.error('Retry insert without post_stock failed:', retry.error);
-            } else {
-              console.log('Inserted intrari_solutie record (without post_stock) successfully:', retry.data);
+          const msg = String(res.error.message || res.error).toLowerCase();
+
+          // If numar_ordine column is missing, remove it and retry
+          if (msg.includes('column "numar_ordine"') || msg.includes('column numar_ordine') || msg.includes('numar_ordine')) {
+            const { numar_ordine, ...withoutNumar } = intrareRecord;
+            console.log('Retrying insert without numar_ordine:', withoutNumar);
+            res = await supabase.from('intrari_solutie').insert([withoutNumar]);
+            console.log('Supabase retry result (without numar_ordine):', res);
+          }
+
+          // If still error and mentions post_stock, remove post_stock and retry
+          if (res.error) {
+            const msg2 = String(res.error.message || res.error).toLowerCase();
+            if (msg2.includes('column "post_stock"') || msg2.includes('column post_stock') || msg2.includes('post_stock')) {
+              const { post_stock, ...withoutPost } = intrareRecord;
+              // also remove numar_ordine if it exists (in case first retry didn't run)
+              delete withoutPost.numar_ordine;
+              console.log('Retrying insert without post_stock (and numar_ordine):', withoutPost);
+              const retry2 = await supabase.from('intrari_solutie').insert([withoutPost]);
+              console.log('Supabase retry result (without post_stock):', retry2);
+              if (retry2.error) {
+                console.error('Retry insert without post_stock failed:', retry2.error);
+              } else {
+                console.log('Inserted intrari_solutie record (without post_stock) successfully:', retry2.data);
+                res = retry2;
+              }
             }
-          } else {
+          }
+
+          if (res.error) {
             console.error('Failed to insert intrari_solutie record for ieșire:', res.error);
+          } else {
+            console.log('Inserted intrari_solutie record successfully after retry:', res.data);
           }
         } else {
           console.log('Inserted intrari_solutie record successfully:', res.data);
@@ -331,18 +351,31 @@ const SolutionManagement = () => {
       return s;
     };
 
-    const headers = ['Felul', 'Nr', 'Data', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
+  const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
     const rows = [headers];
 
     try {
       // fetch all movements (intrari + iesiri) for this solution
-      const { data: intrari, error } = await supabase
+      let { data: intrari, error } = await supabase
         .from('intrari_solutie')
-        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot')
+        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine')
         .eq('solution_id', solution.id)
         .order('created_at', { ascending: true });
 
+      // If the DB doesn't have numar_ordine column, retry without it
+      if (error) {
+        console.warn('Select with numar_ordine failed, retrying without it:', error.message || error);
+        const retry = await supabase
+          .from('intrari_solutie')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot')
+          .eq('solution_id', solution.id)
+          .order('created_at', { ascending: true });
+        intrari = retry.data;
+        error = retry.error;
+      }
+
       if (intrari && !error) {
+        let intrareCounter = 0;
         intrari.forEach((intrare, i) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
@@ -358,14 +391,19 @@ const SolutionManagement = () => {
             stocVal = isIntrare ? `${(prev + q)} ${solution.unit_of_measure}` : `${Math.max(0, prev - q)} ${solution.unit_of_measure}`;
           }
 
+          const processNumber = intrare.numar_ordine || '';
+          // For Intrare (Fact) leave Nr blank so agent can fill invoice number; show Fel='Fact'
+          // For Ieșire show Nr = processNumber and Fel='PV'
+          const felVal = isIntrare ? 'Fact' : 'PV';
+          const nrVal = isIntrare ? '' : (processNumber || '');
+
           rows.push([
-            isIntrare ? 'Intrare' : 'Ieșire',
-            i + 1,
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
+            nrVal,
+            felVal,
             intrariVal,
             iesiriVal,
             stocVal,
-            // only populate beneficiar for iesire
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
             intrare.lot || solution.lot || ''
           ]);
@@ -451,17 +489,18 @@ const SolutionManagement = () => {
     let allRows = [...infoLines, ...dataRows];
 
     // add magazie details per solution
-    const magazieHeader = ['Felul', 'Nr', 'Data', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
+  const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
     allRows.push(magazieHeader);
 
     for (const solution of solutions) {
       try {
         const { data: intrari, error } = await supabase
           .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine')
           .eq('solution_id', solution.id)
           .order('created_at', { ascending: true });
         if (error) continue;
+        let intrareCounter = 0;
         (intrari || []).forEach((intrare, i) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
@@ -476,10 +515,14 @@ const SolutionManagement = () => {
             stocVal = isIntrare ? `${(prev + q)} ${solution.unit_of_measure}` : `${Math.max(0, prev - q)} ${solution.unit_of_measure}`;
           }
 
+          const processNumber = intrare.numar_ordine || '';
+          const felVal = isIntrare ? 'Fact' : 'PV';
+          const nrVal = isIntrare ? '' : (processNumber || '');
+
           allRows.push([
-            isIntrare ? 'Intrare' : 'Ieșire',
-            i + 1,
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
+            nrVal,
+            felVal,
             intrariVal,
             iesiriVal,
             stocVal,

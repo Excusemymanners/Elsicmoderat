@@ -170,12 +170,13 @@ const SummaryAndSignatureStep = () => {
 
       // increment reception number now that PDF was generated/sent (or skipped)
       await incrementReceptionNumber();
-      // Prepare operations with extra context so we can record intrari_solutie (ieșiri)
+  // Prepare operations with extra context so we can record intrari_solutie (ieșiri)
+  console.log('receptionNumber (state):', receptionNumber, 'finalData.receptionNumber:', finalData.receptionNumber);
       let opsToUpdate = [];
 
       // Primary source: finalData.operations (selected in the flow)
       if (Array.isArray(finalData.operations) && finalData.operations.length > 0) {
-        opsToUpdate = finalData.operations.map(operation => {
+          opsToUpdate = finalData.operations.map(operation => {
           const sol = finalData.solutions[operation] && finalData.solutions[operation][0];
           const rawQty = finalData.quantities ? finalData.quantities[operation] : undefined;
           const parsed = Number.parseFloat(rawQty);
@@ -186,6 +187,8 @@ const SummaryAndSignatureStep = () => {
             quantity: qtyVal,
             beneficiar: finalData.customer?.name || null,
             lot: sol ? (sol.lot || null) : null,
+            // prefer the live receptionNumber state, fallback to finalData.receptionNumber
+            numar_ordine: receptionNumber || finalData.receptionNumber || null,
             created_at: new Date().toISOString()
           };
         }).filter(op => op.solutionId !== null && op.solutionId !== undefined);
@@ -225,6 +228,7 @@ const SummaryAndSignatureStep = () => {
                 quantity: item.qty,
                 beneficiar: finalData.customer?.name || null,
                 lot: item.lot || null,
+                numar_ordine: receptionNumber || finalData.receptionNumber || null,
                 created_at: new Date().toISOString()
               });
             } else {
@@ -260,6 +264,7 @@ const SummaryAndSignatureStep = () => {
               quantity: qty,
               beneficiar: finalData.customer?.name || null,
               lot: sol.lot || null,
+              numar_ordine: receptionNumber || finalData.receptionNumber || null,
               created_at: new Date().toISOString()
             });
           }
