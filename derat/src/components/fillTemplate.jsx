@@ -95,8 +95,8 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw employee information in blue
     const blueGreenColor = rgb(0, 0.1, 0.3);
-    drawText(` ${request.employeeName}`, 540, height - 522, blueGreenColor);
-    drawText(` ${request.employeeIDSeries}`, 550, height - 532, blueGreenColor); // Add ID series
+    drawText(` ${request.employeeName}`, 540, height - 530, blueGreenColor);
+    drawText(` ${request.employeeIDSeries}`, 550, height - 540, blueGreenColor); // Add ID series
 
     // Embed and draw the employee's signature
     if (request.employeeSignature) {
