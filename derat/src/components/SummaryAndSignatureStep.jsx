@@ -53,17 +53,7 @@ const SummaryAndSignatureStep = () => {
   }, [formData, navigate]);
 
   const handleFinish = async () => {
-    // require client signature/representative and employee signature before finishing
-    if (!clientRepresentativeLocal && !formData.clientRepresentative) {
-      alert('Vă rugăm să introduceți numele reprezentantului client.');
-      return;
-    }
-
-    if (!clientSignatureLocal && !formData.clientSignature) {
-      alert('Vă rugăm să adăugați semnătura clientului.');
-      return;
-    }
-
+    // Employee signature is required; client signature/representative are optional now
     if (!employeeSignature) {
       alert('Vă rugăm să adăugați semnătura angajatului.');
       return;
