@@ -313,8 +313,37 @@ const SolutionManagement = () => {
             expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
             created_at: createdAt
           };
-          console.log('Inserting intrari_solutie (edit) payload:', intrarePayload);
+          console.log('Preparing intrari_solutie (edit) payload:', intrarePayload);
+          // sanitize numeric inputs (strip thousand separators/spaces) before calculating totals
+          const sanitizeNumber = (v) => {
+            if (v === null || v === undefined) return 0;
+            try {
+              const s = String(v).replace(/[,\s]/g, '');
+              return parseFloat(s) || 0;
+            } catch (e) {
+              return 0;
+            }
+          };
+
+          const prevIntrSan = sanitizeNumber(previousIntrari);
+          const intrareAmtSan = sanitizeNumber(intrareAmount);
+          const precomputedNewTotal = prevIntrSan + intrareAmtSan;
+          console.log('Pre-insert total_intrari check (edit):', { previousIntrari, intrareAmount, prevIntrSan, intrareAmtSan, precomputedNewTotal, MAX_QTY });
+
+          // Validate before performing the insert to avoid needless partial writes and rollbacks
+          if (!Number.isFinite(precomputedNewTotal) || precomputedNewTotal < 0) {
+            alert('Eroare: total_intrari calculat este invalid. Verifică valorile introduse.');
+            setLoading(false);
+            return;
+          }
+          if (precomputedNewTotal > MAX_QTY) {
+            alert(`Eroare: total_intrari calculat (${precomputedNewTotal}) depășește limita permisă (${MAX_QTY}). Operațiunea a fost anulată.`);
+            setLoading(false);
+            return;
+          }
+
           // request returning representation to obtain inserted id for rollback if needed
+          console.log('Inserting intrari_solutie (edit) payload now that pre-check passed');
           const intrareRes = await supabase.from('intrari_solutie').insert([intrarePayload]).select('*');
           console.log('Supabase insert intrari_solutie result (edit):', intrareRes);
           if (intrareRes.error) {
@@ -324,10 +353,31 @@ const SolutionManagement = () => {
             const insertedIntrare = intrareRes.data && intrareRes.data[0];
             // now update total_intrari; if that update fails, rollback the intrare we just created
             try {
-              const newTotalIntrari = previousIntrari + intrareAmount;
-              if (!Number.isFinite(newTotalIntrari) || newTotalIntrari < 0 || newTotalIntrari > MAX_QTY) {
+              const newTotalIntrari = (parseFloat(previousIntrari) || 0) + (parseFloat(intrareAmount) || 0);
+              console.log('total_intrari calculation:', { previousIntrari, intrareAmount, newTotalIntrari, MAX_QTY });
+
+              // validate before attempting DB update
+              if (!Number.isFinite(newTotalIntrari) || newTotalIntrari < 0) {
+                console.error('Calculated total_intrari invalid (NaN or negative):', newTotalIntrari);
                 throw new Error('Calculated total_intrari invalid: ' + newTotalIntrari);
               }
+
+              if (newTotalIntrari > MAX_QTY) {
+                console.warn('Calculated total_intrari exceeds MAX_QTY; aborting update to avoid DB constraint violation.', { newTotalIntrari, MAX_QTY });
+                // attempt rollback of the inserted intrare
+                if (insertedIntrare && insertedIntrare.id) {
+                  try {
+                    await supabase.from('intrari_solutie').delete().eq('id', insertedIntrare.id);
+                    console.log('Rolled back inserted intrare id=', insertedIntrare.id);
+                  } catch (delErr) {
+                    console.error('Rollback delete failed:', delErr);
+                  }
+                }
+                alert(`Eroare: total_intrari calculat (${newTotalIntrari}) depășește limita permisă (${MAX_QTY}). Operațiunea a fost anulată.`);
+                setLoading(false);
+                return;
+              }
+
               const totRes = await supabase.from('solutions').update({ total_intrari: newTotalIntrari }).eq('id', editingSolution);
               console.log('Supabase update total_intrari result:', totRes);
               if (totRes.error) throw totRes.error;
@@ -375,7 +425,33 @@ const SolutionManagement = () => {
             expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
             created_at: createdAt
           };
-          console.log('Inserting intrari_solutie (new) payload:', intrarePayload);
+          console.log('Preparing intrari_solutie (new) payload:', intrarePayload);
+          // sanitize numeric inputs before calculating totals
+          const sanitizeNumber = (v) => {
+            if (v === null || v === undefined) return 0;
+            try {
+              const s = String(v).replace(/[,\s]/g, '');
+              return parseFloat(s) || 0;
+            } catch (e) {
+              return 0;
+            }
+          };
+
+          const stockSan = sanitizeNumber(stock);
+          const precomputedNewTotalNew = stockSan;
+          console.log('Pre-insert total_intrari check (new):', { stock, stockSan, precomputedNewTotalNew, MAX_QTY });
+          if (!Number.isFinite(precomputedNewTotalNew) || precomputedNewTotalNew < 0) {
+            alert('Eroare: total_intrari calculat este invalid pentru soluția nouă. Verifică valoarea stoc.');
+            setLoading(false);
+            return;
+          }
+          if (precomputedNewTotalNew > MAX_QTY) {
+            alert(`Eroare: total_intrari calculat (${precomputedNewTotalNew}) depășește limita permisă (${MAX_QTY}). Operațiunea a fost anulată.`);
+            setLoading(false);
+            return;
+          }
+
+          console.log('Inserting intrari_solutie (new) payload now that pre-check passed');
           const intrareRes = await supabase.from('intrari_solutie').insert([intrarePayload]).select('*');
           console.log('Supabase insert intrari_solutie result (new):', intrareRes);
           if (intrareRes.error) {
@@ -384,7 +460,27 @@ const SolutionManagement = () => {
           } else {
             const insertedIntrare = intrareRes.data && intrareRes.data[0];
             try {
-              const totRes = await supabase.from('solutions').update({ total_intrari: stock }).eq('id', newId);
+              const newTotalIntrari = parseFloat(stock) || 0;
+              console.log('total_intrari (new solution):', { stock, newTotalIntrari, MAX_QTY });
+              if (!Number.isFinite(newTotalIntrari) || newTotalIntrari < 0) {
+                throw new Error('Calculated total_intrari invalid: ' + newTotalIntrari);
+              }
+              if (newTotalIntrari > MAX_QTY) {
+                console.warn('total_intrari for new solution exceeds MAX_QTY; aborting.', { newTotalIntrari, MAX_QTY });
+                if (insertedIntrare && insertedIntrare.id) {
+                  try {
+                    await supabase.from('intrari_solutie').delete().eq('id', insertedIntrare.id);
+                    console.log('Rolled back inserted intrare id=', insertedIntrare.id);
+                  } catch (delErr) {
+                    console.error('Rollback delete failed:', delErr);
+                  }
+                }
+                alert(`Eroare: total_intrari calculat (${newTotalIntrari}) depășește limita permisă (${MAX_QTY}). Operațiunea a fost anulată.`);
+                setLoading(false);
+                return;
+              }
+
+              const totRes = await supabase.from('solutions').update({ total_intrari: newTotalIntrari }).eq('id', newId);
               console.log('Supabase update total_intrari result (new):', totRes);
               if (totRes.error) throw totRes.error;
             } catch (totErr) {
