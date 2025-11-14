@@ -117,35 +117,6 @@ const SummaryAndSignatureStep = () => {
       };
       console.log('Verbal process:', verbalProcess);
 
-      // Check for duplicate work (same day, same client location / unitate de lucru)
-      try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-
-        const { data: existing, error: existingErr } = await supabase
-          .from('lucrari')
-          .select('id, created_at, client_location, client_name')
-          .eq('client_location', finalData.customer.location)
-          .gte('created_at', startOfDay)
-          .lte('created_at', endOfDay)
-          .limit(1);
-
-        if (existingErr) {
-          console.warn('Could not check existing lucrari for duplicates:', existingErr);
-        }
-
-        if (existing && existing.length > 0) {
-          console.warn('Duplicate work detected for this unit today, aborting verbal process and stock update:', existing[0]);
-          alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Procesul verbal nu va fi creat și stocurile nu vor fi modificate.');
-          setIsFinalizeDisabled(false);
-          return; // abort finalize: do not create verbalProcess or update stock
-        }
-      } catch (checkErr) {
-        console.error('Error checking for duplicate lucrari:', checkErr);
-      }
-
-      await addVerbalProcess(verbalProcess);
       // Build pdf request payload (same as generateAndSendPDF uses)
       const pdfRequest = {
         receptionNumber: receptionNumber,
@@ -179,38 +150,81 @@ const SummaryAndSignatureStep = () => {
           surface: surface
         });
       });
-
-      // Generate PDF always; if simulateSend is true, skip sending the email but still generate PDF
+      // Generate PDF and send email first. Only if email is sent successfully
+      // do we proceed to persist the verbal process and update stock.
+      let pdfBytes;
       try {
-        const pdfBytes = await fillTemplate('/assets/template.pdf', pdfRequest);
-        try {
-          const response = await fetch('/derat/api/send-email.js', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pdfBytes,
-              customerEmail: finalData.customer.email
-            })
-          });
-
-          const responseData = await response.json();
-          if (!responseData.success) {
-            console.error('Email send failed:', responseData.error);
-          } else {
-            console.log('Email sent successfully');
-          }
-        } catch (err) {
-          console.error('Error sending email:', err);
-        }
+        pdfBytes = await fillTemplate('/assets/template.pdf', pdfRequest);
       } catch (e) {
-        console.error('Error generating PDF (continuing with DB updates):', e);
+        console.error('Error generating PDF:', e);
+        alert('Eroare la generarea PDF-ului. Vă rugăm să încercați din nou.');
+        setIsFinalizeDisabled(false);
+        return;
       }
 
-      // increment reception number now that PDF was generated/sent (or skipped)
+      // Send email
+      try {
+        const response = await fetch('/derat/api/send-email.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pdfBytes,
+            customerEmail: finalData.customer.email
+          })
+        });
+
+        const responseData = await response.json();
+        if (!responseData.success) {
+          console.error('Email send failed:', responseData.error);
+          alert('Eroare la trimiterea emailului: ' + (responseData.error || 'unknown'));
+          setIsFinalizeDisabled(false);
+          return;
+        }
+        console.log('Email sent successfully');
+      } catch (err) {
+        console.error('Error sending email:', err);
+        alert('Eroare la trimiterea emailului. Vă rugăm să verificați conexiunea și să încercați din nou.');
+        setIsFinalizeDisabled(false);
+        return;
+      }
+
+      // After email was successfully sent, check for duplicate work (same day, same client location / unitate de lucru)
+      try {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+        const { data: existing, error: existingErr } = await supabase
+          .from('lucrari')
+          .select('id, created_at, client_location, client_name')
+          .eq('client_location', finalData.customer.location)
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .limit(1);
+
+        if (existingErr) {
+          console.warn('Could not check existing lucrari for duplicates:', existingErr);
+        }
+
+        if (existing && existing.length > 0) {
+          console.warn('Duplicate work detected for this unit today, aborting verbal process and stock update:', existing[0]);
+          alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Procesul verbal nu va fi creat și stocurile nu vor fi modificate.');
+          setIsFinalizeDisabled(false);
+          return; // abort finalize: do not create verbalProcess or update stock
+        }
+      } catch (checkErr) {
+        console.error('Error checking for duplicate lucrari:', checkErr);
+      }
+
+      // Persist verbal process now that email was sent and no duplicates detected
+      await addVerbalProcess(verbalProcess);
+
+      // increment reception number now that PDF was generated/sent and verbalProcess created
       await incrementReceptionNumber();
-  // Prepare operations with extra context so we can record intrari_solutie (ieșiri)
+
+      // Prepare operations with extra context so we can record intrari_solutie (ieșiri)
   console.log('receptionNumber (state):', receptionNumber, 'finalData.receptionNumber:', finalData.receptionNumber);
       let opsToUpdate = [];
 
