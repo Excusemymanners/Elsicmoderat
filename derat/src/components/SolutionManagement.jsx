@@ -127,11 +127,12 @@ const SolutionManagement = () => {
   const MAX_QTY = 1e9; // safety cap for stock/quantities to prevent constraint violations
   const [solutions, setSolutions] = useState([]);
   const [intrariHistory, setIntrariHistory] = useState({}); // { solutionId: [intrari] }
+  const todayISO = new Date().toISOString().split('T')[0];
   const [newSolution, setNewSolution] = useState({
     name: '',
     lot: '',
     numar_factura: '',
-    expiration_date: '',
+    expiration_date: todayISO,
     concentration: '',
     stock: '',
     initial_stock: '',
@@ -507,7 +508,7 @@ const SolutionManagement = () => {
         name: '',
         lot: '',
         numar_factura: '',
-        expiration_date: '',
+        expiration_date: todayISO,
         concentration: '',
         stock: '',
         initial_stock: '',
