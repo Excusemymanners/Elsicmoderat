@@ -150,7 +150,37 @@ const SummaryAndSignatureStep = () => {
           surface: surface
         });
       });
-      // Generate PDF and send email first. Only if email is sent successfully
+      // Before generating PDF or sending email, check for duplicate work
+      // (same day, same client location / unitate de lucru). If a duplicate
+      // exists we must abort and not send the email.
+      try {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+        const { data: existing, error: existingErr } = await supabase
+          .from('lucrari')
+          .select('id, created_at, client_location, client_name')
+          .eq('client_location', finalData.customer.location)
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .limit(1);
+
+        if (existingErr) {
+          console.warn('Could not check existing lucrari for duplicates:', existingErr);
+        }
+
+        if (existing && existing.length > 0) {
+          console.warn('Duplicate work detected for this unit today, aborting before sending email:', existing[0]);
+          alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Emailul nu va fi trimis.');
+          setIsFinalizeDisabled(false);
+          return; // abort finalize: do not generate PDF or send email
+        }
+      } catch (checkErr) {
+        console.error('Error checking for duplicate lucrari:', checkErr);
+      }
+
+      // Generate PDF and send email. Only if email is sent successfully
       // do we proceed to persist the verbal process and update stock.
       let pdfBytes;
       try {
@@ -188,34 +218,6 @@ const SummaryAndSignatureStep = () => {
         alert('Eroare la trimiterea emailului. Vă rugăm să verificați conexiunea și să încercați din nou.');
         setIsFinalizeDisabled(false);
         return;
-      }
-
-      // After email was successfully sent, check for duplicate work (same day, same client location / unitate de lucru)
-      try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
-        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-
-        const { data: existing, error: existingErr } = await supabase
-          .from('lucrari')
-          .select('id, created_at, client_location, client_name')
-          .eq('client_location', finalData.customer.location)
-          .gte('created_at', startOfDay)
-          .lte('created_at', endOfDay)
-          .limit(1);
-
-        if (existingErr) {
-          console.warn('Could not check existing lucrari for duplicates:', existingErr);
-        }
-
-        if (existing && existing.length > 0) {
-          console.warn('Duplicate work detected for this unit today, aborting verbal process and stock update:', existing[0]);
-          alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Procesul verbal nu va fi creat și stocurile nu vor fi modificate.');
-          setIsFinalizeDisabled(false);
-          return; // abort finalize: do not create verbalProcess or update stock
-        }
-      } catch (checkErr) {
-        console.error('Error checking for duplicate lucrari:', checkErr);
       }
 
       // Persist verbal process now that email was sent and no duplicates detected

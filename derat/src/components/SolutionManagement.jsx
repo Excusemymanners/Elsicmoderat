@@ -124,11 +124,14 @@ const calculateRemainingPercentage = (initial, remaining) => {
 };
 
 const SolutionManagement = () => {
+  const MAX_QTY = 1e9; // safety cap for stock/quantities to prevent constraint violations
   const [solutions, setSolutions] = useState([]);
   const [intrariHistory, setIntrariHistory] = useState({}); // { solutionId: [intrari] }
   const [newSolution, setNewSolution] = useState({
     name: '',
     lot: '',
+    numar_factura: '',
+    expiration_date: '',
     concentration: '',
     stock: '',
     initial_stock: '',
@@ -228,6 +231,18 @@ const SolutionManagement = () => {
       const stock = parseFloat(newSolution.stock);
       const quantityPerSqm = parseFloat(newSolution.quantity_per_sqm);
 
+      // Basic validation to avoid inserting absurd values that violate DB constraints
+      if (!Number.isFinite(stock) || stock < 0 || stock > MAX_QTY) {
+        alert('Valoare cantitate invalidă. Introdu o valoare între 0 și ' + MAX_QTY + '.');
+        setLoading(false);
+        return;
+      }
+      if (!Number.isFinite(quantityPerSqm) || quantityPerSqm < 0 || quantityPerSqm > MAX_QTY) {
+        alert('Valoare cantitate/mp invalidă. Introdu o valoare între 0 și ' + MAX_QTY + '.');
+        setLoading(false);
+        return;
+      }
+
       if (isNaN(stock) || isNaN(quantityPerSqm)) {
         console.error('Invalid numeric values for stock or quantity per sqm');
         setLoading(false);
@@ -255,7 +270,13 @@ const SolutionManagement = () => {
         quantity_per_sqm: quantityPerSqm,
         minimum_reserve: minimumReserve,
         is_active: shouldBeActive
+      ,
+        expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null
       };
+
+      // Do not persist invoice number as a column on `solutions` table
+      // (it belongs to `intrari_solutie`). Remove if present to avoid 400 errors.
+      if (solutionToSave.numar_factura !== undefined) delete solutionToSave.numar_factura;
 
       if (editingSolution) {
         // update existing
@@ -267,55 +288,120 @@ const SolutionManagement = () => {
         const previousStock = prevData ? parseFloat(prevData.total_quantity || 0) : 0;
         const previousIntrari = prevData ? parseFloat(prevData.total_intrari || 0) : 0;
 
-        await supabase
+        const updateRes = await supabase
           .from('solutions')
           .update(solutionToSave)
           .eq('id', editingSolution);
+        console.log('Supabase update solutions result:', updateRes);
+        if (updateRes.error) {
+          console.error('Error updating solution:', updateRes.error);
+          alert('Eroare la actualizarea soluției: ' + (updateRes.error.message || updateRes.error));
+        }
 
         if (stock > previousStock) {
           const intrareAmount = stock - previousStock;
           const createdAt = new Date().toISOString();
           // Insert intrare record including post/edit stock (post_stock) and tip
-          await supabase
-            .from('intrari_solutie')
-            .insert([{ 
-              solution_id: editingSolution,
-              quantity: intrareAmount,
-              previous_stock: previousStock,
-              post_stock: stock,
-              tip: 'Intrare',
-              lot: newSolution.lot || null,
-              created_at: createdAt
-            }]);
-          await supabase
-            .from('solutions')
-            .update({ total_intrari: previousIntrari + intrareAmount })
-            .eq('id', editingSolution);
+          const intrarePayload = {
+            solution_id: editingSolution,
+            quantity: intrareAmount,
+            previous_stock: previousStock,
+            post_stock: stock,
+            tip: 'Intrare',
+            lot: newSolution.lot || null,
+            numar_factura: newSolution.numar_factura || null,
+            expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
+            created_at: createdAt
+          };
+          console.log('Inserting intrari_solutie (edit) payload:', intrarePayload);
+          // request returning representation to obtain inserted id for rollback if needed
+          const intrareRes = await supabase.from('intrari_solutie').insert([intrarePayload]).select('*');
+          console.log('Supabase insert intrari_solutie result (edit):', intrareRes);
+          if (intrareRes.error) {
+            console.error('Error inserting intrari_solutie (edit):', intrareRes.error);
+            alert('Eroare la înregistrarea intrării (edit): ' + (intrareRes.error.message || intrareRes.error));
+          } else {
+            const insertedIntrare = intrareRes.data && intrareRes.data[0];
+            // now update total_intrari; if that update fails, rollback the intrare we just created
+            try {
+              const newTotalIntrari = previousIntrari + intrareAmount;
+              if (!Number.isFinite(newTotalIntrari) || newTotalIntrari < 0 || newTotalIntrari > MAX_QTY) {
+                throw new Error('Calculated total_intrari invalid: ' + newTotalIntrari);
+              }
+              const totRes = await supabase.from('solutions').update({ total_intrari: newTotalIntrari }).eq('id', editingSolution);
+              console.log('Supabase update total_intrari result:', totRes);
+              if (totRes.error) throw totRes.error;
+            } catch (totErr) {
+              console.error('Failed to update total_intrari after intrare insert:', totErr);
+              // attempt rollback of the inserted intrare
+              if (insertedIntrare && insertedIntrare.id) {
+                try {
+                  await supabase.from('intrari_solutie').delete().eq('id', insertedIntrare.id);
+                  console.log('Rolled back inserted intrare id=', insertedIntrare.id);
+                } catch (delErr) {
+                  console.error('Rollback delete failed:', delErr);
+                }
+              }
+              alert('Eroare la actualizarea total_intrari. Operațiunea a fost anulată.');
+              setLoading(false);
+              return;
+            }
+          }
         }
       } else {
         const result = await supabase
           .from('solutions')
-          .insert([solutionToSave]);
+          .insert([solutionToSave]).select('*');
+        console.log('Supabase insert solutions result:', result);
+        if (result.error) {
+          console.error('Error inserting solution:', result.error);
+          alert('Eroare la inserarea soluției: ' + (result.error.message || result.error));
+          setLoading(false);
+          return;
+        }
 
         const inserted = result.data && result.data[0];
         if (inserted && inserted.id) {
           const newId = inserted.id;
           const createdAt = new Date().toISOString();
-          await supabase
-            .from('intrari_solutie')
-            .insert([{ 
-              solution_id: newId,
-              quantity: stock,
-              previous_stock: 0,
-              post_stock: stock,
-              tip: 'Intrare',
-              lot: newSolution.lot || null,
-              created_at: createdAt
-            }]);
-          await supabase
-            .from('solutions')
-            .update({ total_intrari: stock })
-            .eq('id', newId);
+          const intrarePayload = {
+            solution_id: newId,
+            quantity: stock,
+            previous_stock: 0,
+            post_stock: stock,
+            tip: 'Intrare',
+            lot: newSolution.lot || null,
+            numar_factura: newSolution.numar_factura || null,
+            expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
+            created_at: createdAt
+          };
+          console.log('Inserting intrari_solutie (new) payload:', intrarePayload);
+          const intrareRes = await supabase.from('intrari_solutie').insert([intrarePayload]).select('*');
+          console.log('Supabase insert intrari_solutie result (new):', intrareRes);
+          if (intrareRes.error) {
+            console.error('Error inserting intrari_solutie (new):', intrareRes.error);
+            alert('Eroare la înregistrarea intrării (new): ' + (intrareRes.error.message || intrareRes.error));
+          } else {
+            const insertedIntrare = intrareRes.data && intrareRes.data[0];
+            try {
+              const totRes = await supabase.from('solutions').update({ total_intrari: stock }).eq('id', newId);
+              console.log('Supabase update total_intrari result (new):', totRes);
+              if (totRes.error) throw totRes.error;
+            } catch (totErr) {
+              console.error('Failed to update total_intrari after new intrare insert:', totErr);
+              if (insertedIntrare && insertedIntrare.id) {
+                try {
+                  await supabase.from('intrari_solutie').delete().eq('id', insertedIntrare.id);
+                  console.log('Rolled back inserted intrare id=', insertedIntrare.id);
+                } catch (delErr) {
+                  console.error('Rollback delete failed:', delErr);
+                }
+              }
+              alert('Eroare la actualizarea total_intrari. Operațiunea a fost anulată.');
+              setLoading(false);
+              return;
+            }
+          }
         }
       }
 
@@ -324,6 +410,8 @@ const SolutionManagement = () => {
       setNewSolution({
         name: '',
         lot: '',
+        numar_factura: '',
+        expiration_date: '',
         concentration: '',
         stock: '',
         initial_stock: '',
@@ -363,7 +451,7 @@ const SolutionManagement = () => {
       // fetch all movements (intrari + iesiri) for this solution
       let { data: intrari, error } = await supabase
         .from('intrari_solutie')
-        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine')
+        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date')
         .eq('solution_id', solution.id)
         .order('created_at', { ascending: true });
 
@@ -396,11 +484,16 @@ const SolutionManagement = () => {
             stocVal = isIntrare ? `${(prev + q)} ${solution.unit_of_measure}` : `${Math.max(0, prev - q)} ${solution.unit_of_measure}`;
           }
 
+          const invoiceNumber = intrare.numar_factura || '';
           const processNumber = intrare.numar_ordine || '';
-          // For Intrare (Fact) leave Nr blank so agent can fill invoice number; show Fel='Fact'
-          // For Ieșire show Nr = processNumber and Fel='PV'
+          // For Intrare (Fact) show Nr = invoiceNumber; for Ieșire show Nr = processNumber
           const felVal = isIntrare ? 'Fact' : 'PV';
-          const nrVal = isIntrare ? '' : (processNumber || '');
+          const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
+
+          // For Intrare show "lot / data expirare" in the last column
+          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : '';
+          const lotDisplay = intrare.lot || solution.lot || '';
+          const lastCol = isIntrare ? `${lotDisplay}${expirationDisplay ? ' / ' + expirationDisplay : ''}` : (intrare.lot || solution.lot || '');
 
           rows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -410,7 +503,7 @@ const SolutionManagement = () => {
             iesiriVal,
             stocVal,
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
-            intrare.lot || solution.lot || ''
+            lastCol
           ]);
         });
       }
@@ -506,7 +599,7 @@ const SolutionManagement = () => {
       try {
         const { data: intrari, error } = await supabase
           .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date')
           .eq('solution_id', solution.id)
           .order('created_at', { ascending: true });
         if (error) continue;
@@ -525,9 +618,14 @@ const SolutionManagement = () => {
             stocVal = isIntrare ? `${(prev + q)} ${solution.unit_of_measure}` : `${Math.max(0, prev - q)} ${solution.unit_of_measure}`;
           }
 
+          const invoiceNumber = intrare.numar_factura || '';
           const processNumber = intrare.numar_ordine || '';
           const felVal = isIntrare ? 'Fact' : 'PV';
-          const nrVal = isIntrare ? '' : (processNumber || '');
+          const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
+
+          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : '';
+          const lotDisplay = intrare.lot || solution.lot || '';
+          const lastCol = isIntrare ? `${lotDisplay}${expirationDisplay ? ' / ' + expirationDisplay : ''}` : (intrare.lot || solution.lot || '');
 
           allRows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -537,7 +635,7 @@ const SolutionManagement = () => {
             iesiriVal,
             stocVal,
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
-            intrare.lot || solution.lot || ''
+            lastCol
           ]);
         });
       } catch (e) {
@@ -574,6 +672,8 @@ const SolutionManagement = () => {
     setNewSolution({
       name: solution.name || '',
       lot: solution.lot || '',
+      numar_factura: '',
+      expiration_date: solution.expiration_date ? new Date(solution.expiration_date).toISOString().split('T')[0] : '',
       concentration: solution.concentration || '',
       stock: solution.total_quantity ? String(solution.total_quantity) : '',
       initial_stock: solution.initial_stock || '',
@@ -694,6 +794,18 @@ const SolutionManagement = () => {
             value={newSolution.lot}
             onChange={(e) => setNewSolution({ ...newSolution, lot: e.target.value })}
             required
+          />
+          <input
+            type="text"
+            placeholder="Număr factură (opțional)"
+            value={newSolution.numar_factura}
+            onChange={(e) => setNewSolution({ ...newSolution, numar_factura: e.target.value })}
+          />
+          <input
+            type="date"
+            placeholder="Data expirare (opțional)"
+            value={newSolution.expiration_date}
+            onChange={(e) => setNewSolution({ ...newSolution, expiration_date: e.target.value })}
           />
           <input
             type="text"
@@ -868,10 +980,10 @@ const SolutionManagement = () => {
                           </div>
                           <div>{solution.quantity_per_sqm} {solution.unit_of_measure}</div>
                           <div className="mobile-actions">
-                            <button className={isActive ? 'btn-deactivate' : 'btn-activate'} onClick={() => handleToggleActive(solution.id, isActive)}>{isActive ? '🔴 Dezactivează' : '🟢 Activează'}</button>
-                            <button onClick={() => handleEditSolution(solution)}>✏️ Editează</button>
-                            <button className="btn-delete" onClick={() => handleDeleteSolution(solution.id)}>🗑️ Șterge</button>
-                            <button className="btn-export-single" onClick={() => exportSingleSolutionCSV(solution)}>📄 Exportă</button>
+                            <button tabIndex={-1} className={isActive ? 'btn-deactivate' : 'btn-activate'} onClick={() => handleToggleActive(solution.id, isActive)}>{isActive ? '🔴 Dezactivează' : '🟢 Activează'}</button>
+                            <button tabIndex={-1} onClick={() => handleEditSolution(solution)}>✏️ Editează</button>
+                            <button tabIndex={-1} className="btn-delete" onClick={() => handleDeleteSolution(solution.id)}>🗑️ Șterge</button>
+                            <button tabIndex={-1} className="btn-export-single" onClick={() => exportSingleSolutionCSV(solution)}>📄 Exportă</button>
                           </div>
                         </div>
                       </div>
