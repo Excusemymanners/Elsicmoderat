@@ -53,8 +53,26 @@ export const updateRemainingQuantities = async (operations) => {
           numar_ordine: operation?.numar_ordine || null,
           created_at: created_at || new Date().toISOString()
         };
+        
+        // If this is an exit (Ieșire), attempt to populate expiration_date
+        try {
+          const { data: latestIntrare, error: latestErr } = await supabase
+            .from('intrari_solutie')
+            .select('expiration_date')
+            .eq('solution_id', solutionId)
+            .eq('tip', 'Intrare')
+            .not('expiration_date', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          if (!latestErr && latestIntrare && latestIntrare.expiration_date) {
+            intrareRecord.expiration_date = latestIntrare.expiration_date;
+          }
+        } catch (e) {
+          // ignore failure to lookup latest expiration; continue without it
+          console.warn('Could not fetch latest intrare expiration for exit:', e);
+        }
 
-        // Attempt insert. If DB doesn't have some optional columns, retry removing them.
         console.log('Inserting intrari_solutie record:', intrareRecord);
         let res = await supabase.from('intrari_solutie').insert([intrareRecord]);
         console.log('Supabase insert result:', res);
@@ -63,7 +81,7 @@ export const updateRemainingQuantities = async (operations) => {
           const msg = String(res.error.message || res.error).toLowerCase();
 
           // If numar_ordine column is missing, remove it and retry
-          if (msg.includes('column "numar_ordine"') || msg.includes('column numar_ordine') || msg.includes('numar_ordine')) {
+          if (msg.includes('numar_ordine') ) {
             const { numar_ordine, ...withoutNumar } = intrareRecord;
             console.log('Retrying insert without numar_ordine:', withoutNumar);
             res = await supabase.from('intrari_solutie').insert([withoutNumar]);
@@ -73,9 +91,8 @@ export const updateRemainingQuantities = async (operations) => {
           // If still error and mentions post_stock, remove post_stock and retry
           if (res.error) {
             const msg2 = String(res.error.message || res.error).toLowerCase();
-            if (msg2.includes('column "post_stock"') || msg2.includes('column post_stock') || msg2.includes('post_stock')) {
+            if (msg2.includes('post_stock')) {
               const { post_stock, ...withoutPost } = intrareRecord;
-              // also remove numar_ordine if it exists (in case first retry didn't run)
               delete withoutPost.numar_ordine;
               console.log('Retrying insert without post_stock (and numar_ordine):', withoutPost);
               const retry2 = await supabase.from('intrari_solutie').insert([withoutPost]);
@@ -105,7 +122,6 @@ export const updateRemainingQuantities = async (operations) => {
       console.log(`Updated remaining quantity for solution ${solutionId}: ${newRemainingQuantity}`);
 
       if (shouldDeactivate) {
-        // notify user once; in UI contexts you might prefer non-blocking notifications
         alert(`⚠️ ATENȚIE: Soluția "${data.name}" a atins rezerva minimă (${minimumReserve}) și a fost dezactivată automat!`);
       }
     }
@@ -565,13 +581,21 @@ const SolutionManagement = () => {
       }
 
       if (intrari && !error) {
-        let intrareCounter = 0;
-        intrari.forEach((intrare, i) => {
+        // Determine latest expiration for this solution (prefer intrari values, fallback to solution record)
+        let latestExp = solution.expiration_date ? new Date(solution.expiration_date) : null;
+        (intrari || []).forEach(i => {
+          if (i && i.expiration_date) {
+            const d = new Date(i.expiration_date);
+            if (!latestExp || d > latestExp) latestExp = d;
+          }
+        });
+        const latestExpDisplay = latestExp ? latestExp.toLocaleDateString('ro-RO') : '';
+
+        intrari.forEach((intrare) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
           const intrariVal = isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
           const iesiriVal = !isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
-          // prefer post_stock if available, else compute fallback
           let stocVal = '';
           if (intrare.post_stock !== undefined && intrare.post_stock !== null) {
             stocVal = `${intrare.post_stock} ${solution.unit_of_measure}`;
@@ -583,13 +607,11 @@ const SolutionManagement = () => {
 
           const invoiceNumber = intrare.numar_factura || '';
           const processNumber = intrare.numar_ordine || '';
-          // For Intrare (Fact) show Nr = invoiceNumber; for Ieșire show Nr = processNumber
           const felVal = isIntrare ? 'Fact' : 'PV';
           const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
 
-          // Separate lot and expiration into two columns
-          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : '';
           const lotDisplay = intrare.lot || solution.lot || '';
+          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : (!isIntrare ? latestExpDisplay : '');
 
           rows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -659,14 +681,36 @@ const SolutionManagement = () => {
       headers
     ];
 
-    const dataRows = solutions.map((solution, idx) => {
+    const dataRows = [];
+    for (let idx = 0; idx < solutions.length; idx++) {
+      const solution = solutions[idx];
       const percentage = calculateRemainingPercentage(solution.initial_stock, solution.remaining_quantity);
       const isActive = solution.is_active !== false;
       const minimumReserve = solution.minimum_reserve || 0;
       const remainingQuantity = solution.remaining_quantity || 0;
       const availableQuantity = remainingQuantity - minimumReserve;
-      const expirationDisplay = solution.expiration_date ? new Date(solution.expiration_date).toLocaleDateString('ro-RO') : '';
-      return [
+
+      // fetch latest expiration_date from intrari_solutie (prefer intrari values)
+      let expirationDisplay = '';
+      try {
+        const { data: intrariDates, error: intrErr } = await supabase
+          .from('intrari_solutie')
+          .select('expiration_date')
+          .eq('solution_id', solution.id)
+          .not('expiration_date', 'is', null)
+          .order('expiration_date', { ascending: false })
+          .limit(1);
+        if (!intrErr && intrariDates && intrariDates.length > 0) {
+          expirationDisplay = new Date(intrariDates[0].expiration_date).toLocaleDateString('ro-RO');
+        } else if (solution.expiration_date) {
+          expirationDisplay = new Date(solution.expiration_date).toLocaleDateString('ro-RO');
+        }
+      } catch (e) {
+        console.error('Error fetching latest expiration for solution summary:', solution.id, e);
+        if (solution.expiration_date) expirationDisplay = new Date(solution.expiration_date).toLocaleDateString('ro-RO');
+      }
+
+      dataRows.push([
         idx + 1,
         isActive ? 'Activ' : 'Inactiv',
         solution.name,
@@ -681,13 +725,13 @@ const SolutionManagement = () => {
         `${percentage}%`,
         `${solution.quantity_per_sqm} ${solution.unit_of_measure}`,
         solution.unit_of_measure
-      ];
-    });
+      ]);
+    }
 
     let allRows = [...infoLines, ...dataRows];
 
     // add magazie details per solution (header declared once; we'll insert it per-solution)
-    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
+    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Data expirare'];
 
     // For each solution block, add solution name row + two blank rows before movements
     for (const solution of solutions) {
@@ -704,6 +748,16 @@ const SolutionManagement = () => {
           .order('created_at', { ascending: true });
         if (error) continue;
         let intrareCounter = 0;
+        // compute latest expiration for this solution (prefer intrari values)
+        let latestExp = solution.expiration_date ? new Date(solution.expiration_date) : null;
+        (intrari || []).forEach(i => {
+          if (i && i.expiration_date) {
+            const d = new Date(i.expiration_date);
+            if (!latestExp || d > latestExp) latestExp = d;
+          }
+        });
+        const latestExpDisplay = latestExp ? latestExp.toLocaleDateString('ro-RO') : '';
+
         (intrari || []).forEach((intrare, i) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
@@ -723,9 +777,8 @@ const SolutionManagement = () => {
           const felVal = isIntrare ? 'Fact' : 'PV';
           const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
 
-          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : '';
           const lotDisplay = intrare.lot || solution.lot || '';
-          const lastCol = isIntrare ? `${lotDisplay}${expirationDisplay ? ' / ' + expirationDisplay : ''}` : (intrare.lot || solution.lot || '');
+          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : (!isIntrare ? latestExpDisplay : '');
 
           allRows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -735,7 +788,8 @@ const SolutionManagement = () => {
             iesiriVal,
             stocVal,
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
-            lastCol
+            lotDisplay,
+            expirationDisplay
           ]);
         });
       } catch (e) {
