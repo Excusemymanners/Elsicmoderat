@@ -536,7 +536,7 @@ const SolutionManagement = () => {
       return s;
     };
 
-     const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs / Data expirare'];
+    const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Data expirare'];
      const rows = [];
      // Insert solution name line + two blank lines at top as requested
      rows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
@@ -587,10 +587,9 @@ const SolutionManagement = () => {
           const felVal = isIntrare ? 'Fact' : 'PV';
           const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
 
-          // For Intrare show "lot / data expirare" in the last column
+          // Separate lot and expiration into two columns
           const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : '';
           const lotDisplay = intrare.lot || solution.lot || '';
-          const lastCol = isIntrare ? `${lotDisplay}${expirationDisplay ? ' / ' + expirationDisplay : ''}` : (intrare.lot || solution.lot || '');
 
           rows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -600,7 +599,8 @@ const SolutionManagement = () => {
             iesiriVal,
             stocVal,
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
-            lastCol
+            lotDisplay,
+            expirationDisplay
           ]);
         });
       }
@@ -636,7 +636,8 @@ const SolutionManagement = () => {
       'Nr. Crt.',
       'Status',
       'Nume Substanță',
-      'Aviz/Lot',
+      'Lot produs',
+      'Data expirare',
       'Concentrație',
       'Stoc Inițial',
       'Cantitate Totală',
@@ -664,11 +665,13 @@ const SolutionManagement = () => {
       const minimumReserve = solution.minimum_reserve || 0;
       const remainingQuantity = solution.remaining_quantity || 0;
       const availableQuantity = remainingQuantity - minimumReserve;
+      const expirationDisplay = solution.expiration_date ? new Date(solution.expiration_date).toLocaleDateString('ro-RO') : '';
       return [
         idx + 1,
         isActive ? 'Activ' : 'Inactiv',
         solution.name,
         solution.lot,
+        expirationDisplay,
         solution.concentration,
         `${solution.initial_stock} ${solution.unit_of_measure}`,
         `${solution.total_quantity} ${solution.unit_of_measure}`,
