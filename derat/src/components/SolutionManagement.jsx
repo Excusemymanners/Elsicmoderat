@@ -72,6 +72,23 @@ export const updateRemainingQuantities = async (operations) => {
           // ignore failure to lookup latest expiration; continue without it
           console.warn('Could not fetch latest intrare expiration for exit:', e);
         }
+        // Also attempt to populate supplier (furnizor) for exits from latest intrare
+        try {
+          const { data: latestIntrareSupplier, error: latestSupplierErr } = await supabase
+            .from('intrari_solutie')
+            .select('furnizor')
+            .eq('solution_id', solutionId)
+            .eq('tip', 'Intrare')
+            .not('furnizor', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          if (!latestSupplierErr && latestIntrareSupplier && latestIntrareSupplier.furnizor) {
+            intrareRecord.furnizor = latestIntrareSupplier.furnizor;
+          }
+        } catch (e) {
+          console.warn('Could not fetch latest intrare supplier for exit:', e);
+        }
 
         console.log('Inserting intrari_solutie record:', intrareRecord);
         let res = await supabase.from('intrari_solutie').insert([intrareRecord]);
@@ -147,6 +164,7 @@ const SolutionManagement = () => {
   const [newSolution, setNewSolution] = useState({
     name: '',
     lot: '',
+    furnizor: '',
     numar_factura: '',
     expiration_date: todayISO,
     concentration: '',
@@ -326,6 +344,7 @@ const SolutionManagement = () => {
             post_stock: stock,
             tip: 'Intrare',
             lot: newSolution.lot || null,
+            furnizor: newSolution.furnizor || null,
             numar_factura: newSolution.numar_factura || null,
             expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
             created_at: createdAt
@@ -409,7 +428,7 @@ const SolutionManagement = () => {
                   console.error('Rollback delete failed:', delErr);
                 }
               }
-              alert('Eroare la actualizarea total_intrari. Operațiunea a fost anulată.');
+              alert('Eroare la actualizarea total_intrari. Operațiunea a fost anulizată.');
               setLoading(false);
               return;
             }
@@ -438,6 +457,7 @@ const SolutionManagement = () => {
             post_stock: stock,
             tip: 'Intrare',
             lot: newSolution.lot || null,
+            furnizor: newSolution.furnizor || null,
             numar_factura: newSolution.numar_factura || null,
             expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
             created_at: createdAt
@@ -523,6 +543,7 @@ const SolutionManagement = () => {
       setNewSolution({
         name: '',
         lot: '',
+        furnizor: '',
         numar_factura: '',
         expiration_date: todayISO,
         concentration: '',
@@ -552,7 +573,7 @@ const SolutionManagement = () => {
       return s;
     };
 
-    const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Data expirare'];
+    const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Furnizor', 'Data expirare'];
      const rows = [];
      // Insert solution name line + two blank lines at top as requested
      rows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
@@ -564,7 +585,7 @@ const SolutionManagement = () => {
       // fetch all movements (intrari + iesiri) for this solution
       let { data: intrari, error } = await supabase
         .from('intrari_solutie')
-        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date')
+        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
         .eq('solution_id', solution.id)
         .order('created_at', { ascending: true });
 
@@ -573,7 +594,7 @@ const SolutionManagement = () => {
         console.warn('Select with numar_ordine failed, retrying without it:', error.message || error);
         const retry = await supabase
           .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, furnizor')
           .eq('solution_id', solution.id)
           .order('created_at', { ascending: true });
         intrari = retry.data;
@@ -581,15 +602,10 @@ const SolutionManagement = () => {
       }
 
       if (intrari && !error) {
-        // Determine latest expiration for this solution (prefer intrari values, fallback to solution record)
-        let latestExp = solution.expiration_date ? new Date(solution.expiration_date) : null;
-        (intrari || []).forEach(i => {
-          if (i && i.expiration_date) {
-            const d = new Date(i.expiration_date);
-            if (!latestExp || d > latestExp) latestExp = d;
-          }
-        });
-        const latestExpDisplay = latestExp ? latestExp.toLocaleDateString('ro-RO') : '';
+        // Carry-forward supplier and expiration_date: start from no supplier so we don't retroactively overwrite
+        // past exits if `solutions.furnizor` is updated later. We only set supplier when an Intrare provides it.
+        let currentSupplier = null;
+        let currentExp = null;
 
         intrari.forEach((intrare) => {
           const tip = (intrare.tip || '').toLowerCase();
@@ -610,8 +626,13 @@ const SolutionManagement = () => {
           const felVal = isIntrare ? 'Fact' : 'PV';
           const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
 
+          // Update carried-forward values when a new one appears
+          if (intrare.furnizor) currentSupplier = intrare.furnizor;
+          if (intrare.expiration_date) currentExp = new Date(intrare.expiration_date);
+
           const lotDisplay = intrare.lot || solution.lot || '';
-          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : (!isIntrare ? latestExpDisplay : '');
+          const supplierDisplay = currentSupplier || '';
+          const expirationDisplay = currentExp ? currentExp.toLocaleDateString('ro-RO') : '';
 
           rows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -622,6 +643,7 @@ const SolutionManagement = () => {
             stocVal,
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
             lotDisplay,
+            supplierDisplay,
             expirationDisplay
           ]);
         });
@@ -731,7 +753,7 @@ const SolutionManagement = () => {
     let allRows = [...infoLines, ...dataRows];
 
     // add magazie details per solution (header declared once; we'll insert it per-solution)
-    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Data expirare'];
+    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Furnizor', 'Data expirare'];
 
     // For each solution block, add solution name row + two blank rows before movements
     for (const solution of solutions) {
@@ -743,20 +765,15 @@ const SolutionManagement = () => {
       try {
         const { data: intrari, error } = await supabase
           .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
           .eq('solution_id', solution.id)
           .order('created_at', { ascending: true });
         if (error) continue;
         let intrareCounter = 0;
-        // compute latest expiration for this solution (prefer intrari values)
-        let latestExp = solution.expiration_date ? new Date(solution.expiration_date) : null;
-        (intrari || []).forEach(i => {
-          if (i && i.expiration_date) {
-            const d = new Date(i.expiration_date);
-            if (!latestExp || d > latestExp) latestExp = d;
-          }
-        });
-        const latestExpDisplay = latestExp ? latestExp.toLocaleDateString('ro-RO') : '';
+        // Carry-forward supplier and expiration_date within each solution block
+        // Start from null so we don't retroactively apply solution-level supplier to past movements
+        let currentSupplier = null;
+        let currentExp = null;
 
         (intrari || []).forEach((intrare, i) => {
           const tip = (intrare.tip || '').toLowerCase();
@@ -777,8 +794,13 @@ const SolutionManagement = () => {
           const felVal = isIntrare ? 'Fact' : 'PV';
           const nrVal = isIntrare ? (invoiceNumber || '') : (processNumber || '');
 
+          // Update carried-forward values when a new one appears
+          if (intrare.furnizor) currentSupplier = intrare.furnizor;
+          if (intrare.expiration_date) currentExp = new Date(intrare.expiration_date);
+
           const lotDisplay = intrare.lot || solution.lot || '';
-          const expirationDisplay = intrare.expiration_date ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO') : (!isIntrare ? latestExpDisplay : '');
+          const supplierDisplay = currentSupplier || '';
+          const expirationDisplay = currentExp ? currentExp.toLocaleDateString('ro-RO') : '';
 
           allRows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
@@ -789,6 +811,7 @@ const SolutionManagement = () => {
             stocVal,
             (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
             lotDisplay,
+            supplierDisplay,
             expirationDisplay
           ]);
         });
@@ -827,6 +850,7 @@ const SolutionManagement = () => {
       name: solution.name || '',
       lot: solution.lot || '',
       numar_factura: '',
+      furnizor: solution.furnizor || '',
       expiration_date: solution.expiration_date ? new Date(solution.expiration_date).toISOString().split('T')[0] : '',
       concentration: solution.concentration || '',
       stock: solution.total_quantity ? String(solution.total_quantity) : '',
@@ -948,6 +972,12 @@ const SolutionManagement = () => {
             value={newSolution.lot}
             onChange={(e) => setNewSolution({ ...newSolution, lot: e.target.value })}
             required
+          />
+          <input
+            type="text"
+            placeholder="Furnizor (opțional)"
+            value={newSolution.furnizor}
+            onChange={(e) => setNewSolution({ ...newSolution, furnizor: e.target.value })}
           />
           <input
             type="text"
