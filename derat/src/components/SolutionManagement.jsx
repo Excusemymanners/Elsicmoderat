@@ -573,7 +573,7 @@ const SolutionManagement = () => {
       return s;
     };
 
-    const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Furnizor', 'Data expirare'];
+    const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Aviz/Lot', 'Furnizor', 'Data expirare'];
      const rows = [];
      // Insert solution name line + two blank lines at top as requested
      rows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
@@ -753,7 +753,7 @@ const SolutionManagement = () => {
     let allRows = [...infoLines, ...dataRows];
 
     // add magazie details per solution (header declared once; we'll insert it per-solution)
-    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Lot produs', 'Furnizor', 'Data expirare'];
+    const magazieHeader = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Aviz/Lot', 'Furnizor', 'Data expirare'];
 
     // For each solution block, add solution name row + two blank rows before movements
     for (const solution of solutions) {
