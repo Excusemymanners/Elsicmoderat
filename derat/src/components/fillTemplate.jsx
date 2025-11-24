@@ -81,7 +81,7 @@ export const fillTemplate = async (templateUrl, request) => {
     // Draw client representative just under the contact info and embed
     // the client's signature directly below it so it appears under the
     // contact block (not elsewhere on the page).
-    drawText(`${request.clientRepresentative}`, 160, height - 520);
+    drawText(`${request.clientRepresentative}`, 160, height - 500);
 
     if (request.clientSignature) {
       try {
