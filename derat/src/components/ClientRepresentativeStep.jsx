@@ -17,14 +17,17 @@ const ClientRepresentativeStep = () => {
     }
 
     try {
-      const clientSignature = sigCanvas.current.toDataURL();
-      
+      let clientSignature = '';
+      if (sigCanvas.current && typeof sigCanvas.current.toDataURL === 'function' && !sigCanvas.current.isEmpty()) {
+        clientSignature = sigCanvas.current.toDataURL();
+      }
+
       const newFormData = {
         ...formData,
         clientRepresentative: representative,
         clientSignature: clientSignature,
-        signatureDateTime: '2025-02-12 19:10:31', // Data fixă
-        userLogin: 'Excusemymanners' // User login fix
+        signatureDateTime: new Date().toISOString(),
+        userLogin: 'Excusemymanners'
       };
       
       await updateFormData(newFormData);
@@ -36,15 +39,19 @@ const ClientRepresentativeStep = () => {
   };
 
   const handleBack = () => {
-    const clientSignature = sigCanvas.current.toDataURL();
+    let clientSignature = '';
+    if (sigCanvas.current && typeof sigCanvas.current.toDataURL === 'function' && !sigCanvas.current.isEmpty()) {
+      clientSignature = sigCanvas.current.toDataURL();
+    }
+
     const newFormData = {
       ...formData,
       clientRepresentative: representative,
       clientSignature: clientSignature,
-      signatureDateTime: '2025-02-12 19:10:31',
+      signatureDateTime: new Date().toISOString(),
       userLogin: 'Excusemymanners'
     };
-    
+
     updateFormData(newFormData);
     navigate('/employee/step3');
   };

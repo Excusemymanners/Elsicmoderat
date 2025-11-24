@@ -20,6 +20,8 @@ const SummaryAndSignatureStep = () => {
   const [isFinalizeDisabled, setIsFinalizeDisabled] = useState(false); // State to disable finalize button
   const [showPopup, setShowPopup] = useState(false);
 
+  // Ref to avoid duplicate submissions (prevents double-click race conditions)
+  const isSubmittingRef = useRef(false);
   const [custodyItems, setCustodyItems] = useState({
     ultrasuneteRozatoare: 0,
     ultrasunetePasari: 0,
@@ -53,12 +55,19 @@ const SummaryAndSignatureStep = () => {
   }, [formData, navigate]);
 
   const handleFinish = async () => {
+    // Prevent re-entrancy / duplicate submissions (fast double-clicks)
+    if (isSubmittingRef.current) {
+      console.warn('Submission already in progress, ignoring duplicate call.');
+      return;
+    }
+
     // Employee signature is required; client signature/representative are optional now
     if (!employeeSignature) {
       alert('Vă rugăm să adăugați semnătura angajatului.');
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsFinalizeDisabled(true); // Disable finalize button after it's clicked
 
     try {
@@ -173,6 +182,7 @@ const SummaryAndSignatureStep = () => {
         if (existing && existing.length > 0) {
           console.warn('Duplicate work detected for this unit today, aborting before sending email:', existing[0]);
           alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Emailul nu va fi trimis.');
+          isSubmittingRef.current = false;
           setIsFinalizeDisabled(false);
           return; // abort finalize: do not generate PDF or send email
         }
@@ -188,6 +198,7 @@ const SummaryAndSignatureStep = () => {
       } catch (e) {
         console.error('Error generating PDF:', e);
         alert('Eroare la generarea PDF-ului. Vă rugăm să încercați din nou.');
+        isSubmittingRef.current = false;
         setIsFinalizeDisabled(false);
         return;
       }
@@ -209,6 +220,7 @@ const SummaryAndSignatureStep = () => {
         if (!responseData.success) {
           console.error('Email send failed:', responseData.error);
           alert('Eroare la trimiterea emailului: ' + (responseData.error || 'unknown'));
+          isSubmittingRef.current = false;
           setIsFinalizeDisabled(false);
           return;
         }
@@ -216,6 +228,7 @@ const SummaryAndSignatureStep = () => {
       } catch (err) {
         console.error('Error sending email:', err);
         alert('Eroare la trimiterea emailului. Vă rugăm să verificați conexiunea și să încercați din nou.');
+        isSubmittingRef.current = false;
         setIsFinalizeDisabled(false);
         return;
       }
@@ -351,6 +364,7 @@ const SummaryAndSignatureStep = () => {
     } catch (error) {
       console.error('Error in handleFinish:', error);
       alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
+      isSubmittingRef.current = false;
       setIsFinalizeDisabled(false); // Re-enable finalize button if there is an error
     }
   };
@@ -364,6 +378,17 @@ const SummaryAndSignatureStep = () => {
     sigCanvas.current.clear();
     setEmployeeSignature('');
   };
+
+  // Load existing client signature into the client signature pad when available
+  useEffect(() => {
+    try {
+      if (clientSignatureLocal && clientSigCanvas.current && typeof clientSigCanvas.current.fromDataURL === 'function') {
+        clientSigCanvas.current.fromDataURL(clientSignatureLocal);
+      }
+    } catch (e) {
+      console.warn('Could not load client signature into canvas:', e);
+    }
+  }, [clientSignatureLocal]);
 
   const handleSignatureEnd = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
