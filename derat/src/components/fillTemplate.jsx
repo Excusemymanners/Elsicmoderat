@@ -78,19 +78,25 @@ export const fillTemplate = async (templateUrl, request) => {
     drawText(`${request.client.location}`, 200, height - 202);
     drawText(`${request.client.surface}`, 590, height - 202); // Added Suprafat client
 
-    drawText(` ${request.clientRepresentative}`, 140, height - 520);
+    // Draw client representative just under the contact info and embed
+    // the client's signature directly below it so it appears under the
+    // contact block (not elsewhere on the page).
+    drawText(`${request.clientRepresentative}`, 160, height - 230);
 
-    // Embed and draw the client representative's signature
     if (request.clientSignature) {
-      const clientSignatureImage = await pdfDoc.embedPng(request.clientSignature);
-      firstPage.drawImage(clientSignatureImage, {
-        x: 75,
-        y: height - 580,
-        width: 150,
-        height: 50,
-      });
+      try {
+        const clientSignatureImage = await pdfDoc.embedPng(request.clientSignature);
+        firstPage.drawImage(clientSignatureImage, {
+          x: 160,
+          y: height - 270,
+          width: 150,
+          height: 50,
+        });
+      } catch (e) {
+        console.warn('Could not embed client signature image into PDF:', e);
+      }
     } else {
-      drawText(`Client Signature: Not provided`, 580, height - 520);
+      // If not provided, leave the area blank (no misleading text)
     }
 
     // Draw employee information in blue

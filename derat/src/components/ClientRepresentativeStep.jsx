@@ -1,13 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SignatureCanvas from 'react-signature-canvas';
 import { useEmployeeForm } from './EmployeeFormProvider';
 import './ClientRepresentativeStep.css';
 
 const ClientRepresentativeStep = () => {
   const { formData, updateFormData } = useEmployeeForm();
   const [representative, setRepresentative] = useState(formData.clientRepresentative || '');
-  const sigCanvas = useRef(null);
   const navigate = useNavigate();
 
   const handleNext = async () => {
@@ -17,19 +15,13 @@ const ClientRepresentativeStep = () => {
     }
 
     try {
-      let clientSignature = '';
-      if (sigCanvas.current && typeof sigCanvas.current.toDataURL === 'function' && !sigCanvas.current.isEmpty()) {
-        clientSignature = sigCanvas.current.toDataURL();
-      }
-
+      // Persist only the representative name here. The client's signature
+      // must be captured in the Summary step to avoid duplication.
       const newFormData = {
         ...formData,
-        clientRepresentative: representative,
-        clientSignature: clientSignature,
-        signatureDateTime: new Date().toISOString(),
-        userLogin: 'Excusemymanners'
+        clientRepresentative: representative
       };
-      
+
       await updateFormData(newFormData);
       navigate('/employee/step5');
     } catch (error) {
@@ -39,26 +31,17 @@ const ClientRepresentativeStep = () => {
   };
 
   const handleBack = () => {
-    let clientSignature = '';
-    if (sigCanvas.current && typeof sigCanvas.current.toDataURL === 'function' && !sigCanvas.current.isEmpty()) {
-      clientSignature = sigCanvas.current.toDataURL();
-    }
-
+    // Persist only representative when going back
     const newFormData = {
       ...formData,
-      clientRepresentative: representative,
-      clientSignature: clientSignature,
-      signatureDateTime: new Date().toISOString(),
-      userLogin: 'Excusemymanners'
+      clientRepresentative: representative
     };
 
     updateFormData(newFormData);
     navigate('/employee/step3');
   };
 
-  const handleClear = () => {
-    sigCanvas.current.clear();
-  };
+  // No signature canvas here anymore; clearing is handled in Summary step.
 
   return (
     <div className="client-representative-step">

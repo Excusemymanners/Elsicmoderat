@@ -32,7 +32,7 @@ const SummaryAndSignatureStep = () => {
   // local state for client representative + signature (moved here from ClientRepresentativeStep)
   const [clientRepresentativeLocal, setClientRepresentativeLocal] = useState(formData.clientRepresentative || '');
   const clientSigCanvas = useRef(null);
-  const [clientSignatureLocal, setClientSignatureLocal] = useState(formData.clientSignature || '');
+  const [clientSignatureLocal, setClientSignatureLocal] = useState('');
 
 
   useEffect(() => {
@@ -379,16 +379,24 @@ const SummaryAndSignatureStep = () => {
     setEmployeeSignature('');
   };
 
-  // Load existing client signature into the client signature pad when available
-  useEffect(() => {
+  // Capture client signature directly in the Summary step. We don't pre-load
+  // a client signature from context to avoid duplicate saves; the signature
+  // must be drawn here (immediate capture via onEnd) and persisted.
+  const handleClientSignatureEnd = () => {
     try {
-      if (clientSignatureLocal && clientSigCanvas.current && typeof clientSigCanvas.current.fromDataURL === 'function') {
-        clientSigCanvas.current.fromDataURL(clientSignatureLocal);
+      if (clientSigCanvas.current && typeof clientSigCanvas.current.toDataURL === 'function' && !clientSigCanvas.current.isEmpty()) {
+        const dataUrl = clientSigCanvas.current.toDataURL();
+        setClientSignatureLocal(dataUrl);
+        try {
+          updateFormData({ clientSignature: dataUrl, clientRepresentative: clientRepresentativeLocal || formData.clientRepresentative || '' });
+        } catch (e) {
+          console.warn('Could not persist client signature to context immediately:', e);
+        }
       }
     } catch (e) {
-      console.warn('Could not load client signature into canvas:', e);
+      console.warn('Error capturing client signature:', e);
     }
-  }, [clientSignatureLocal]);
+  };
 
   const handleSignatureEnd = () => {
     setEmployeeSignature(sigCanvas.current.toDataURL());
@@ -552,7 +560,7 @@ const SummaryAndSignatureStep = () => {
                 <div className="signature-pad-container">
                   <SignatureCanvas
                     ref={clientSigCanvas}
-                    onEnd={() => setClientSignatureLocal(clientSigCanvas.current.toDataURL())}
+                    onEnd={handleClientSignatureEnd}
                     penColor={'#000000'}
                     velocityFilterWeight={0.7}
                     canvasProps={{
