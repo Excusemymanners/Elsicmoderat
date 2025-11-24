@@ -81,14 +81,14 @@ export const fillTemplate = async (templateUrl, request) => {
     // Draw client representative just under the contact info and embed
     // the client's signature directly below it so it appears under the
     // contact block (not elsewhere on the page).
-    drawText(`${request.clientRepresentative}`, 160, height - 500);
+    drawText(`${request.clientRepresentative}`, 160, height - 530);
 
     if (request.clientSignature) {
       try {
         const clientSignatureImage = await pdfDoc.embedPng(request.clientSignature);
         firstPage.drawImage(clientSignatureImage, {
           x: 160,
-          y: height - 580,
+          y: height - 500,
           width: 150,
           height: 50,
         });
