@@ -88,7 +88,7 @@ export const fillTemplate = async (templateUrl, request) => {
         const clientSignatureImage = await pdfDoc.embedPng(request.clientSignature);
         firstPage.drawImage(clientSignatureImage, {
           x: 160,
-          y: height - 580,
+          y: height - 560,
           width: 150,
           height: 50,
         });
