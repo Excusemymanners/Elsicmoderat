@@ -565,8 +565,9 @@ const SummaryAndSignatureStep = () => {
                     velocityFilterWeight={0.7}
                     canvasProps={{
                       className: 'signature-canvas',
-                      width: window.innerWidth < 768 ? 300 : 400,
-                      height: window.innerWidth < 768 ? 100 : 150,
+                      // Match employee signature sizes so client signature appears identical
+                      width: window.innerWidth < 768 ? 300 : 500,
+                      height: window.innerWidth < 768 ? 150 : 200,
                       style: { cursor: 'crosshair', touchAction: 'none', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px' }
                     }}
                   />
