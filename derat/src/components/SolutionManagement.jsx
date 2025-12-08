@@ -160,6 +160,7 @@ const SolutionManagement = () => {
   const MAX_QTY = 1e9; // safety cap for stock/quantities to prevent constraint violations
   const [solutions, setSolutions] = useState([]);
   const [intrariHistory, setIntrariHistory] = useState({}); // { solutionId: [intrari] }
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const todayISO = new Date().toISOString().split('T')[0];
   const [newSolution, setNewSolution] = useState({
     name: '',
@@ -238,6 +239,14 @@ const SolutionManagement = () => {
 
   useEffect(() => {
     fetchSolutions();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -832,6 +841,119 @@ const SolutionManagement = () => {
   alert(`Fișa de magazie a fost exportată cu succes!`);
   };
 
+  const releaseSolution = async (solution) => {
+    if (!window.confirm(`Ești sigur că vrei să eliberezi soluția "${solution.name}"? Aceasta va descărca un CSV și va șterge toate mișcările de stoc pentru această soluție.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Helper function to escape CSV values
+      const escapeCSV = (value) => {
+        if (value === null || value === undefined) return '';
+        return `"${value.toString().replace(/"/g, '""')}"`;
+      };
+
+      // Fetch all intrari_solutie records for this solution
+      const { data: intrari, error: fetchError } = await supabase
+        .from('intrari_solutie')
+        .select('*')
+        .eq('solution_id', solution.id);
+
+      if (fetchError) {
+        console.error('Error fetching intrari:', fetchError);
+        alert('Eroare la preluarea datelor mișcărilor de stoc.');
+        setLoading(false);
+        return;
+      }
+
+      // Generate CSV with intrari data
+      const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Aviz/Lot', 'Furnizor', 'Data expirare'];
+      const infoLines = [
+        [`Eliberare Soluție: ${solution.name}`],
+        [`Data generării: ${new Date().toLocaleDateString('ro-RO')}`],
+        [`Lot: ${solution.lot || 'N/A'}`],
+        [`Total mișcări: ${intrari?.length || 0}`],
+        [''],
+        headers
+      ];
+
+      const dataRows = [];
+      let intrareCounter = 0;
+
+      (intrari || []).forEach((intrare) => {
+        const tip = (intrare.tip || '').toLowerCase();
+        const isIntrare = tip === 'intrare';
+        const intrariVal = isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
+        const iesiriVal = !isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
+        let stocVal = '';
+        if (intrare.post_stock !== undefined && intrare.post_stock !== null) {
+          stocVal = `${intrare.post_stock} ${solution.unit_of_measure}`;
+        } else {
+          const prev = parseFloat(intrare.previous_stock || 0);
+          const q = parseFloat(intrare.quantity || 0);
+          stocVal = isIntrare ? `${(prev + q)} ${solution.unit_of_measure}` : `${Math.max(0, prev - q)} ${solution.unit_of_measure}`;
+        }
+
+        if (!isIntrare) {
+          intrareCounter++;
+        }
+        const nrVal = !isIntrare ? intrareCounter : '';
+        const felVal = isIntrare ? 'Intrare' : 'Ieșire';
+
+        const lotDisplay = intrare.lot || solution.lot || '';
+        const supplierDisplay = intrare.furnizor || solution.furnizor || '';
+        const expirationDisplay = intrare.expiration_date
+          ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO')
+          : (solution.expiration_date ? new Date(solution.expiration_date).toLocaleDateString('ro-RO') : '');
+
+        dataRows.push([
+          new Date(intrare.created_at).toLocaleDateString('ro-RO'),
+          nrVal,
+          felVal,
+          intrariVal,
+          iesiriVal,
+          stocVal,
+          (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
+          lotDisplay,
+          supplierDisplay,
+          expirationDisplay
+        ]);
+      });
+
+      const allRows = [...infoLines, ...dataRows];
+      const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)).join('\n');
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Eliberare_${solution.name}_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Delete all intrari_solutie records for this solution
+      if (intrari && intrari.length > 0) {
+        const deleteIds = intrari.map(i => i.id);
+        for (const id of deleteIds) {
+          await supabase
+            .from('intrari_solutie')
+            .delete()
+            .eq('id', id);
+        }
+        console.log(`✅ ${deleteIds.length} mișcări de stoc au fost șterse pentru soluția "${solution.name}".`);
+      }
+
+      alert(`✅ Soluția "${solution.name}" a fost eliberată. CSV descărcat și ${intrari?.length || 0} mișcări șterse.`);
+      await fetchSolutions(); // Reload to reflect changes
+    } catch (error) {
+      console.error('Error releasing solution:', error);
+      alert('Eroare la eliberarea soluției: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleToggleActive = async (id, currentlyActive) => {
     try {
       await supabase
@@ -1132,6 +1254,15 @@ const SolutionManagement = () => {
                         >
                           📄 Exportă fișa de magazie
                         </button>
+                        {!isMobile && (
+                          <button
+                            className="btn-danger"
+                            onClick={() => releaseSolution(solution)}
+                            title="Eliberează soluția - descarcă CSV și șterge mișcări"
+                          >
+                            🔑 Eliberare
+                          </button>
+                        )}
                       </div>
                     </td>
 
@@ -1168,6 +1299,9 @@ const SolutionManagement = () => {
                             <button tabIndex={-1} onClick={() => handleEditSolution(solution)}>✏️ Editează</button>
                             <button tabIndex={-1} className="btn-delete" onClick={() => handleDeleteSolution(solution.id)}>🗑️ Șterge</button>
                             <button tabIndex={-1} className="btn-export-single" onClick={() => exportSingleSolutionCSV(solution)}>📄 Exportă</button>
+                            {isMobile && (
+                              <button tabIndex={-1} className="btn-danger" onClick={() => releaseSolution(solution)}>🔑 Eliberare</button>
+                            )}
                           </div>
                         </div>
                       </div>

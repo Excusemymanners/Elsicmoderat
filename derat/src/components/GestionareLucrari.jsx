@@ -13,7 +13,17 @@ const GestionareLucrari = () => {
     const [confirmText, setConfirmText] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const itemsPerPage = 50;
+
+    // Detect mobile/tablet size
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (showConfirmModal) {
@@ -268,12 +278,13 @@ const GestionareLucrari = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'lucrari.csv';
+        a.download = `lucrari_export_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
+        alert('✅ Lucrările au fost exportate cu succes!');
     };
 
-    const clearDatabase = async () => {
+    const clearDatabase = () => {
         setShowConfirmModal(true);
     };
 
@@ -286,132 +297,10 @@ const GestionareLucrari = () => {
         }
 
         try {
-            // Fetch all data before deleting
-            const { data: allData, error: fetchError } = await supabase
-                .from('lucrari')
-                .select('*');
+            // First: Export CSV
+            await exportExcel();
 
-            if (fetchError) {
-                console.error('Error fetching data for backup:', fetchError);
-                alert('Eroare la preluarea datelor pentru backup!');
-                return;
-            }
-
-            // Generate CSV content
-            const escapeCSV = (value) => {
-                if (value === null || value === undefined) return '';
-                return `"${value.toString().replace(/"/g, '""')}"`;
-            };
-
-            const headers = [
-                'Nr. Proces Verbal',
-                'Data',
-                'Beneficiar',
-                'Locatie',
-                'Suprafata',
-                'Nume Angajat',
-                'Proceduri (Deratizare, Dezinfectie, Dezinsectie)',
-                'Denumire Produs',
-                'Lot si cantitate',
-                'Concentratii'
-            ];
-
-            const processRow = async (lucrare) => {
-                const client = await fetchClient(lucrare.client_name);
-
-                const procedures = [];
-                const products = [];
-                const surfaces = [];
-                const lotsAndQuantities = [];
-                const concentrations = [];
-
-                if (lucrare.procedure1 !== null) {
-                    procedures.push(lucrare.procedure1);
-                    products.push(lucrare.product1_name);
-                    surfaces.push(getSurface(client, lucrare.procedure1));
-                    lotsAndQuantities.push(`${lucrare.product1_lot} - ${lucrare.product1_quantity}`);
-                    concentrations.push(lucrare.concentration1 ?? 'null');
-                }
-
-                if (lucrare.procedure2 !== null) {
-                    procedures.push(lucrare.procedure2);
-                    products.push(lucrare.product2_name);
-                    surfaces.push(getSurface(client, lucrare.procedure2));
-                    lotsAndQuantities.push(`${lucrare.product2_lot} - ${lucrare.product2_quantity}`);
-                    concentrations.push(lucrare.concentration2 ?? 'null');
-                }
-
-                if (lucrare.procedure3 !== null) {
-                    procedures.push(lucrare.procedure3);
-                    products.push(lucrare.product3_name);
-                    surfaces.push(getSurface(client, lucrare.procedure3));
-                    lotsAndQuantities.push(`${lucrare.product3_lot} - ${lucrare.product3_quantity}`);
-                    concentrations.push(lucrare.concentration3 ?? 'null');
-                }
-
-                if (lucrare.procedure4 !== null) {
-                    procedures.push(lucrare.procedure4);
-                    products.push(lucrare.product4_name);
-                    surfaces.push(getSurface(client, lucrare.procedure4));
-                    lotsAndQuantities.push(`${lucrare.product4_lot} - ${lucrare.product4_quantity}`);
-                    concentrations.push(lucrare.concentration4 ?? 'null');
-                }
-
-                const row = [
-                    lucrare.numar_ordine - 1,
-                    new Date(lucrare.created_at).toLocaleString('ro-RO'),
-                    lucrare.client_name,
-                    lucrare.client_location,
-                    surfaces.join('; '),
-                    lucrare.employee_name,
-                    procedures.join('; '),
-                    products.join('; '),
-                    lotsAndQuantities.join('; '),
-                    concentrations.join('; ')
-                ];
-
-                return row.map(escapeCSV).join(',');
-            };
-
-            const processedRows = await Promise.all(allData.map(processRow));
-
-            processedRows.sort((a, b) => {
-                const numA = parseInt(a.split(',')[0].replace(/"/g, ''));
-                const numB = parseInt(b.split(',')[0].replace(/"/g, ''));
-                return numA - numB;
-            });
-
-            const csv = [
-                headers.map(escapeCSV).join(','),
-                ...processedRows
-            ].join('\n');
-
-            const BOM = '\uFEFF';
-            const csvContent = BOM + csv;
-
-            // Send email with CSV
-            const response = await fetch('/api/send-csv-email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    csvContent: csvContent,
-                    recipientEmail: '1285849adm@gmail.com'
-                }),
-            });
-
-            const result = await response.json();
-
-            if (!result.success) {
-                console.error('Error sending email:', result.error);
-                alert('Eroare la trimiterea emailului cu backup-ul! Ștergerea a fost anulată.');
-                setShowConfirmModal(false);
-                setConfirmText('');
-                return;
-            }
-
-            // If email sent successfully, proceed with deletion
+            // Then: Delete all records
             const { error } = await supabase
                 .from('lucrari')
                 .delete()
@@ -422,7 +311,8 @@ const GestionareLucrari = () => {
                 alert('Eroare la ștergerea lucrărilor din baza de date!');
             } else {
                 setLucrari([]);
-                alert('Backup-ul a fost trimis pe email și toate lucrările au fost șterse din baza de date.');
+                alert('✅ Backup-ul a fost descărcat și toate lucrările au fost șterse din baza de date.');
+                await fetchLucrari(1); // Reset to first page
             }
         } catch (error) {
             console.error('Error in clear process:', error);
@@ -476,8 +366,12 @@ const GestionareLucrari = () => {
             <h2>Gestionare Lucrări</h2>
 
             <div className="action-buttons">
-                <button onClick={exportExcel}>Export Excel</button>
-                <button onClick={clearDatabase}>Eliberează Baza de Date</button>
+                <button onClick={exportExcel}>📄 Export</button>
+                {!isMobile && (
+                    <button onClick={clearDatabase} className="danger-button">
+                        🔑 Eliberare
+                    </button>
+                )}
             </div>
 
             <div className="search-container">
