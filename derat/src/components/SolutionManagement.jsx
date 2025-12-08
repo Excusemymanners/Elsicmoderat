@@ -1082,9 +1082,9 @@ const SolutionManagement = () => {
                     <td data-label="Nume">{solution.name}</td>
                     <td data-label="Aviz/Lot">{solution.lot}</td>
                     <td data-label="Concentrație">{solution.concentration}</td>
-                    <td data-label="Stoc Inițial">{solution.initial_stock} {solution.unit_of_measure}</td>
-                    <td data-label="Stoc Rămas">
-                      {solution.remaining_quantity} {solution.unit_of_measure}
+                    <td data-label="Ultima înregistrare">{solution.initial_stock} {solution.unit_of_measure}</td>
+                    <td data-label="Solutie">
+                      {solution.total_quantity} {solution.unit_of_measure}
                     </td>
                     <td data-label="Rezervă minimă">
                       <span className={`reserve-indicator ${isAtReserve ? 'at-reserve' : isNearReserve ? 'near-reserve' : ''}`}>
@@ -1143,8 +1143,8 @@ const SolutionManagement = () => {
                           <div>Nume</div>
                           <div>Aviz/Lot</div>
                           <div>Concentrație</div>
-                          <div>Stoc Inițial</div>
-                          <div>Stoc Rămas</div>
+                          <div>Ultima înregistrare</div>
+                          <div>Soluție</div>
                           <div>Rezervă minimă</div>
                           <div>Procentaj rămas</div>
                           <div>Cantitate/mp</div>
@@ -1155,7 +1155,7 @@ const SolutionManagement = () => {
                           <div>{solution.lot}</div>
                           <div>{solution.concentration}</div>
                           <div>{solution.initial_stock} {solution.unit_of_measure}</div>
-                          <div>{solution.remaining_quantity} {solution.unit_of_measure}</div>
+                          <div>{solution.total_quantity} {solution.unit_of_measure}</div>
                           <div><span className={`reserve-indicator ${isAtReserve ? 'at-reserve' : isNearReserve ? 'near-reserve' : ''}`}>{minimumReserve} {solution.unit_of_measure}</span></div>
                           <div>
                             <div className="progress-bar-container">
