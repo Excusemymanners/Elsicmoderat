@@ -1206,7 +1206,7 @@ const SolutionManagement = () => {
                     <td data-label="Concentrație">{solution.concentration}</td>
                     <td data-label="Ultima înregistrare">{solution.initial_stock} {solution.unit_of_measure}</td>
                     <td data-label="Solutie">
-                      {solution.total_quantity} {solution.unit_of_measure}
+                      {solution.remaining_quantity} {solution.unit_of_measure}
                     </td>
                     <td data-label="Rezervă minimă">
                       <span className={`reserve-indicator ${isAtReserve ? 'at-reserve' : isNearReserve ? 'near-reserve' : ''}`}>
@@ -1286,7 +1286,7 @@ const SolutionManagement = () => {
                           <div>{solution.lot}</div>
                           <div>{solution.concentration}</div>
                           <div>{solution.initial_stock} {solution.unit_of_measure}</div>
-                          <div>{solution.total_quantity} {solution.unit_of_measure}</div>
+                          <div>{solution.remaining_quantity} {solution.unit_of_measure}</div>
                           <div><span className={`reserve-indicator ${isAtReserve ? 'at-reserve' : isNearReserve ? 'near-reserve' : ''}`}>{minimumReserve} {solution.unit_of_measure}</span></div>
                           <div>
                             <div className="progress-bar-container">
