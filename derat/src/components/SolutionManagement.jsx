@@ -1102,29 +1102,32 @@ const SolutionManagement = () => {
             />
           </div>
           <div className="form-group">
-            <label>Furnizor (opțional)</label>
+            <label>Furnizor *</label>
             <input
               type="text"
               placeholder="ex. BASF, Syngenta, etc."
               value={newSolution.furnizor}
               onChange={(e) => setNewSolution({ ...newSolution, furnizor: e.target.value })}
+              required
             />
           </div>
           <div className="form-group">
-            <label>Număr factură (opțional)</label>
+            <label>Număr factură *</label>
             <input
               type="text"
               placeholder="ex. FAC-2024-001"
               value={newSolution.numar_factura}
               onChange={(e) => setNewSolution({ ...newSolution, numar_factura: e.target.value })}
+              required
             />
           </div>
           <div className="form-group">
-            <label>Data expirare (opțional)</label>
+            <label>Data expirare *</label>
             <input
               type="date"
               value={newSolution.expiration_date}
               onChange={(e) => setNewSolution({ ...newSolution, expiration_date: e.target.value })}
+              required
             />
           </div>
           <div className="form-group">
@@ -1158,7 +1161,7 @@ const SolutionManagement = () => {
             />
           </div>
           <div className="form-group">
-            <label>Rezervă minimă ({newSolution.unit_of_measure})</label>
+            <label>Rezervă minimă ({newSolution.unit_of_measure}) *</label>
             <input
               type="number"
               placeholder="ex. 100"
@@ -1167,6 +1170,7 @@ const SolutionManagement = () => {
               min="0"
               step="0.01"
               title="Cantitatea minimă care trebuie să rămână ca rezervă. Soluția se va dezactiva automat când ajunge la această limită."
+              required
             />
           </div>
           <div className="form-group">
