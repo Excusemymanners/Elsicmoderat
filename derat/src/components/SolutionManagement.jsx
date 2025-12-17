@@ -975,7 +975,7 @@ const SolutionManagement = () => {
       furnizor: solution.furnizor || '',
       expiration_date: solution.expiration_date ? new Date(solution.expiration_date).toISOString().split('T')[0] : '',
       concentration: solution.concentration || '',
-      stock: solution.total_quantity ? String(solution.total_quantity) : '',
+      stock: solution.remaining_quantity ? String(solution.remaining_quantity) : '',
       initial_stock: solution.initial_stock || '',
       total_quantity: solution.total_quantity || '',
       remaining_quantity: solution.remaining_quantity || '',
