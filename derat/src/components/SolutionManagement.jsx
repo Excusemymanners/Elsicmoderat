@@ -1081,76 +1081,105 @@ const SolutionManagement = () => {
 
       {showForm ? (
         <form onSubmit={handleAddSolution} className="solution-form">
-          <input
-            type="text"
-            placeholder="Nume substanță"
-            value={newSolution.name}
-            onChange={(e) => setNewSolution({ ...newSolution, name: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Aviz/Lot"
-            value={newSolution.lot}
-            onChange={(e) => setNewSolution({ ...newSolution, lot: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Furnizor (opțional)"
-            value={newSolution.furnizor}
-            onChange={(e) => setNewSolution({ ...newSolution, furnizor: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Număr factură (opțional)"
-            value={newSolution.numar_factura}
-            onChange={(e) => setNewSolution({ ...newSolution, numar_factura: e.target.value })}
-          />
-          <input
-            type="date"
-            placeholder="Data expirare (opțional)"
-            value={newSolution.expiration_date}
-            onChange={(e) => setNewSolution({ ...newSolution, expiration_date: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Concentrație"
-            value={newSolution.concentration}
-            onChange={(e) => setNewSolution({ ...newSolution, concentration: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder={`Cantitate totală (${newSolution.unit_of_measure})`}
-            value={newSolution.stock}
-            onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
-            required
-          />
-          <input
-            type="text"
-            placeholder={`Cantitate pe metru pătrat (${newSolution.unit_of_measure})`}
-            value={newSolution.quantity_per_sqm}
-            onChange={(e) => setNewSolution({ ...newSolution, quantity_per_sqm: e.target.value })}
-            required
-          />
-          <input
-            type="number"
-            placeholder={`Rezervă minimă (${newSolution.unit_of_measure})`}
-            value={newSolution.minimum_reserve}
-            onChange={(e) => setNewSolution({ ...newSolution, minimum_reserve: e.target.value })}
-            min="0"
-            step="0.01"
-            title="Cantitatea minimă care trebuie să rămână ca rezervă. Soluția se va dezactiva automat când ajunge la această limită."
-          />
-          <select
-            value={newSolution.unit_of_measure}
-            onChange={(e) => setNewSolution({ ...newSolution, unit_of_measure: e.target.value })}
-            required
-          >
-            <option value="ml">Mililitri (ml)</option>
-            <option value="g">Grame (g)</option>
-          </select>
+          <div className="form-group">
+            <label>Nume substanță *</label>
+            <input
+              type="text"
+              placeholder="ex. Spinosad, Neem, etc."
+              value={newSolution.name}
+              onChange={(e) => setNewSolution({ ...newSolution, name: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Aviz/Lot *</label>
+            <input
+              type="text"
+              placeholder="ex. AVIZ-2024-001, LOT-12345"
+              value={newSolution.lot}
+              onChange={(e) => setNewSolution({ ...newSolution, lot: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Furnizor (opțional)</label>
+            <input
+              type="text"
+              placeholder="ex. BASF, Syngenta, etc."
+              value={newSolution.furnizor}
+              onChange={(e) => setNewSolution({ ...newSolution, furnizor: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Număr factură (opțional)</label>
+            <input
+              type="text"
+              placeholder="ex. FAC-2024-001"
+              value={newSolution.numar_factura}
+              onChange={(e) => setNewSolution({ ...newSolution, numar_factura: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Data expirare (opțional)</label>
+            <input
+              type="date"
+              value={newSolution.expiration_date}
+              onChange={(e) => setNewSolution({ ...newSolution, expiration_date: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Concentrație *</label>
+            <input
+              type="text"
+              placeholder="ex. 5%, 10 g/L, etc."
+              value={newSolution.concentration}
+              onChange={(e) => setNewSolution({ ...newSolution, concentration: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Cantitate rămasă ({newSolution.unit_of_measure}) *</label>
+            <input
+              type="text"
+              placeholder="ex. 1000, 500.5, etc."
+              value={newSolution.stock}
+              onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Cantitate pe metru pătrat ({newSolution.unit_of_measure}) *</label>
+            <input
+              type="text"
+              placeholder="ex. 10, 5.5, etc."
+              value={newSolution.quantity_per_sqm}
+              onChange={(e) => setNewSolution({ ...newSolution, quantity_per_sqm: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Rezervă minimă ({newSolution.unit_of_measure})</label>
+            <input
+              type="number"
+              placeholder="ex. 100"
+              value={newSolution.minimum_reserve}
+              onChange={(e) => setNewSolution({ ...newSolution, minimum_reserve: e.target.value })}
+              min="0"
+              step="0.01"
+              title="Cantitatea minimă care trebuie să rămână ca rezervă. Soluția se va dezactiva automat când ajunge la această limită."
+            />
+          </div>
+          <div className="form-group">
+            <label>Unitate de măsură *</label>
+            <select
+              value={newSolution.unit_of_measure}
+              onChange={(e) => setNewSolution({ ...newSolution, unit_of_measure: e.target.value })}
+              required
+            >
+              <option value="ml">Mililitri (ml)</option>
+              <option value="g">Grame (g)</option>
+            </select>
+          </div>
           <button type="submit" disabled={loading}>
             {editingSolution !== null ? 'Actualizează Soluție' : 'Adaugă Soluție'}
           </button>
