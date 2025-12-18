@@ -172,23 +172,13 @@ const SelectOperationStep = () => {
                         updateData.is_active = false;
                     }
 
-                    const { error } = await supabase
-                        .from('solutions')
-                        .update(updateData)
-                        .eq('id', solution.value);
-
-                    if (error) {
-                        throw new Error(`Eroare la actualizarea stocului pentru "${solution.name}": ${error.message}`);
-                    }
-                    
-                    // Notifică utilizatorul dacă soluția a fost dezactivată
+                    // Do NOT update the DB here. Final decrement of stock (and insertion
+                    // of the corresponding `intrari_solutie` ieșiri) must happen exactly
+                    // once in the finalization step (`updateRemainingQuantities`).
+                    // Here we only validate that enough stock exists and warn the user
+                    // if the operation would cause deactivation at finalize time.
                     if (shouldDeactivate) {
-                        console.warn(`⚠️ Soluția "${solution.name}" a fost dezactivată automat deoarece a atins rezerva minimă!`);
-                        alert(
-                            `⚠️ ATENȚIE: Soluția "${solution.name}" a atins rezerva minimă ` +
-                            `(${minimumReserve.toFixed(2)} ${solution.unit_of_measure}) ` +
-                            `și a fost dezactivată automat!`
-                        );
+                        console.warn(`⚠️ Soluția "${solution.name}" va fi dezactivată la finalizare deoarece va atinge rezerva minimă.`);
                     }
                 }
             }

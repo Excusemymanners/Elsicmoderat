@@ -6,7 +6,28 @@ export const updateRemainingQuantities = async (operations) => {
   console.log('updateRemainingQuantities called with operations:', operations);
   try {
     for (const operation of operations) {
-      const { solutionId, quantity, beneficiar, lot, created_at } = operation;
+      const { solutionId, quantity, beneficiar, lot, created_at, numar_ordine } = operation;
+      // If caller provided a process number (`numar_ordine`), skip any exit
+      // that was already recorded for this solution and process to make this
+      // operation idempotent per process.
+      if (numar_ordine) {
+        try {
+          const { data: existing, error: existingErr } = await supabase
+            .from('intrari_solutie')
+            .select('id')
+            .eq('solution_id', solutionId)
+            .eq('numar_ordine', numar_ordine)
+            .eq('tip', 'Ieșire')
+            .limit(1);
+
+          if (!existingErr && existing && existing.length > 0) {
+            console.log(`Skipping duplicate exit: solution ${solutionId} already has an Ieșire for numar_ordine=${numar_ordine}`);
+            continue; // skip this operation
+          }
+        } catch (e) {
+          console.warn('Could not verify existing intrare for idempotency, proceeding:', e);
+        }
+      }
       const { data, error } = await supabase
         .from('solutions')
         .select('remaining_quantity, minimum_reserve, name')
