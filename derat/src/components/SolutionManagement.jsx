@@ -597,7 +597,8 @@ const SolutionManagement = () => {
     const escapeCSV = (value) => {
       if (value === null || value === undefined) return '';
       const s = String(value);
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      // Use semicolon as delimiter for locales like ro-RO (Excel expects ';')
+      if (s.includes(';') || s.includes(',') || s.includes('"') || s.includes('\n')) {
         return `"${s.replace(/"/g, '""')}"`;
       }
       return s;
@@ -682,9 +683,9 @@ const SolutionManagement = () => {
       console.error('Error fetching intrari for single solution:', e);
     }
 
-    const csv = rows.map(r => r.map(escapeCSV).join(',')).join('\n');
+    const csv = rows.map(r => r.map(escapeCSV).join(';')).join('\n');
     const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob([BOM + 'sep=;\n' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -697,7 +698,8 @@ const SolutionManagement = () => {
     const escapeCSV = (value) => {
       if (value === null || value === undefined) return '';
       const s = String(value);
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      // consider semicolon and comma when deciding to quote
+      if (s.includes(';') || s.includes(',') || s.includes('"') || s.includes('\n')) {
         return `"${s.replace(/"/g, '""')}"`;
       }
       return s;
@@ -850,9 +852,9 @@ const SolutionManagement = () => {
       }
     }
 
-  const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)).join('\n');
+  const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(';') : escapeCSV(row)).join('\n');
   const BOM = '\uFEFF';
-  const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob([BOM + 'sep=;\n' + csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -872,7 +874,11 @@ const SolutionManagement = () => {
       // Helper function to escape CSV values
       const escapeCSV = (value) => {
         if (value === null || value === undefined) return '';
-        return `"${value.toString().replace(/"/g, '""')}"`;
+        const s = String(value);
+        if (s.includes(';') || s.includes(',') || s.includes('"') || s.includes('\n')) {
+          return `"${s.replace(/"/g, '""')}"`;
+        }
+        return s;
       };
 
       // Fetch all intrari_solutie records for this solution
@@ -943,9 +949,9 @@ const SolutionManagement = () => {
       });
 
       const allRows = [...infoLines, ...dataRows];
-      const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(',') : escapeCSV(row)).join('\n');
+      const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(';') : escapeCSV(row)).join('\n');
       const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([BOM + 'sep=;\n' + csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
