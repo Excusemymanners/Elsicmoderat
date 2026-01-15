@@ -160,8 +160,7 @@ const SummaryAndSignatureStep = () => {
         });
       });
       // Before generating PDF or sending email, check for duplicate work
-      // (same day, same client location / unitate de lucru). If a duplicate
-      // exists we must abort and not send the email.
+      // (same day, same client ID). If a duplicate exists we must abort and not send the email.
       try {
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
@@ -169,8 +168,8 @@ const SummaryAndSignatureStep = () => {
 
         const { data: existing, error: existingErr } = await supabase
           .from('lucrari')
-          .select('id, created_at, client_location, client_name')
-          .eq('client_location', finalData.customer.location)
+          .select('id, created_at, customer_id, client_name')
+          .eq('customer_id', finalData.customer.id)
           .gte('created_at', startOfDay)
           .lte('created_at', endOfDay)
           .limit(1);
@@ -180,8 +179,8 @@ const SummaryAndSignatureStep = () => {
         }
 
         if (existing && existing.length > 0) {
-          console.warn('Duplicate work detected for this unit today, aborting before sending email:', existing[0]);
-          alert('Există deja o lucrare înregistrată astăzi pentru aceeași unitate de lucru. Emailul nu va fi trimis.');
+          console.warn('Duplicate work detected for this client today, aborting before sending email:', existing[0]);
+          alert('Există deja o lucrare înregistrată astăzi pentru acest client. Emailul nu va fi trimis.');
           isSubmittingRef.current = false;
           setIsFinalizeDisabled(false);
           return; // abort finalize: do not generate PDF or send email
