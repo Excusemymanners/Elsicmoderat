@@ -196,7 +196,10 @@ const SolutionManagement = () => {
     remaining_quantity: '',
     quantity_per_sqm: '',
     unit_of_measure: 'ml',
-    minimum_reserve: ''
+    minimum_reserve: '',
+    // When editing an existing solution, decide whether `stock` input
+    // should replace current remaining stock ('set') or add to it ('add')
+    adjustmentType: 'set'
   });
   const [editingSolution, setEditingSolution] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1176,6 +1179,17 @@ const SolutionManagement = () => {
               onChange={(e) => setNewSolution({ ...newSolution, stock: e.target.value })}
               required
             />
+          </div>
+          <div className="form-group">
+            <label>Tip actualizare</label>
+            <select
+              value={newSolution.adjustmentType}
+              onChange={(e) => setNewSolution({ ...newSolution, adjustmentType: e.target.value })}
+            >
+              <option value="set">Setează cantitate (înlocuiește stocul)</option>
+              <option value="add">Adaugă la cantitate (crește stocul)</option>
+            </select>
+            <small>La edit: alege dacă valoarea introdusă în "Cantitate rămasă" înlocuiește stocul sau reprezintă o cantitate adăugată.</small>
           </div>
           <div className="form-group">
             <label>Cantitate pe metru pătrat ({newSolution.unit_of_measure}) *</label>
