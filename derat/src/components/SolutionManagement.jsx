@@ -350,11 +350,24 @@ const SolutionManagement = () => {
         // update existing
         const { data: prevData } = await supabase
           .from('solutions')
-          .select('total_quantity, total_intrari')
+          .select('total_quantity, total_intrari, remaining_quantity')
           .eq('id', editingSolution)
           .single();
         const previousStock = prevData ? parseFloat(prevData.total_quantity || 0) : 0;
         const previousIntrari = prevData ? parseFloat(prevData.total_intrari || 0) : 0;
+        const previousRemainingQty = prevData ? parseFloat(prevData.remaining_quantity || 0) : 0;
+
+        // Calculăm diferența între stocul nou și cel vechi
+        const stockDifference = stock - previousStock;
+        
+        // Actualizăm remaining_quantity adăugând diferența la stocul rămas actual
+        const newRemainingQty = previousRemainingQty + stockDifference;
+        
+        // Actualizăm solutionToSave cu valorile corecte
+        solutionToSave.total_quantity = stock;
+        solutionToSave.remaining_quantity = Math.max(0, newRemainingQty);
+        // initial_stock rămâne neschimbat la editare - nu îl suprascriu
+        delete solutionToSave.initial_stock;
 
         const updateRes = await supabase
           .from('solutions')
@@ -366,15 +379,15 @@ const SolutionManagement = () => {
           alert('Eroare la actualizarea soluției: ' + (updateRes.error.message || updateRes.error));
         }
 
-        if (stock > previousStock) {
-          const intrareAmount = stock - previousStock;
+        if (stockDifference > 0) {
+          const intrareAmount = stockDifference;
           const createdAt = new Date().toISOString();
           // Insert intrare record including post/edit stock (post_stock) and tip
           const intrarePayload = {
             solution_id: editingSolution,
             quantity: intrareAmount,
-            previous_stock: previousStock,
-            post_stock: stock,
+            previous_stock: previousRemainingQty,
+            post_stock: newRemainingQty,
             tip: 'Intrare',
             lot: newSolution.lot || null,
             furnizor: newSolution.furnizor || null,
