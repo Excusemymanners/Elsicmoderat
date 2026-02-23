@@ -161,21 +161,86 @@ tbody tr:hover {
       width: 100%;
   }
 
-  th, td {
-      padding: 0.75rem;
-      font-size: 0.9rem;
-  }
-
   .search-container input {
       font-size: 16px;
       padding: 0.875rem;
   }
 
-  .select-button {
-      padding: 0.5rem 1rem;
-      min-width: 80px;
-      font-size: 0.9rem;
+  /* Ascunde tabelul pe mobile */
+  .desktop-table {
+    display: none;
   }
+
+  /* Arată cardurile pe mobile */
+  .mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  /* Ascunde cardurile pe desktop */
+  .mobile-cards {
+    display: none;
+  }
+}
+
+/* Stiluri carduri mobile */
+.client-card {
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(100, 108, 255, 0.15);
+  touch-action: manipulation;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  position: relative;
+}
+
+.client-card:active {
+  background: #f0f4ff;
+  border-color: #646cff;
+}
+
+.client-card--selected {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.client-card__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.4rem;
+}
+
+.client-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.client-card__badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: #22c55e;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+/* Selected row highlight pentru desktop */
+.selected-row {
+  background-color: #f0fdf4 !important;
 }
 
 /* Custom scrollbar */

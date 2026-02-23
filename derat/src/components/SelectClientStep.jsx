@@ -75,37 +75,66 @@ const SelectClientStep = () => {
         {loading ? (
           <p>Se încarcă...</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Nume</th>
-                <th>Email</th>
-                <th>Telefon</th>
-                <th>Numar Contract</th>
-                <th>Punct de lucru</th>
-                <th>Acțiune</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCustomers.map(customer => (
-                <tr key={customer.id}>
-                  <td>{customer.name}</td>
-                  <td>{customer.email}</td>
-                  <td>{customer.phone}</td>
-                  <td>{customer.contract_number}</td>
-                  <td>{customer.location}</td>
-                  <td>
-                    <button 
-                      onClick={() => handleSelectCustomer(customer)}
-                      className={selectedCustomer.id === customer.id ? 'selected-button' : ''}
-                    >
-                      {selectedCustomer.id === customer.id ? 'Selectat' : 'Selectează'}
-                    </button>
-                  </td>
+          <>
+            {/* Tabel desktop */}
+            <table className="desktop-table">
+              <thead>
+                <tr>
+                  <th>Nume</th>
+                  <th>Email</th>
+                  <th>Telefon</th>
+                  <th>Numar Contract</th>
+                  <th>Punct de lucru</th>
+                  <th>Acțiune</th>
                 </tr>
+              </thead>
+              <tbody>
+                {filteredCustomers.map(customer => (
+                  <tr
+                    key={customer.id}
+                    onClick={() => handleSelectCustomer(customer)}
+                    className={selectedCustomer.id === customer.id ? 'selected-row' : ''}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td>{customer.name}</td>
+                    <td>{customer.email}</td>
+                    <td>{customer.phone}</td>
+                    <td>{customer.contract_number}</td>
+                    <td>{customer.location}</td>
+                    <td>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleSelectCustomer(customer); }}
+                        className={selectedCustomer.id === customer.id ? 'selected-button' : 'select-button'}
+                      >
+                        {selectedCustomer.id === customer.id ? 'Selectat ✓' : 'Selectează'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Carduri mobile */}
+            <div className="mobile-cards">
+              {filteredCustomers.map(customer => (
+                <div
+                  key={customer.id}
+                  className={`client-card${selectedCustomer.id === customer.id ? ' client-card--selected' : ''}`}
+                  onClick={() => handleSelectCustomer(customer)}
+                >
+                  <div className="client-card__name">{customer.name}</div>
+                  <div className="client-card__details">
+                    <span>📍 {customer.location}</span>
+                    <span>📄 {customer.contract_number}</span>
+                    <span>📞 {customer.phone}</span>
+                  </div>
+                  {selectedCustomer.id === customer.id && (
+                    <div className="client-card__badge">✓ Selectat</div>
+                  )}
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
       <div className="navigation-buttons" ref={navigationButtonsRef}>
