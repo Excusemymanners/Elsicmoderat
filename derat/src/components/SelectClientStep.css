@@ -48,21 +48,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
-table {
+.customers-list table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   min-width: 900px;
 }
 
-th, td {
+.customers-list th,
+.customers-list td {
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #e2e8f0;
   font-size: 0.95rem;
 }
 
-th {
+.customers-list th {
   background-color: #f8fafc;
   font-weight: 600;
   color: #4a5568;
@@ -74,7 +75,7 @@ th {
   letter-spacing: 0.05em;
 }
 
-tbody tr:hover {
+.customers-list tbody tr:hover {
   background-color: #f7fafc;
 }
 
@@ -170,7 +171,8 @@ tbody tr:hover {
       width: 100%;
   }
 
-  th, td {
+  .customers-list th,
+  .customers-list td {
       padding: 0.75rem;
       font-size: 0.9rem;
   }
