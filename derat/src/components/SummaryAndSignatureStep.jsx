@@ -22,6 +22,8 @@ const SummaryAndSignatureStep = () => {
 
   // Ref to avoid duplicate submissions (prevents double-click race conditions)
   const isSubmittingRef = useRef(false);
+  // Ref to track whether the verbal process was already inserted into DB
+  const isInsertedRef = useRef(false);
   const [custodyItems, setCustodyItems] = useState({
     ultrasuneteRozatoare: 0,
     ultrasunetePasari: 0,
@@ -99,6 +101,7 @@ const SummaryAndSignatureStep = () => {
 
   const verbalProcess = {
         numar_ordine: receptionNumber,
+        customer_id: finalData.customer.id,
         client_name: finalData.customer.name,
         client_contract: finalData.customer.contract_number,
         client_location: finalData.customer.location,
@@ -234,6 +237,7 @@ const SummaryAndSignatureStep = () => {
 
       // Persist verbal process now that email was sent and no duplicates detected
       await addVerbalProcess(verbalProcess);
+      isInsertedRef.current = true; // Mark as inserted — prevents re-enabling button on subsequent errors
 
       // increment reception number now that PDF was generated/sent and verbalProcess created
       await incrementReceptionNumber();
@@ -362,9 +366,14 @@ const SummaryAndSignatureStep = () => {
       }, 3000);
     } catch (error) {
       console.error('Error in handleFinish:', error);
-      alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
-      isSubmittingRef.current = false;
-      setIsFinalizeDisabled(false); // Re-enable finalize button if there is an error
+      if (isInsertedRef.current) {
+        // Verbal process already inserted — do NOT re-enable the button to prevent duplicate submissions
+        alert('Procesul verbal a fost trimis, dar a apărut o eroare la actualizarea stocurilor. Vă rugăm să verificați stocurile manual.');
+      } else {
+        alert('A apărut o eroare la finalizarea procesului. Vă rugăm să încercați din nou.');
+        isSubmittingRef.current = false;
+        setIsFinalizeDisabled(false); // Re-enable finalize button only if nothing was yet inserted
+      }
     }
   };
 
