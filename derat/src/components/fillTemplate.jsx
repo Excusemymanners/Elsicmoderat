@@ -70,7 +70,7 @@ export const fillTemplate = async (templateUrl, request) => {
       hour12: false
     });
 
-    drawText(`${request.receptionNumber}`, 620, height - 112);
+    drawText(`${request.receptionNumber}`, 680, height - 112);
     drawText(`${formattedDate}`, 400, height - 135);
     drawText(`${formattedTime}`, 475, height - 135);
     drawText(`${request.client.name}`, 160, height - 180);
