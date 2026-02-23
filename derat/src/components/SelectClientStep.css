@@ -9,6 +9,7 @@
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   box-sizing: border-box;
   width: 100%;
+  overflow: hidden;
 }
 
 .sc-title {
@@ -79,17 +80,17 @@
   font-weight: 600;
   font-size: 0.95rem;
   color: #1a1a1a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .sc-item__detail {
   font-size: 0.8rem;
   color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .sc-item__btn {
