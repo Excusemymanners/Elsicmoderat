@@ -194,52 +194,55 @@
 /* Stiluri carduri mobile */
 .client-card {
   background: #fff;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: rgba(100, 108, 255, 0.15);
-  touch-action: manipulation;
-  transition: border-color 0.2s ease, background 0.2s ease;
-  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.9rem 1rem 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-.client-card:active {
-  background: #f0f4ff;
-  border-color: #646cff;
-}
-
-.client-card--selected {
-  border-color: #22c55e;
-  background: #f0fdf4;
-}
-
-.client-card__name {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 0.4rem;
-}
-
-.client-card__details {
+.client-card__row {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.9rem;
-  color: #475569;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
-.client-card__badge {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  background: #22c55e;
-  color: white;
-  font-size: 0.8rem;
+.client-card__row:last-of-type {
+  border-bottom: none;
+}
+
+.client-card__label {
+  color: #64748b;
   font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 20px;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.client-card__value {
+  color: #1a1a1a;
+  word-break: break-word;
+}
+
+.client-card__btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #646cff;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.client-card__btn--selected {
+  background-color: #22c55e;
 }
 
 /* Selected row highlight pentru desktop */

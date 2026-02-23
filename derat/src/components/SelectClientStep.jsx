@@ -119,18 +119,19 @@ const SelectClientStep = () => {
               {filteredCustomers.map(customer => (
                 <div
                   key={customer.id}
-                  className={`client-card${selectedCustomer.id === customer.id ? ' client-card--selected' : ''}`}
-                  onClick={() => handleSelectCustomer(customer)}
+                  className="client-card"
                 >
-                  <div className="client-card__name">{customer.name}</div>
-                  <div className="client-card__details">
-                    <span>📍 {customer.location}</span>
-                    <span>📄 {customer.contract_number}</span>
-                    <span>📞 {customer.phone}</span>
-                  </div>
-                  {selectedCustomer.id === customer.id && (
-                    <div className="client-card__badge">✓ Selectat</div>
-                  )}
+                  <div className="client-card__row"><span className="client-card__label">Nume:</span><span className="client-card__value">{customer.name}</span></div>
+                  <div className="client-card__row"><span className="client-card__label">Punct de lucru:</span><span className="client-card__value">{customer.location}</span></div>
+                  <div className="client-card__row"><span className="client-card__label">Contract:</span><span className="client-card__value">{customer.contract_number}</span></div>
+                  <div className="client-card__row"><span className="client-card__label">Telefon:</span><span className="client-card__value">{customer.phone}</span></div>
+                  <div className="client-card__row"><span className="client-card__label">Email:</span><span className="client-card__value">{customer.email}</span></div>
+                  <button
+                    className={selectedCustomer.id === customer.id ? 'client-card__btn client-card__btn--selected' : 'client-card__btn'}
+                    onClick={() => handleSelectCustomer(customer)}
+                  >
+                    {selectedCustomer.id === customer.id ? '\u2713 Selectat' : 'Selecteaz\u0103'}
+                  </button>
                 </div>
               ))}
             </div>
