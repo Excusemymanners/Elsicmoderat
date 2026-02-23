@@ -1,10 +1,13 @@
 .customer-management {
   padding: 2rem;
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .customer-management h2 {
@@ -40,6 +43,9 @@
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
+  /* Izoleaza scroll-ul tabelului in container, nu permite paginii sa se largeasca */
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -80,9 +86,10 @@ tbody tr:hover {
   padding: 0.6em 1.2em;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
   font-weight: 500;
-  min-width: 100px;
+  width: 110px; /* latime fixa ca schimbarea textului sa nu cauzeze reflow */
+  white-space: nowrap;
 }
 
 .select-button:hover:not(.selected-button) {
@@ -94,6 +101,8 @@ tbody tr:hover {
   background-color: #22c55e !important;
   color: white !important;
   cursor: default;
+  width: 110px;
+  white-space: nowrap;
 }
 
 .navigation-buttons {
