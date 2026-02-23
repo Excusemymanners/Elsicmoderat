@@ -75,67 +75,37 @@ const SelectClientStep = () => {
         {loading ? (
           <p>Se încarcă...</p>
         ) : (
-          <>
-            {/* Tabel desktop */}
-            <table className="desktop-table">
-              <thead>
-                <tr>
-                  <th>Nume</th>
-                  <th>Email</th>
-                  <th>Telefon</th>
-                  <th>Numar Contract</th>
-                  <th>Punct de lucru</th>
-                  <th>Acțiune</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCustomers.map(customer => (
-                  <tr
-                    key={customer.id}
-                    onClick={() => handleSelectCustomer(customer)}
-                    className={selectedCustomer.id === customer.id ? 'selected-row' : ''}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <td>{customer.name}</td>
-                    <td>{customer.email}</td>
-                    <td>{customer.phone}</td>
-                    <td>{customer.contract_number}</td>
-                    <td>{customer.location}</td>
-                    <td>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleSelectCustomer(customer); }}
-                        className={selectedCustomer.id === customer.id ? 'selected-button' : 'select-button'}
-                      >
-                        {selectedCustomer.id === customer.id ? 'Selectat ✓' : 'Selectează'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Carduri mobile */}
-            <div className="mobile-cards">
+          <table>
+            <thead>
+              <tr>
+                <th>Nume</th>
+                <th>Email</th>
+                <th>Telefon</th>
+                <th>Numar Contract</th>
+                <th>Punct de lucru</th>
+                <th>Acțiune</th>
+              </tr>
+            </thead>
+            <tbody>
               {filteredCustomers.map(customer => (
-                <div
-                  key={customer.id}
-                  className="client-card"
-                >
-                  <div className="client-card__row"><span className="client-card__label">Nume:</span><span className="client-card__value">{customer.name}</span></div>
-                  <div className="client-card__row"><span className="client-card__label">Punct de lucru:</span><span className="client-card__value">{customer.location}</span></div>
-                  <div className="client-card__row"><span className="client-card__label">Contract:</span><span className="client-card__value">{customer.contract_number}</span></div>
-                  <div className="client-card__row"><span className="client-card__label">Telefon:</span><span className="client-card__value">{customer.phone}</span></div>
-                  <div className="client-card__row"><span className="client-card__label">Email:</span><span className="client-card__value">{customer.email}</span></div>
-                  <button
-                    className={selectedCustomer.id === customer.id ? 'client-card__btn client-card__btn--selected' : 'client-card__btn'}
-                    onClick={() => handleSelectCustomer(customer)}
-                  >
-                    {selectedCustomer.id === customer.id ? '\u2713 Selectat' : 'Selecteaz\u0103'}
-                  </button>
-                </div>
+                <tr key={customer.id}>
+                  <td>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  <td>{customer.phone}</td>
+                  <td>{customer.contract_number}</td>
+                  <td>{customer.location}</td>
+                  <td>
+                    <button
+                      onClick={() => handleSelectCustomer(customer)}
+                      className={selectedCustomer.id === customer.id ? 'selected-button' : 'select-button'}
+                    >
+                      {selectedCustomer.id === customer.id ? 'Selectat' : 'Selectează'}
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </>
+            </tbody>
+          </table>
         )}
       </div>
       <div className="navigation-buttons" ref={navigationButtonsRef}>

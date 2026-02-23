@@ -42,26 +42,21 @@
   overflow-x: auto;
 }
 
-/* Ascunde cardurile by default (desktop-first) */
-.mobile-cards {
-  display: none;
-}
-
-.customers-list .desktop-table {
+table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  min-width: 900px;
 }
 
-.customers-list .desktop-table th,
-.customers-list .desktop-table td {
+th, td {
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #e2e8f0;
   font-size: 0.95rem;
 }
 
-.customers-list .desktop-table th {
+th {
   background-color: #f8fafc;
   font-weight: 600;
   color: #4a5568;
@@ -73,7 +68,7 @@
   letter-spacing: 0.05em;
 }
 
-.customers-list .desktop-table tbody tr:hover {
+tbody tr:hover {
   background-color: #f7fafc;
 }
 
@@ -166,88 +161,21 @@
       width: 100%;
   }
 
+  th, td {
+      padding: 0.75rem;
+      font-size: 0.9rem;
+  }
+
   .search-container input {
       font-size: 16px;
       padding: 0.875rem;
   }
 
-  /* Ascunde tabelul pe mobile */
-  .desktop-table {
-    display: none !important;
+  .select-button {
+      padding: 0.5rem 1rem;
+      min-width: 80px;
+      font-size: 0.9rem;
   }
-
-  /* Arată cardurile pe mobile */
-  .mobile-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.5rem;
-  }
-}
-
-@media screen and (min-width: 769px) {
-  .mobile-cards {
-    display: none !important;
-  }
-}
-
-/* Stiluri carduri mobile */
-.client-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 0.9rem 1rem 0.75rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-
-.client-card__row {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.client-card__row:last-of-type {
-  border-bottom: none;
-}
-
-.client-card__label {
-  color: #64748b;
-  font-weight: 600;
-  min-width: 110px;
-  flex-shrink: 0;
-}
-
-.client-card__value {
-  color: #1a1a1a;
-  word-break: break-word;
-}
-
-.client-card__btn {
-  display: block;
-  width: 100%;
-  margin-top: 0.75rem;
-  padding: 0.7rem;
-  border: none;
-  border-radius: 8px;
-  background-color: #646cff;
-  color: white;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.client-card__btn--selected {
-  background-color: #22c55e;
-}
-
-/* Selected row highlight pentru desktop */
-.selected-row {
-  background-color: #f0fdf4 !important;
 }
 
 /* Custom scrollbar */
