@@ -1,16 +1,17 @@
-.customer-management {
-  padding: 2rem;
+/* ===================== SELECT CLIENT STEP ===================== */
+
+.sc-wrapper {
+  padding: 1.5rem;
   max-width: 1200px;
-  width: 100%;
   margin: 0 auto;
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   box-sizing: border-box;
+  width: 100%;
 }
 
-.customer-management h2 {
+.sc-title {
   color: #1a1a1a;
   text-align: center;
   margin-bottom: 1.5rem;
@@ -18,52 +19,122 @@
   font-weight: 600;
 }
 
-.search-container {
-  margin-bottom: 1.5rem;
-}
-
-.search-container input {
+.sc-search input {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 1rem;
   background-color: #f8fafc;
-  transition: all 0.3s ease;
+  box-sizing: border-box;
+  margin-bottom: 1.25rem;
 }
 
-.search-container input:focus {
+.sc-search input:focus {
   outline: none;
   border-color: #646cff;
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(100,108,255,0.1);
 }
 
-.customers-list {
-  background-color: #ffffff;
+.sc-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+/* ---- MOBILE LIST ---- */
+.sc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
-  /* Izoleaza scroll-ul tabelului in container, nu permite paginii sa se largeasca */
-  max-width: 100%;
-  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  box-sizing: border-box;
+  width: 100%;
 }
 
-.customers-list table {
+.sc-item--selected {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.sc-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+  margin-right: 0.75rem;
+}
+
+.sc-item__name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-item__detail {
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-item__btn {
+  flex-shrink: 0;
+  width: 64px;
+  padding: 0.5rem 0;
+  border: none;
+  border-radius: 8px;
+  background-color: #646cff;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  text-align: center;
+}
+
+.sc-item__btn--selected {
+  background-color: #22c55e;
+}
+
+/* ---- DESKTOP TABLE ---- */
+.sc-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.sc-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   min-width: 900px;
 }
 
-.customers-list th,
-.customers-list td {
+.sc-table th,
+.sc-table td {
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #e2e8f0;
   font-size: 0.95rem;
 }
 
-.customers-list th {
+.sc-table th {
   background-color: #f8fafc;
   font-weight: 600;
   color: #4a5568;
@@ -75,174 +146,100 @@
   letter-spacing: 0.05em;
 }
 
-.customers-list tbody tr:hover {
+.sc-table tbody tr:hover {
   background-color: #f7fafc;
 }
 
-/* Stiluri pentru butonul de select */
-.select-button {
+.sc-row--selected {
+  background-color: #f0fdf4 !important;
+}
+
+.sc-btn {
   background-color: #646cff;
   color: white;
   border: none;
   padding: 0.6em 1.2em;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
   font-weight: 500;
-  width: 110px; /* latime fixa ca schimbarea textului sa nu cauzeze reflow */
-  white-space: nowrap;
-}
-
-.select-button:hover:not(.selected-button) {
-  background-color: #535bf2;
-  transform: translateY(-1px);
-}
-
-.selected-button {
-  background-color: #22c55e !important;
-  color: white !important;
-  cursor: default;
   width: 110px;
   white-space: nowrap;
 }
 
-.navigation-buttons {
+.sc-btn:hover {
+  background-color: #535bf2;
+}
+
+.sc-btn--selected {
+  background-color: #22c55e;
+  color: white;
+  border: none;
+  padding: 0.6em 1.2em;
+  border-radius: 6px;
+  font-weight: 500;
+  width: 110px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* ---- NAVIGATION ---- */
+.sc-nav {
   display: flex;
   justify-content: space-between;
   margin-top: 2rem;
   gap: 1rem;
 }
 
-.navigation-buttons button {
+.sc-nav button {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
   min-width: 120px;
   font-weight: 500;
 }
 
-.navigation-buttons button:first-child {
+.sc-nav button:first-child {
   background-color: #f1f5f9;
   color: #475569;
 }
 
-.navigation-buttons button:first-child:hover {
-  background-color: #e2e8f0;
-}
-
-.navigation-buttons button:last-child {
+.sc-nav button:last-child {
   background-color: #646cff;
   color: white;
 }
 
-.navigation-buttons button:last-child:hover:not(:disabled) {
+.sc-nav button:last-child:hover:not(:disabled) {
   background-color: #535bf2;
-  transform: translateY(-1px);
 }
 
-.navigation-buttons button:disabled {
+.sc-nav button:disabled {
   background-color: #e2e8f0;
   color: #94a3b8;
   cursor: not-allowed;
 }
 
-/* Loading state */
-.customers-list p {
-  text-align: center;
-  padding: 2rem;
-  color: #64748b;
-}
-
-/* Responsive design */
 @media screen and (max-width: 768px) {
-  .customer-management {
-      padding: 0.75rem;
-      margin: 0.25rem;
+  .sc-wrapper {
+    padding: 0.75rem;
+    margin: 0.25rem;
   }
 
-  .navigation-buttons {
-      flex-direction: column;
+  .sc-title {
+    font-size: 1.4rem;
   }
 
-  .navigation-buttons button {
-      width: 100%;
+  .sc-search input {
+    font-size: 16px;
   }
 
-  .search-container input {
-      font-size: 16px;
-      padding: 0.875rem;
+  .sc-nav {
+    flex-direction: column;
   }
 
-  /* Pe mobile: elimina min-width si ascunde coloanele Email, Telefon, Numar Contract */
-  .customers-list table {
-      min-width: unset;
-      width: 100%;
-      table-layout: fixed;
+  .sc-nav button {
+    width: 100%;
+    min-width: unset;
   }
-
-  /* Ascunde Email (col 2), Telefon (col 3), Numar Contract (col 4) */
-  .customers-list th:nth-child(2),
-  .customers-list td:nth-child(2),
-  .customers-list th:nth-child(3),
-  .customers-list td:nth-child(3),
-  .customers-list th:nth-child(4),
-  .customers-list td:nth-child(4) {
-      display: none;
-  }
-
-  .customers-list th,
-  .customers-list td {
-      padding: 0.6rem 0.4rem;
-      font-size: 0.82rem;
-      word-break: break-word;
-  }
-
-  /* Nume (col 1) si Punct de lucru (col 5) iau mai mult spatiu */
-  .customers-list th:nth-child(1),
-  .customers-list td:nth-child(1) {
-      width: 40%;
-  }
-
-  .customers-list th:nth-child(5),
-  .customers-list td:nth-child(5) {
-      width: 35%;
-  }
-
-  /* Buton Selecteaza (col 6) */
-  .customers-list th:nth-child(6),
-  .customers-list td:nth-child(6) {
-      width: 25%;
-  }
-
-  .select-button,
-  .selected-button {
-      width: 100% !important;
-      padding: 0.5rem 0.25rem;
-      font-size: 0.8rem;
-      white-space: normal;
-      word-break: break-word;
-  }
-}
-
-/* Custom scrollbar */
-.customers-list::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.customers-list::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.customers-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.customers-list::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
