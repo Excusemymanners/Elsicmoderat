@@ -345,6 +345,8 @@ const SolutionManagement = () => {
       // Do not persist invoice number as a column on `solutions` table
       // (it belongs to `intrari_solutie`). Remove if present to avoid 400 errors.
       if (solutionToSave.numar_factura !== undefined) delete solutionToSave.numar_factura;
+      // adjustmentType is UI-only, not a DB column
+      if (solutionToSave.adjustmentType !== undefined) delete solutionToSave.adjustmentType;
 
       if (editingSolution) {
         // update existing
@@ -357,14 +359,25 @@ const SolutionManagement = () => {
         const previousIntrari = prevData ? parseFloat(prevData.total_intrari || 0) : 0;
         const previousRemainingQty = prevData ? parseFloat(prevData.remaining_quantity || 0) : 0;
 
-        // Calculăm diferența între stocul nou și cel vechi
-        const stockDifference = stock - previousStock;
+        // Respectăm alegerea utilizatorului pentru tipul de actualizare
+        let newRemainingQty;
+        let stockDifference;
         
-        // Actualizăm remaining_quantity adăugând diferența la stocul rămas actual
-        const newRemainingQty = previousRemainingQty + stockDifference;
+        if (newSolution.adjustmentType === 'add') {
+          // Adăugare: cantitatea introdusă se adaugă la stocul actual
+          newRemainingQty = previousRemainingQty + stock;
+          stockDifference = stock;
+          // Actualizăm și total_quantity când adăugăm
+          solutionToSave.total_quantity = previousStock + stock;
+        } else {
+          // Setare (implicit): cantitatea introdusă înlocuiește stocul actual
+          newRemainingQty = stock;
+          stockDifference = stock - previousRemainingQty;
+          // La setare, total_quantity devine valoarea nouă
+          solutionToSave.total_quantity = stock;
+        }
         
         // Actualizăm solutionToSave cu valorile corecte
-        solutionToSave.total_quantity = stock;
         solutionToSave.remaining_quantity = Math.max(0, newRemainingQty);
         // initial_stock rămâne neschimbat la editare - nu îl suprascriu
         delete solutionToSave.initial_stock;
@@ -1024,7 +1037,8 @@ const SolutionManagement = () => {
       remaining_quantity: solution.remaining_quantity || '',
       quantity_per_sqm: solution.quantity_per_sqm ? String(solution.quantity_per_sqm) : '',
       unit_of_measure: solution.unit_of_measure || 'ml',
-      minimum_reserve: solution.minimum_reserve ? String(solution.minimum_reserve) : ''
+      minimum_reserve: solution.minimum_reserve ? String(solution.minimum_reserve) : '',
+      adjustmentType: 'set'
     });
     setShowForm(true);
   };
