@@ -15,6 +15,7 @@ const SelectOperationStep = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [customerJobs, setCustomerJobs] = useState([]);
     const [stockErrors, setStockErrors] = useState([]);
+    const [stockWarnings, setStockWarnings] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -224,6 +225,7 @@ const SelectOperationStep = () => {
 
     useEffect(() => {
         const errors = [];
+        const warnings = [];
         for (const operation of selectedOperations) {
             const operationSolutions = selectedSolutions[operation] || [];
             
@@ -249,13 +251,14 @@ const SelectOperationStep = () => {
                 // Avertisment dacă folosirea ar lăsa foarte puțin stoc disponibil
                 const remainingAfterUse = availableQuantity - quantityUsed;
                 if (remainingAfterUse > STOCK_EPSILON && remainingAfterUse < availableQuantity * 0.2) {
-                    errors.push(
+                    warnings.push(
                         `⚡ Atenție: După utilizare, "${solution.name}" va avea doar ${remainingAfterUse.toFixed(2)} ${solution.unit_of_measure} disponibili.`
                     );
                 }
             }
         }
         setStockErrors(errors);
+        setStockWarnings(warnings);
     }, [selectedOperations, selectedSolutions, customerJobs]);
 
     return (
@@ -324,6 +327,14 @@ const SelectOperationStep = () => {
                 <div className="stock-errors">
                     {stockErrors.map((error, index) => (
                         <p key={index}>{error}</p>
+                    ))}
+                </div>
+            )}
+
+            {stockWarnings.length > 0 && (
+                <div className="stock-errors">
+                    {stockWarnings.map((warning, index) => (
+                        <p key={index}>{warning}</p>
                     ))}
                 </div>
             )}
