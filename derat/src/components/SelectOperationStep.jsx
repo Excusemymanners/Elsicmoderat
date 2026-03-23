@@ -6,6 +6,7 @@ import supabase from '../../supabaseClient';
 import './SelectOperationStep.css';
 
 const SelectOperationStep = () => {
+    const STOCK_EPSILON = 1e-6;
     const { formData, updateFormData } = useEmployeeForm();
     const [selectedOperations, setSelectedOperations] = useState(formData.operations || []);
     const [selectedSolutions, setSelectedSolutions] = useState(formData.solutions || {});
@@ -36,14 +37,14 @@ const SelectOperationStep = () => {
                     const isActive = solution.is_active !== false; // Default true dacă nu există câmpul
                     const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
                     const minimumReserve = solution.minimum_reserve || 0;
-                    const hasAvailableStock = remainingQuantity > minimumReserve;
+                    const hasAvailableStock = (remainingQuantity - minimumReserve) > STOCK_EPSILON;
                     
                     return isActive && hasAvailableStock;
                 })
                 .map(solution => {
                     const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
                     const minimumReserve = solution.minimum_reserve || 0;
-                    const availableQuantity = remainingQuantity - minimumReserve;
+                    const availableQuantity = Math.max(0, remainingQuantity - minimumReserve);
                     
                     return {
                         value: solution.id,
@@ -144,10 +145,10 @@ const SelectOperationStep = () => {
                     
                     const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
                     const minimumReserve = solution.minimum_reserve || 0;
-                    const availableQuantity = remainingQuantity - minimumReserve;
+                    const availableQuantity = Math.max(0, remainingQuantity - minimumReserve);
                     
                     // Verifică dacă există suficient stoc disponibil (peste rezerva minimă)
-                    if (availableQuantity < quantityUsed) {
+                    if ((quantityUsed - availableQuantity) > STOCK_EPSILON) {
                         throw new Error(
                             `Stoc insuficient pentru "${solution.name}". ` +
                             `Necesită ${quantityUsed.toFixed(2)} ${solution.unit_of_measure}, ` +
@@ -233,10 +234,10 @@ const SelectOperationStep = () => {
                 
                 const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
                 const minimumReserve = solution.minimum_reserve || 0;
-                const availableQuantity = remainingQuantity - minimumReserve;
+                const availableQuantity = Math.max(0, remainingQuantity - minimumReserve);
                 
                 // Verifică dacă cantitatea necesară depășește cantitatea disponibilă (peste rezerva minimă)
-                if (availableQuantity < quantityUsed) {
+                if ((quantityUsed - availableQuantity) > STOCK_EPSILON) {
                     errors.push(
                         `⚠️ Stoc insuficient pentru "${solution.name}": ` +
                         `Necesită ${quantityUsed.toFixed(2)} ${solution.unit_of_measure}, ` +
@@ -247,7 +248,7 @@ const SelectOperationStep = () => {
                 
                 // Avertisment dacă folosirea ar lăsa foarte puțin stoc disponibil
                 const remainingAfterUse = availableQuantity - quantityUsed;
-                if (remainingAfterUse > 0 && remainingAfterUse < availableQuantity * 0.2) {
+                if (remainingAfterUse > STOCK_EPSILON && remainingAfterUse < availableQuantity * 0.2) {
                     errors.push(
                         `⚡ Atenție: După utilizare, "${solution.name}" va avea doar ${remainingAfterUse.toFixed(2)} ${solution.unit_of_measure} disponibili.`
                     );
