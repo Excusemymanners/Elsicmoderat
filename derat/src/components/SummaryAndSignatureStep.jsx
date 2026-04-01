@@ -207,7 +207,7 @@ const SummaryAndSignatureStep = () => {
 
       // Send email
       try {
-        const response = await fetch('/derat/api/send-email.js', {
+        const response = await fetch('/api/send-email.js', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -236,7 +236,10 @@ const SummaryAndSignatureStep = () => {
       }
 
       // Persist verbal process now that email was sent and no duplicates detected
-      await addVerbalProcess(verbalProcess);
+      const { error: addVerbalProcessError } = await addVerbalProcess(verbalProcess);
+      if (addVerbalProcessError) {
+        throw new Error(`Nu s-a putut salva lucrarea: ${addVerbalProcessError.message || addVerbalProcessError}`);
+      }
       isInsertedRef.current = true; // Mark as inserted — prevents re-enabling button on subsequent errors
 
       // increment reception number now that PDF was generated/sent and verbalProcess created
@@ -469,7 +472,7 @@ const SummaryAndSignatureStep = () => {
   let customerEmail = data.customer.email;
 
     try {
-      const response = await fetch('/derat/api/send-email.js', {
+      const response = await fetch('/api/send-email.js', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
