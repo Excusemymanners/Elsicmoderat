@@ -148,7 +148,7 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
 
-    drawText(`${request.observations}`, 190, 160);
+    drawText(`${request.observations}`, 190, 1500); // Adjusted Y position for observations
     console.log(request.observations);
 
     // Draw custody items if their values are greater than 0
@@ -165,12 +165,12 @@ export const fillTemplate = async (templateUrl, request) => {
       if (item.value > 0) {
         const statusText = item.status === 'inlocuit' ? 'Înlocuit' : 'Predat';
         drawText(`${item.label}: ${item.value} (${statusText})`, xOffset, height - 387);
-        xOffset = xOffset + 270;
+        xOffset = xOffset + 275;
       }
     });
 
     if (request.apparateSgr) {
-      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 100, height - 460, rgb(0, 0, 0), 10);
+      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 100, height - 465, rgb(0, 0, 0), 10);
     }
 
     // Save the PDF document and return the bytes
