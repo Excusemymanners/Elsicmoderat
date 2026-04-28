@@ -45,12 +45,12 @@ export const fillTemplate = async (templateUrl, request) => {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontSize = 11;
 
-    // Function to draw text in the PDF
-    const drawText = (text, x, y, color = rgb(0, 0, 0)) => {
+    // Function to draw text in the PDF (accept optional size override)
+    const drawText = (text, x, y, color = rgb(0, 0, 0), size = fontSize) => {
       firstPage.drawText(text, {
         x,
         y,
-        size: fontSize,
+        size,
         font,
         color,
       });
@@ -170,7 +170,7 @@ export const fillTemplate = async (templateUrl, request) => {
     });
 
     if (request.apparateSgr) {
-      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 100, height - 460);
+      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 100, height - 460, rgb(0, 0, 0), 10);
     }
 
     // Save the PDF document and return the bytes
