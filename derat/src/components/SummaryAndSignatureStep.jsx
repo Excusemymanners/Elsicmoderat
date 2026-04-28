@@ -139,22 +139,8 @@ const SummaryAndSignatureStep = () => {
         product4_quantity: finalData.operations[3] ? Number.parseFloat(finalData.quantities[finalData.operations[2]]) || 0 : null,
         concentration4: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
       };
-      // attach custody items with status into the verbalProcess so DB receives predat/inlocuit info
-      verbalProcess.custody_items = Object.keys(custodyItems).map(key => ({
-        key,
-        label: (() => {
-          switch (key) {
-            case 'ultrasuneteRozatoare': return 'Dispozitive profesionale ultrasunete rozatoare';
-            case 'ultrasunetePasari': return 'Dispozitive profesionale ultrasunete pasari';
-            case 'antiinsecte': return 'Dispozitive profesionale antiinsecte';
-            case 'capturareRozatoare': return 'Dispozitiv mecanic capturare rozatoare';
-            case 'statieIntoxicare': return 'Statie de intoxicare exterior';
-            default: return key;
-          }
-        })(),
-        count: custodyItems[key] || 0,
-        status: custodyStatuses[key] ? 'inlocuit' : 'predat'
-      })).filter(i => i.count > 0);
+      // custody items are intentionally kept out of the DB payload
+      // They remain available in `pdfRequest` and the UI summary only.
       console.log('Verbal process:', verbalProcess);
 
       // Build pdf request payload (same as generateAndSendPDF uses)
