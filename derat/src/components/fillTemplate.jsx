@@ -170,7 +170,7 @@ export const fillTemplate = async (templateUrl, request) => {
     });
 
     if (request.apparateSgr) {
-      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 220, height - 500);
+      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 120, height - 475);
     }
 
     // Save the PDF document and return the bytes
