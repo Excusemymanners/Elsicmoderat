@@ -39,6 +39,7 @@ const SummaryAndSignatureStep = () => {
     capturareRozatoare: false,
     statieIntoxicare: false
   });
+  const [apparateSgr, setAparateSgr] = useState(false);
   // local state for client representative + signature (moved here from ClientRepresentativeStep)
   const [clientRepresentativeLocal, setClientRepresentativeLocal] = useState(formData.clientRepresentative || '');
   const clientSigCanvas = useRef(null);
@@ -94,7 +95,8 @@ const SummaryAndSignatureStep = () => {
         receptionNumber,
         observations,
         clientSurface: formData.customer.surface, // Add client surface to final data
-        custodyItems // Add custody items to final data
+        custodyItems, // Add custody items to final data
+        apparateSgr
       };
 
         // also persist custodyStatuses
@@ -183,7 +185,8 @@ const SummaryAndSignatureStep = () => {
           capturareRozatoare_status: custodyStatuses.capturareRozatoare ? 'inlocuit' : 'predat',
           statieIntoxicare: finalData.custodyItems?.statieIntoxicare || custodyItems.statieIntoxicare,
           statieIntoxicare_status: custodyStatuses.statieIntoxicare ? 'inlocuit' : 'predat'
-        }
+        },
+        apparateSgr: finalData.apparateSgr || apparateSgr
       };
 
   (finalData.operations || []).forEach(operation => {
@@ -500,7 +503,8 @@ const SummaryAndSignatureStep = () => {
         capturareRozatoare_status: data.custodyStatuses?.capturareRozatoare ? 'inlocuit' : 'predat',
         statieIntoxicare: data.custodyItems?.statieIntoxicare || 0,
         statieIntoxicare_status: data.custodyStatuses?.statieIntoxicare ? 'inlocuit' : 'predat'
-      }
+      },
+      apparateSgr: data.apparateSgr || false
     }
 
     data.operations.forEach(operation => {
@@ -725,6 +729,18 @@ const SummaryAndSignatureStep = () => {
               </label>
             </div>
           </div>
+        </div>
+
+        <div className="summary-section">
+          <h4>APARATE SGR</h4>
+          <label className="custody-status">
+            <input
+              type="checkbox"
+              checked={apparateSgr}
+              onChange={(e) => setAparateSgr(e.target.checked)}
+            />
+            Marchează pentru a afișa linia SGR în procesul verbal
+          </label>
         </div>
 
         <div className="summary-section">

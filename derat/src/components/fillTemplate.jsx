@@ -164,10 +164,14 @@ export const fillTemplate = async (templateUrl, request) => {
     custodyItems.forEach(item => {
       if (item.value > 0) {
         const statusText = item.status === 'inlocuit' ? 'Înlocuit' : 'Predat';
-        drawText(`${item.label}: ${item.value} (${statusText})`, xOffset, height - 390);
+        drawText(`${item.label}: ${item.value} (${statusText})`, xOffset, height - 385);
         xOffset = xOffset + 250;
       }
     });
+
+    if (request.apparateSgr) {
+      drawText('10. S-a efectuat operatiunea de dezinsectie + deeatizare container SGR', 60, height - 396);
+    }
 
     // Save the PDF document and return the bytes
     const pdfBytes = await pdfDoc.save();
