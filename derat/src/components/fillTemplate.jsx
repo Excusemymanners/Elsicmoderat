@@ -148,7 +148,7 @@ export const fillTemplate = async (templateUrl, request) => {
       drawText(`${operation.lot}`, lotXPosition, yPosition);
     }
 
-    drawText(`${request.observations}`, 190, 155); // Adjusted Y position for observations
+    drawText(`${request.observations}`, 190, 165); // Adjusted Y position for observations
     console.log(request.observations);
 
     // Draw custody items if their values are greater than 0
@@ -165,7 +165,7 @@ export const fillTemplate = async (templateUrl, request) => {
       if (item.value > 0) {
         const statusText = item.status === 'inlocuit' ? 'Înlocuit' : 'Predat';
         drawText(`${item.label}: ${item.value} (${statusText})`, xOffset, height - 387);
-        xOffset = xOffset + 280;
+        xOffset = xOffset + 285;
       }
     });
 
