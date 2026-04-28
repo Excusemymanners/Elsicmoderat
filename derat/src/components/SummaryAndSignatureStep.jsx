@@ -31,6 +31,14 @@ const SummaryAndSignatureStep = () => {
     capturareRozatoare: 0,
     statieIntoxicare: 0
   });
+  // track whether each custody item was replaced (înlocuit) instead of handed over (predat)
+  const [custodyStatuses, setCustodyStatuses] = useState({
+    ultrasuneteRozatoare: false,
+    ultrasunetePasari: false,
+    antiinsecte: false,
+    capturareRozatoare: false,
+    statieIntoxicare: false
+  });
   // local state for client representative + signature (moved here from ClientRepresentativeStep)
   const [clientRepresentativeLocal, setClientRepresentativeLocal] = useState(formData.clientRepresentative || '');
   const clientSigCanvas = useRef(null);
@@ -89,6 +97,9 @@ const SummaryAndSignatureStep = () => {
         custodyItems // Add custody items to final data
       };
 
+        // also persist custodyStatuses
+        finalData.custodyStatuses = custodyStatuses;
+
         // persist finalData to the form context so it's stored
         try {
           updateFormData(finalData);
@@ -126,6 +137,22 @@ const SummaryAndSignatureStep = () => {
         product4_quantity: finalData.operations[3] ? Number.parseFloat(finalData.quantities[finalData.operations[2]]) || 0 : null,
         concentration4: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
       };
+      // attach custody items with status into the verbalProcess so DB receives predat/inlocuit info
+      verbalProcess.custody_items = Object.keys(custodyItems).map(key => ({
+        key,
+        label: (() => {
+          switch (key) {
+            case 'ultrasuneteRozatoare': return 'Dispozitive profesionale ultrasunete rozatoare';
+            case 'ultrasunetePasari': return 'Dispozitive profesionale ultrasunete pasari';
+            case 'antiinsecte': return 'Dispozitive profesionale antiinsecte';
+            case 'capturareRozatoare': return 'Dispozitiv mecanic capturare rozatoare';
+            case 'statieIntoxicare': return 'Statie de intoxicare exterior';
+            default: return key;
+          }
+        })(),
+        count: custodyItems[key] || 0,
+        status: custodyStatuses[key] ? 'inlocuit' : 'predat'
+      })).filter(i => i.count > 0);
       console.log('Verbal process:', verbalProcess);
 
       // Build pdf request payload (same as generateAndSendPDF uses)
@@ -144,7 +171,19 @@ const SummaryAndSignatureStep = () => {
         employeeSignature: finalData.employeeSignature,
         operations: [],
         observations: finalData.observations,
-        custodyItems: finalData.custodyItems || custodyItems
+        // include counts and statuses for custody items so the PDF can show predat/inlocuit
+        custodyItems: {
+          ultrasuneteRozatoare: finalData.custodyItems?.ultrasuneteRozatoare || custodyItems.ultrasuneteRozatoare,
+          ultrasuneteRozatoare_status: custodyStatuses.ultrasuneteRozatoare ? 'inlocuit' : 'predat',
+          ultrasunetePasari: finalData.custodyItems?.ultrasunetePasari || custodyItems.ultrasunetePasari,
+          ultrasunetePasari_status: custodyStatuses.ultrasunetePasari ? 'inlocuit' : 'predat',
+          antiinsecte: finalData.custodyItems?.antiinsecte || custodyItems.antiinsecte,
+          antiinsecte_status: custodyStatuses.antiinsecte ? 'inlocuit' : 'predat',
+          capturareRozatoare: finalData.custodyItems?.capturareRozatoare || custodyItems.capturareRozatoare,
+          capturareRozatoare_status: custodyStatuses.capturareRozatoare ? 'inlocuit' : 'predat',
+          statieIntoxicare: finalData.custodyItems?.statieIntoxicare || custodyItems.statieIntoxicare,
+          statieIntoxicare_status: custodyStatuses.statieIntoxicare ? 'inlocuit' : 'predat'
+        }
       };
 
   (finalData.operations || []).forEach(operation => {
@@ -449,7 +488,19 @@ const SummaryAndSignatureStep = () => {
       employeeSignature: data.employeeSignature,
       operations: [],
       observations: data.observations,
-      custodyItems: data.custodyItems // Add custody items to PDF request
+      // Add custody items + statuses to PDF request when available
+      custodyItems: {
+        ultrasuneteRozatoare: data.custodyItems?.ultrasuneteRozatoare || 0,
+        ultrasuneteRozatoare_status: data.custodyStatuses?.ultrasuneteRozatoare ? 'inlocuit' : 'predat',
+        ultrasunetePasari: data.custodyItems?.ultrasunetePasari || 0,
+        ultrasunetePasari_status: data.custodyStatuses?.ultrasunetePasari ? 'inlocuit' : 'predat',
+        antiinsecte: data.custodyItems?.antiinsecte || 0,
+        antiinsecte_status: data.custodyStatuses?.antiinsecte ? 'inlocuit' : 'predat',
+        capturareRozatoare: data.custodyItems?.capturareRozatoare || 0,
+        capturareRozatoare_status: data.custodyStatuses?.capturareRozatoare ? 'inlocuit' : 'predat',
+        statieIntoxicare: data.custodyItems?.statieIntoxicare || 0,
+        statieIntoxicare_status: data.custodyStatuses?.statieIntoxicare ? 'inlocuit' : 'predat'
+      }
     }
 
     data.operations.forEach(operation => {
@@ -628,30 +679,50 @@ const SummaryAndSignatureStep = () => {
               <button onClick={() => incrementItem('ultrasuneteRozatoare')}>+</button>
               <span>{custodyItems.ultrasuneteRozatoare}</span>
               <button onClick={() => decrementItem('ultrasuneteRozatoare')}>-</button>
+              <label className="custody-status">
+                <input type="checkbox" checked={custodyStatuses.ultrasuneteRozatoare} onChange={(e) => setCustodyStatuses(prev => ({ ...prev, ultrasuneteRozatoare: e.target.checked }))} />
+                Înlocuit
+              </label>
             </div>
             <div className="custody-item">
               <span>dispozitive profesionale ultrasunete păsări</span>
               <button onClick={() => incrementItem('ultrasunetePasari')}>+</button>
               <span>{custodyItems.ultrasunetePasari}</span>
               <button onClick={() => decrementItem('ultrasunetePasari')}>-</button>
+              <label className="custody-status">
+                <input type="checkbox" checked={custodyStatuses.ultrasunetePasari} onChange={(e) => setCustodyStatuses(prev => ({ ...prev, ultrasunetePasari: e.target.checked }))} />
+                Înlocuit
+              </label>
             </div>
             <div className="custody-item">
               <span>dispozitive profesionale antiinsecte</span>
               <button onClick={() => incrementItem('antiinsecte')}>+</button>
               <span>{custodyItems.antiinsecte}</span>
               <button onClick={() => decrementItem('antiinsecte')}>-</button>
+              <label className="custody-status">
+                <input type="checkbox" checked={custodyStatuses.antiinsecte} onChange={(e) => setCustodyStatuses(prev => ({ ...prev, antiinsecte: e.target.checked }))} />
+                Înlocuit
+              </label>
             </div>
             <div className="custody-item">
               <span>dispozitiv mecanic capturare rozătoare</span>
               <button onClick={() => incrementItem('capturareRozatoare')}>+</button>
               <span>{custodyItems.capturareRozatoare}</span>
               <button onClick={() => decrementItem('capturareRozatoare')}>-</button>
+              <label className="custody-status">
+                <input type="checkbox" checked={custodyStatuses.capturareRozatoare} onChange={(e) => setCustodyStatuses(prev => ({ ...prev, capturareRozatoare: e.target.checked }))} />
+                Înlocuit
+              </label>
             </div>
             <div className="custody-item">
               <span>stație de intoxicare exterior</span>
               <button onClick={() => incrementItem('statieIntoxicare')}>+</button>
               <span>{custodyItems.statieIntoxicare}</span>
               <button onClick={() => decrementItem('statieIntoxicare')}>-</button>
+              <label className="custody-status">
+                <input type="checkbox" checked={custodyStatuses.statieIntoxicare} onChange={(e) => setCustodyStatuses(prev => ({ ...prev, statieIntoxicare: e.target.checked }))} />
+                Înlocuit
+              </label>
             </div>
           </div>
         </div>

@@ -153,18 +153,19 @@ export const fillTemplate = async (templateUrl, request) => {
 
     // Draw custody items if their values are greater than 0
     const custodyItems = [
-      { label: 'Dispozitive profesionale ultrasunete rozatoare', value: request.custodyItems.ultrasuneteRozatoare },
-      { label: 'Dispozitive profesionale ultrasunete pasari', value: request.custodyItems.ultrasunetePasari },
-      { label: 'Dispozitive profesionale antiinsecte', value: request.custodyItems.antiinsecte },
-      { label: 'Dispozitiv mecanic capturare rozatoare', value: request.custodyItems.capturareRozatoare },
-      { label: 'Statie de intoxicare exterior', value: request.custodyItems.statieIntoxicare }
+      { label: 'Dispozitive profesionale ultrasunete rozatoare', value: request.custodyItems?.ultrasuneteRozatoare || 0, status: request.custodyItems?.ultrasuneteRozatoare_status },
+      { label: 'Dispozitive profesionale ultrasunete pasari', value: request.custodyItems?.ultrasunetePasari || 0, status: request.custodyItems?.ultrasunetePasari_status },
+      { label: 'Dispozitive profesionale antiinsecte', value: request.custodyItems?.antiinsecte || 0, status: request.custodyItems?.antiinsecte_status },
+      { label: 'Dispozitiv mecanic capturare rozatoare', value: request.custodyItems?.capturareRozatoare || 0, status: request.custodyItems?.capturareRozatoare_status },
+      { label: 'Statie de intoxicare exterior', value: request.custodyItems?.statieIntoxicare || 0, status: request.custodyItems?.statieIntoxicare_status }
     ];
 
     let xOffset = 220;
     custodyItems.forEach(item => {
       if (item.value > 0) {
-        drawText(`${item.label}: ${item.value}`, xOffset, height - 390);
-        xOffset =xOffset+ 250;
+        const statusText = item.status === 'inlocuit' ? 'Înlocuit' : 'Predat';
+        drawText(`${item.label}: ${item.value} (${statusText})`, xOffset, height - 390);
+        xOffset = xOffset + 250;
       }
     });
 
