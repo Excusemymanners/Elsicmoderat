@@ -244,7 +244,7 @@ const GestionareLucrari = () => {
             }
 
             const row = [
-                lucrare.numar_ordine - 1, // Decrement numar_ordine by 1
+                lucrare.numar_ordine || '',
                 new Date(lucrare.created_at).toLocaleString('ro-RO'),
                 lucrare.client_name,
                 lucrare.client_location,
@@ -259,13 +259,21 @@ const GestionareLucrari = () => {
             return row.map(escapeCSV).join(',');
         };
 
-        const processedRows = await Promise.all(data.map(processRow));
+        const orderedData = [...data].sort((a, b) => {
+            const numA = Number.parseInt(a.numar_ordine ?? '', 10);
+            const numB = Number.parseInt(b.numar_ordine ?? '', 10);
 
-        processedRows.sort((a, b) => {
-            const numA = parseInt(a.split(',')[0].replace(/"/g, ''));
-            const numB = parseInt(b.split(',')[0].replace(/"/g, ''));
-            return numA - numB;
+            if (Number.isFinite(numA) && Number.isFinite(numB) && numA !== numB) {
+                return numA - numB;
+            }
+
+            if (Number.isFinite(numA)) return -1;
+            if (Number.isFinite(numB)) return 1;
+
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         });
+
+        const processedRows = await Promise.all(orderedData.map(processRow));
 
         const csv = [
             headers.map(escapeCSV).join(','),

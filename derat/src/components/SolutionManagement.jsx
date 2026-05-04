@@ -177,6 +177,22 @@ const calculateRemainingPercentage = (initial, remaining) => {
   return Math.max(0, Math.min(100, pct));
 };
 
+const compareMovementsByProcessNumber = (left, right) => {
+  const leftOrder = Number.parseInt(left?.numar_ordine ?? '', 10);
+  const rightOrder = Number.parseInt(right?.numar_ordine ?? '', 10);
+
+  if (Number.isFinite(leftOrder) && Number.isFinite(rightOrder) && leftOrder !== rightOrder) {
+    return leftOrder - rightOrder;
+  }
+
+  if (Number.isFinite(leftOrder)) return -1;
+  if (Number.isFinite(rightOrder)) return 1;
+
+  const leftTime = left?.created_at ? new Date(left.created_at).getTime() : 0;
+  const rightTime = right?.created_at ? new Date(right.created_at).getTime() : 0;
+  return leftTime - rightTime;
+};
+
 const SolutionManagement = () => {
   const MAX_QTY = 1e9; // safety cap for stock/quantities to prevent constraint violations
   const [solutions, setSolutions] = useState([]);
@@ -662,12 +678,14 @@ const SolutionManagement = () => {
       }
 
       if (intrari && !error) {
+        const orderedIntrari = [...intrari].sort(compareMovementsByProcessNumber);
+
         // Carry-forward supplier and expiration_date: start from no supplier so we don't retroactively overwrite
         // past exits if `solutions.furnizor` is updated later. We only set supplier when an Intrare provides it.
         let currentSupplier = null;
         let currentExp = null;
 
-        intrari.forEach((intrare) => {
+        orderedIntrari.forEach((intrare) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
           const intrariVal = isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
@@ -830,13 +848,14 @@ const SolutionManagement = () => {
           .eq('solution_id', solution.id)
           .order('created_at', { ascending: true });
         if (error) continue;
+        const orderedIntrari = [...(intrari || [])].sort(compareMovementsByProcessNumber);
         let intrareCounter = 0;
         // Carry-forward supplier and expiration_date within each solution block
         // Start from null so we don't retroactively apply solution-level supplier to past movements
         let currentSupplier = null;
         let currentExp = null;
 
-        (intrari || []).forEach((intrare, i) => {
+        orderedIntrari.forEach((intrare, i) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
           const intrariVal = isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
@@ -894,113 +913,28 @@ const SolutionManagement = () => {
   };
 
   const releaseSolution = async (solution) => {
-    if (!window.confirm(`Ești sigur că vrei să eliberezi soluția "${solution.name}"? Aceasta va descărca un CSV și va șterge toate mișcările de stoc pentru această soluție.`)) {
+    if (!window.confirm(`Ești sigur că vrei să eliberezi soluția "${solution.name}"? Aceasta va șterge toate mișcările de stoc pentru această soluție.`)) {
       return;
     }
 
     setLoading(true);
     try {
-      // Helper function to escape CSV values
-      const escapeCSV = (value) => {
-        if (value === null || value === undefined) return '';
-        const s = String(value);
-        if (s.includes(';') || s.includes(',') || s.includes('"') || s.includes('\n')) {
-          return `"${s.replace(/"/g, '""')}"`;
-        }
-        return s;
-      };
-
-      // Fetch all intrari_solutie records for this solution
-      const { data: intrari, error: fetchError } = await supabase
+      const { data: deletedRows, error: deleteError } = await supabase
         .from('intrari_solutie')
-        .select('*')
-        .eq('solution_id', solution.id);
+        .delete()
+        .eq('solution_id', solution.id)
+        .select('id');
 
-      if (fetchError) {
-        console.error('Error fetching intrari:', fetchError);
-        alert('Eroare la preluarea datelor mișcărilor de stoc.');
-        setLoading(false);
+      if (deleteError) {
+        console.error('Error deleting intrari:', deleteError);
+        alert('Eroare la ștergerea mișcărilor de stoc.');
         return;
       }
 
-      // Generate CSV with intrari data
-      const headers = ['Data', 'Nr', 'Fel', 'Intrari', 'Iesiri', 'Stoc', 'Beneficiar', 'Aviz/Lot', 'Furnizor', 'Data expirare'];
-      const infoLines = [
-        [`Eliberare Soluție: ${solution.name}`],
-        [`Data generării: ${new Date().toLocaleDateString('ro-RO')}`],
-        [`Lot: ${solution.lot || 'N/A'}`],
-        [`Total mișcări: ${intrari?.length || 0}`],
-        [''],
-        headers
-      ];
+      const deletedCount = deletedRows?.length || 0;
+      console.log(`✅ ${deletedCount} mișcări de stoc au fost șterse pentru soluția "${solution.name}".`);
 
-      const dataRows = [];
-      let intrareCounter = 0;
-
-      (intrari || []).forEach((intrare) => {
-        const tip = (intrare.tip || '').toLowerCase();
-        const isIntrare = tip === 'intrare';
-        const intrariVal = isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
-        const iesiriVal = !isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
-        let stocVal = '';
-        if (intrare.post_stock !== undefined && intrare.post_stock !== null) {
-          stocVal = `${intrare.post_stock} ${solution.unit_of_measure}`;
-        } else {
-          const prev = parseFloat(intrare.previous_stock || 0);
-          const q = parseFloat(intrare.quantity || 0);
-          stocVal = isIntrare ? `${(prev + q)} ${solution.unit_of_measure}` : `${Math.max(0, prev - q)} ${solution.unit_of_measure}`;
-        }
-
-        if (!isIntrare) {
-          intrareCounter++;
-        }
-        const nrVal = !isIntrare ? intrareCounter : '';
-        const felVal = isIntrare ? 'Intrare' : 'Ieșire';
-
-        const lotDisplay = intrare.lot || solution.lot || '';
-        const supplierDisplay = intrare.furnizor || solution.furnizor || '';
-        const expirationDisplay = intrare.expiration_date
-          ? new Date(intrare.expiration_date).toLocaleDateString('ro-RO')
-          : (solution.expiration_date ? new Date(solution.expiration_date).toLocaleDateString('ro-RO') : '');
-
-        dataRows.push([
-          new Date(intrare.created_at).toLocaleDateString('ro-RO'),
-          nrVal,
-          felVal,
-          intrariVal,
-          iesiriVal,
-          stocVal,
-          (!isIntrare && intrare.beneficiar) ? intrare.beneficiar : '',
-          lotDisplay,
-          supplierDisplay,
-          expirationDisplay
-        ]);
-      });
-
-      const allRows = [...infoLines, ...dataRows];
-      const csv = allRows.map(row => Array.isArray(row) ? row.map(escapeCSV).join(';') : escapeCSV(row)).join('\n');
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + 'sep=;\n' + csv], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Eliberare_${solution.name}_${new Date().toISOString().split('T')[0]}_${Date.now()}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      // Delete all intrari_solutie records for this solution
-      if (intrari && intrari.length > 0) {
-        const deleteIds = intrari.map(i => i.id);
-        for (const id of deleteIds) {
-          await supabase
-            .from('intrari_solutie')
-            .delete()
-            .eq('id', id);
-        }
-        console.log(`✅ ${deleteIds.length} mișcări de stoc au fost șterse pentru soluția "${solution.name}".`);
-      }
-
-      alert(`✅ Soluția "${solution.name}" a fost eliberată. CSV descărcat și ${intrari?.length || 0} mișcări șterse.`);
+      alert(`✅ Soluția "${solution.name}" a fost eliberată. Au fost șterse ${deletedCount} mișcări de stoc.`);
       await fetchSolutions(); // Reload to reflect changes
     } catch (error) {
       console.error('Error releasing solution:', error);
