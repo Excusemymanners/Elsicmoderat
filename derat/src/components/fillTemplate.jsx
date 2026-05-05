@@ -43,6 +43,7 @@ export const fillTemplate = async (templateUrl, request) => {
     const firstPage = pages[0];
     const { height } = firstPage.getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
     const fontSize = 11;
 
     // Function to draw text in the PDF (accept optional size override)
@@ -170,7 +171,13 @@ export const fillTemplate = async (templateUrl, request) => {
     });
 
     if (request.apparateSgr) {
-      drawText('10. S-a efectuat operatiunea de dezinsectie + deratizare inclusiv pentru container SGR', 105, height - 465, rgb(0, 0, 0), 10);
+      firstPage.drawText('10. S-a efectuat operatiunea de dezinsectie + deratizare inclusiv pentru container SGR', {
+        x: 105,
+        y: height - 465,
+        size: 10,
+        font: timesFont,
+        color: rgb(0, 0, 0),
+      });
     }
 
     // Save the PDF document and return the bytes
