@@ -11,18 +11,43 @@ export const updateRemainingQuantities = async (operations) => {
       // If solutionId is missing, try to resolve it by matching name/label and lot
       if (!solutionId) {
         try {
-          const searchName = (solutionLabel || name || '').trim();
-          if (searchName) {
-            let query = supabase.from('solutions').select('id, remaining_quantity, minimum_reserve, name, lot').ilike('name', `%${searchName}%`);
-            if (lot) query = query.eq('lot', lot);
-            const { data: found, error: foundErr } = await query.limit(1).maybeSingle();
-            if (!foundErr && found && found.id) {
-              solutionId = found.id;
-              console.log(`Resolved solutionId by name/lot lookup: ${solutionId} (searched '${searchName}' lot='${lot}')`);
+          const searchNameRaw = (solutionLabel || name || '').trim();
+          const searchName = searchNameRaw.replace(/\s*\(.*$/,'').trim(); // strip parentheses and trailing notes
+
+          // 1) Try exact lot match first (lot is usually unique)
+          if (lot) {
+            const { data: byLot, error: byLotErr } = await supabase.from('solutions').select('id, remaining_quantity, minimum_reserve, name, lot').eq('lot', lot).limit(1).maybeSingle();
+            if (!byLotErr && byLot && byLot.id) {
+              solutionId = byLot.id;
+              console.log(`Resolved solutionId by lot: ${solutionId} (lot='${lot}')`);
             } else {
-              console.warn(`Could not resolve solutionId for '${searchName}' (lot='${lot}').`);
+              console.log(`No exact lot match for lot='${lot}'`);
             }
           }
+
+          // 2) Try cleaned name match (ilike)
+          if (!solutionId && searchName) {
+            const { data: byName, error: byNameErr } = await supabase.from('solutions').select('id, remaining_quantity, minimum_reserve, name, lot').ilike('name', `%${searchName}%`).limit(1).maybeSingle();
+            if (!byNameErr && byName && byName.id) {
+              solutionId = byName.id;
+              console.log(`Resolved solutionId by name ilike: ${solutionId} (searched '${searchNameRaw}' -> '${searchName}')`);
+            } else {
+              console.log(`No name ilike match for '${searchNameRaw}' (cleaned '${searchName}')`);
+            }
+          }
+
+          // 3) Fallback: try lot-less search by partial label
+          if (!solutionId && searchNameRaw) {
+            const { data: byLabel, error: byLabelErr } = await supabase.from('solutions').select('id, remaining_quantity, minimum_reserve, name, lot').ilike('name', `%${searchNameRaw}%`).limit(1).maybeSingle();
+            if (!byLabelErr && byLabel && byLabel.id) {
+              solutionId = byLabel.id;
+              console.log(`Resolved solutionId by raw label ilike: ${solutionId} (label='${searchNameRaw}')`);
+            } else {
+              console.log(`No raw label ilike match for '${searchNameRaw}'`);
+            }
+          }
+
+          if (!solutionId) console.warn(`Could not resolve solutionId for '${searchNameRaw}' (lot='${lot}').`);
         } catch (e) {
           console.warn('Error resolving solutionId by name/lot:', e);
         }
