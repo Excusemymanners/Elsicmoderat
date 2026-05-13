@@ -723,55 +723,55 @@ const SolutionManagement = () => {
     rows.push(headers);
 
     try {
-      // fetch all movements (intrari + iesiri) for this solution
-      let { data: intrari, error } = await supabase
-        .from('intrari_solutie')
-        .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
-        .eq('solution_id', solution.id)
-        .order('created_at', { ascending: true });
+      // Fetch movements by LOT (primary key) — this is more reliable than solution_id
+      // which may not always be set correctly during insert
+      let intrari = null;
+      let error = null;
 
-      // If no rows found for this solution_id, try fallback lookups by lot/furnizor/beneficiar
-      if ((!intrari || intrari.length === 0) && (!error)) {
-        console.log(`No intrari found for solution_id=${solution.id}. Trying fallbacks (lot/furnizor/beneficiar)...`);
-        const fallbacks = [];
-        try {
-          // 1) exact lot match
-          if (solution.lot) {
-            const { data: byLot } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').eq('lot', solution.lot).order('created_at', { ascending: true });
-            if (byLot && byLot.length > 0) fallbacks.push(...byLot);
-          }
-          // 2) match by furnizor
-          if (solution.furnizor) {
-            const { data: byFurn } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('furnizor', `%${solution.furnizor}%`).order('created_at', { ascending: true });
-            if (byFurn && byFurn.length > 0) fallbacks.push(...byFurn);
-          }
-          // 3) match by beneficiar (customer name) or solution name in beneficiary field
-          if (solution.name) {
-            const { data: byBenef } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('beneficiar', `%${solution.name}%`).order('created_at', { ascending: true });
-            if (byBenef && byBenef.length > 0) fallbacks.push(...byBenef);
-          }
-          if (fallbacks.length > 0) {
-            intrari = fallbacks;
-            console.log(`Fallback intrari found for solution ${solution.id}:`, fallbacks.length);
-          }
-        } catch (fbErr) {
-          console.warn('Error during intrari fallback queries:', fbErr);
+      if (solution.lot) {
+        console.log(`[exportSingleSolutionCSV] Fetching intrari for lot='${solution.lot}'`);
+        const { data: byLot, error: errLot } = await supabase
+          .from('intrari_solutie')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+          .eq('lot', solution.lot)
+          .order('created_at', { ascending: true });
+        
+        console.log(`[exportSingleSolutionCSV] Lot query result: ${byLot?.length || 0} rows, error: ${errLot?.message || 'none'}`);
+        if (!errLot && byLot && byLot.length > 0) {
+          intrari = byLot;
+        } else if (errLot) {
+          error = errLot;
         }
       }
 
-      // If the DB doesn't have numar_ordine column, retry without it
-      if (error) {
-        console.warn('Select with numar_ordine failed, retrying without it:', error.message || error);
-        const retry = await supabase
+      // Fallback 1: try by furnizor if lot didn't yield results
+      if ((!intrari || intrari.length === 0) && solution.furnizor) {
+        console.log(`[exportSingleSolutionCSV] No results for lot; trying furnizor='${solution.furnizor}'`);
+        const { data: byFurn, error: errFurn } = await supabase
           .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, furnizor')
-          .eq('solution_id', solution.id)
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+          .ilike('furnizor', `%${solution.furnizor}%`)
           .order('created_at', { ascending: true });
-        intrari = retry.data;
-        error = retry.error;
+        
+        console.log(`[exportSingleSolutionCSV] Furnizor query result: ${byFurn?.length || 0} rows`);
+        if (byFurn && byFurn.length > 0) intrari = byFurn;
       }
 
-      if (intrari && !error) {
+      // Fallback 2: try by solution_id as last resort
+      if ((!intrari || intrari.length === 0) && solution.id) {
+        console.log(`[exportSingleSolutionCSV] No results for lot/furnizor; trying solution_id=${solution.id}`);
+        const { data: bySolId, error: errSol } = await supabase
+          .from('intrari_solutie')
+          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+          .eq('solution_id', solution.id)
+          .order('created_at', { ascending: true });
+        
+        console.log(`[exportSingleSolutionCSV] solution_id query result: ${bySolId?.length || 0} rows, error: ${errSol?.message || 'none'}`);
+        if (bySolId && bySolId.length > 0) intrari = bySolId;
+      }
+
+      if (intrari && intrari.length > 0) {
+        console.log(`[exportSingleSolutionCSV] Found ${intrari.length} intrari for solution ${solution.id}, building CSV rows...`);
         const orderedIntrari = [...intrari].sort(compareMovementsByProcessNumber);
 
         // Carry-forward supplier and expiration_date: start from no supplier so we don't retroactively overwrite
@@ -779,7 +779,7 @@ const SolutionManagement = () => {
         let currentSupplier = null;
         let currentExp = null;
 
-        orderedIntrari.forEach((intrare) => {
+        orderedIntrari.forEach((intrare, idx) => {
           const tip = (intrare.tip || '').toLowerCase();
           const isIntrare = tip === 'intrare';
           const intrariVal = isIntrare ? `${intrare.quantity} ${solution.unit_of_measure}` : '';
@@ -806,6 +806,10 @@ const SolutionManagement = () => {
           const supplierDisplay = currentSupplier || '';
           const expirationDisplay = currentExp ? currentExp.toLocaleDateString('ro-RO') : '';
 
+          if (idx === 0) {
+            console.log(`First row for solution ${solution.id}: tip=${tip}, qty=${intrare.quantity}, lot=${lotDisplay}`);
+          }
+
           rows.push([
             new Date(intrare.created_at).toLocaleDateString('ro-RO'),
             nrVal,
@@ -819,6 +823,9 @@ const SolutionManagement = () => {
             expirationDisplay
           ]);
         });
+        console.log(`Pushed ${orderedIntrari.length} rows to CSV for solution ${solution.id}`);
+      } else {
+        console.log(`[exportSingleSolutionCSV] No intrari found for solution ${solution.id} (lot='${solution.lot}', furnizor='${solution.furnizor}')`);
       }
     } catch (e) {
       console.error('Error fetching intrari for single solution:', e);
@@ -930,47 +937,64 @@ const SolutionManagement = () => {
 
     // For each solution block, add solution name row + two blank rows before movements
     for (const solution of solutions) {
+      console.log(`[exportToCSV LOOP] Processing solution: id=${solution.id}, name='${solution.name}', lot='${solution.lot}', furnizor='${solution.furnizor}'`);
+      
       // add solution label row + two blank rows before this solution's movements, then the magazie header
       allRows.push([`Nume substanta : ${solution.name || ''}`, '', '', '', '', '', '', '']);
       allRows.push(['', '', '', '', '', '', '', '']);
       allRows.push(['', '', '', '', '', '', '', '']);
       allRows.push(magazieHeader);
       try {
-        let { data: intrari, error } = await supabase
-          .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
-          .eq('solution_id', solution.id)
-          .order('created_at', { ascending: true });
-
-        // fallback: if no intrari found for solution_id, try matching by lot, furnizor or beneficiary
-        if ((!intrari || intrari.length === 0) && !error) {
-          console.log(`No intrari for solution_id=${solution.id}; running fallback queries (lot/furnizor/beneficiar)`);
-          const fallbacks = [];
-          try {
-            if (solution.lot) {
-              const { data: byLot } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').eq('lot', solution.lot).order('created_at', { ascending: true });
-              if (byLot && byLot.length) fallbacks.push(...byLot);
-            }
-            if (solution.furnizor) {
-              const { data: byF } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('furnizor', `%${solution.furnizor}%`).order('created_at', { ascending: true });
-              if (byF && byF.length) fallbacks.push(...byF);
-            }
-            if (solution.name) {
-              const { data: byB } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('beneficiar', `%${solution.name}%`).order('created_at', { ascending: true });
-              if (byB && byB.length) fallbacks.push(...byB);
-            }
-            if (fallbacks.length > 0) {
-              intrari = fallbacks;
-              console.log(`Found ${fallbacks.length} fallback intrari for solution ${solution.id}`);
-            }
-          } catch (fbErr) {
-            console.warn('Fallback query error:', fbErr);
+        // Primary: fetch by LOT (most reliable key for intrari_solutie)
+        let intrari = null;
+        
+        if (solution.lot) {
+          console.log(`[exportToCSV] Fetching intrari for solution ${solution.id} by lot='${solution.lot}'`);
+          const { data: byLot, error: errLot } = await supabase
+            .from('intrari_solutie')
+            .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+            .eq('lot', solution.lot)
+            .order('created_at', { ascending: true });
+          console.log(`[exportToCSV] Lot result: ${byLot?.length || 0} rows`);
+          if (byLot && byLot.length > 0) {
+            intrari = byLot;
           }
         }
 
-        if (error) continue;
-        const orderedIntrari = [...(intrari || [])].sort(compareMovementsByProcessNumber);
-        let intrareCounter = 0;
+        // Fallback 1: try by furnizor
+        if ((!intrari || intrari.length === 0) && solution.furnizor) {
+          console.log(`[exportToCSV] No lot match; trying furnizor='${solution.furnizor}'`);
+          const { data: byFurn, error: errFurn } = await supabase
+            .from('intrari_solutie')
+            .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+            .ilike('furnizor', `%${solution.furnizor}%`)
+            .order('created_at', { ascending: true });
+          console.log(`[exportToCSV] Furnizor query result: ${byFurn?.length || 0} rows, error: ${errFurn?.message || 'none'}`);
+          if (byFurn && byFurn.length > 0) {
+            intrari = byFurn;
+          }
+        }
+
+        // Fallback 2: try by solution_id
+        if ((!intrari || intrari.length === 0)) {
+          console.log(`[exportToCSV] No lot/furnizor match; trying solution_id=${solution.id}`);
+          const { data: bySolId, error: errSol } = await supabase
+            .from('intrari_solutie')
+            .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+            .eq('solution_id', solution.id)
+            .order('created_at', { ascending: true });
+          console.log(`[exportToCSV] solution_id query result: ${bySolId?.length || 0} rows, error: ${errSol?.message || 'none'}`);
+          if (bySolId && bySolId.length > 0) {
+            intrari = bySolId;
+          }
+        }
+
+        if (!intrari || intrari.length === 0) {
+          console.log(`[exportToCSV] ⚠️ No intrari found for solution ${solution.id} after all lookups (lot='${solution.lot}', furnizor='${solution.furnizor}')`);
+          continue;
+        }
+
+        const orderedIntrari = [...intrari].sort(compareMovementsByProcessNumber);
         // Carry-forward supplier and expiration_date within each solution block
         // Start from null so we don't retroactively apply solution-level supplier to past movements
         let currentSupplier = null;
