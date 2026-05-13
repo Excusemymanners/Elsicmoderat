@@ -163,7 +163,7 @@ export const updateRemainingQuantities = async (operations) => {
         }
 
         console.log('Inserting intrari_solutie record:', intrareRecord);
-        let res = await supabase.from('intrari_solutie').insert([intrareRecord]);
+        let res = await supabase.from('intrari_solutie').insert([intrareRecord]).select('*');
         console.log('Supabase insert result:', res);
 
         if (res.error) {
@@ -173,7 +173,7 @@ export const updateRemainingQuantities = async (operations) => {
           if (msg.includes('numar_ordine') ) {
             const { numar_ordine, ...withoutNumar } = intrareRecord;
             console.log('Retrying insert without numar_ordine:', withoutNumar);
-            res = await supabase.from('intrari_solutie').insert([withoutNumar]);
+            res = await supabase.from('intrari_solutie').insert([withoutNumar]).select('*');
             console.log('Supabase retry result (without numar_ordine):', res);
           }
 
@@ -184,7 +184,7 @@ export const updateRemainingQuantities = async (operations) => {
               const { post_stock, ...withoutPost } = intrareRecord;
               delete withoutPost.numar_ordine;
               console.log('Retrying insert without post_stock (and numar_ordine):', withoutPost);
-              const retry2 = await supabase.from('intrari_solutie').insert([withoutPost]);
+              const retry2 = await supabase.from('intrari_solutie').insert([withoutPost]).select('*');
               console.log('Supabase retry result (without post_stock):', retry2);
               if (retry2.error) {
                 console.error('Retry insert without post_stock failed:', retry2.error);
