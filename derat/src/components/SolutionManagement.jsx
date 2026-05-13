@@ -730,6 +730,35 @@ const SolutionManagement = () => {
         .eq('solution_id', solution.id)
         .order('created_at', { ascending: true });
 
+      // If no rows found for this solution_id, try fallback lookups by lot/furnizor/beneficiar
+      if ((!intrari || intrari.length === 0) && (!error)) {
+        console.log(`No intrari found for solution_id=${solution.id}. Trying fallbacks (lot/furnizor/beneficiar)...`);
+        const fallbacks = [];
+        try {
+          // 1) exact lot match
+          if (solution.lot) {
+            const { data: byLot } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').eq('lot', solution.lot).order('created_at', { ascending: true });
+            if (byLot && byLot.length > 0) fallbacks.push(...byLot);
+          }
+          // 2) match by furnizor
+          if (solution.furnizor) {
+            const { data: byFurn } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('furnizor', `%${solution.furnizor}%`).order('created_at', { ascending: true });
+            if (byFurn && byFurn.length > 0) fallbacks.push(...byFurn);
+          }
+          // 3) match by beneficiar (customer name) or solution name in beneficiary field
+          if (solution.name) {
+            const { data: byBenef } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('beneficiar', `%${solution.name}%`).order('created_at', { ascending: true });
+            if (byBenef && byBenef.length > 0) fallbacks.push(...byBenef);
+          }
+          if (fallbacks.length > 0) {
+            intrari = fallbacks;
+            console.log(`Fallback intrari found for solution ${solution.id}:`, fallbacks.length);
+          }
+        } catch (fbErr) {
+          console.warn('Error during intrari fallback queries:', fbErr);
+        }
+      }
+
       // If the DB doesn't have numar_ordine column, retry without it
       if (error) {
         console.warn('Select with numar_ordine failed, retrying without it:', error.message || error);
@@ -907,11 +936,38 @@ const SolutionManagement = () => {
       allRows.push(['', '', '', '', '', '', '', '']);
       allRows.push(magazieHeader);
       try {
-        const { data: intrari, error } = await supabase
+        let { data: intrari, error } = await supabase
           .from('intrari_solutie')
           .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
           .eq('solution_id', solution.id)
           .order('created_at', { ascending: true });
+
+        // fallback: if no intrari found for solution_id, try matching by lot, furnizor or beneficiary
+        if ((!intrari || intrari.length === 0) && !error) {
+          console.log(`No intrari for solution_id=${solution.id}; running fallback queries (lot/furnizor/beneficiar)`);
+          const fallbacks = [];
+          try {
+            if (solution.lot) {
+              const { data: byLot } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').eq('lot', solution.lot).order('created_at', { ascending: true });
+              if (byLot && byLot.length) fallbacks.push(...byLot);
+            }
+            if (solution.furnizor) {
+              const { data: byF } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('furnizor', `%${solution.furnizor}%`).order('created_at', { ascending: true });
+              if (byF && byF.length) fallbacks.push(...byF);
+            }
+            if (solution.name) {
+              const { data: byB } = await supabase.from('intrari_solutie').select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor').ilike('beneficiar', `%${solution.name}%`).order('created_at', { ascending: true });
+              if (byB && byB.length) fallbacks.push(...byB);
+            }
+            if (fallbacks.length > 0) {
+              intrari = fallbacks;
+              console.log(`Found ${fallbacks.length} fallback intrari for solution ${solution.id}`);
+            }
+          } catch (fbErr) {
+            console.warn('Fallback query error:', fbErr);
+          }
+        }
+
         if (error) continue;
         const orderedIntrari = [...(intrari || [])].sort(compareMovementsByProcessNumber);
         let intrareCounter = 0;
