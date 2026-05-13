@@ -233,10 +233,6 @@ const SolutionManagement = () => {
       return;
     }
 
-    // Deactivate low stock if needed
-    await checkAndDeactivateLowStock(data || []);
-
-    // reload after potential updates
     const { data: updatedData, error: err2 } = await supabase
       .from('solutions')
       .select('*');
@@ -312,8 +308,23 @@ const SolutionManagement = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const stock = parseFloat(newSolution.stock);
-      const quantityPerSqm = parseFloat(newSolution.quantity_per_sqm);
+      const formData = new FormData(e.currentTarget);
+      const submittedSolution = {
+        name: String(formData.get('name') || '').trim(),
+        lot: String(formData.get('lot') || '').trim(),
+        furnizor: String(formData.get('furnizor') || '').trim(),
+        numar_factura: String(formData.get('numar_factura') || '').trim(),
+        expiration_date: String(formData.get('expiration_date') || '').trim(),
+        concentration: String(formData.get('concentration') || '').trim(),
+        stock: String(formData.get('stock') || '').trim(),
+        adjustmentType: String(formData.get('adjustmentType') || 'set'),
+        quantity_per_sqm: String(formData.get('quantity_per_sqm') || '').trim(),
+        minimum_reserve: String(formData.get('minimum_reserve') || '').trim(),
+        unit_of_measure: String(formData.get('unit_of_measure') || 'ml')
+      };
+
+      const stock = parseFloat(submittedSolution.stock);
+      const quantityPerSqm = parseFloat(submittedSolution.quantity_per_sqm);
 
       // Basic validation to avoid inserting absurd values that violate DB constraints
       if (!Number.isFinite(stock) || stock < 0 || stock > MAX_QTY) {
@@ -333,12 +344,12 @@ const SolutionManagement = () => {
         return;
       }
 
-      const minimumReserve = parseFloat(newSolution.minimum_reserve) || 0;
+      const minimumReserve = parseFloat(submittedSolution.minimum_reserve) || 0;
       const shouldBeActive = stock > minimumReserve;
 
       if (!shouldBeActive && !editingSolution) {
         const confirmAdd = window.confirm(
-          `⚠️ ATENȚIE!\n\nStocul introdus (${stock} ${newSolution.unit_of_measure}) este mai mic sau egal cu rezerva minimă (${minimumReserve} ${newSolution.unit_of_measure}).\n\nSoluția va fi adăugată ca INACTIVĂ.\n\nDoriți să continuați?`
+          `⚠️ ATENȚIE!\n\nStocul introdus (${stock} ${submittedSolution.unit_of_measure}) este mai mic sau egal cu rezerva minimă (${minimumReserve} ${submittedSolution.unit_of_measure}).\n\nSoluția va fi adăugată ca INACTIVĂ.\n\nDoriți să continuați?`
         );
         if (!confirmAdd) {
           setLoading(false);
@@ -347,7 +358,7 @@ const SolutionManagement = () => {
       }
 
       const solutionToSave = {
-        ...newSolution,
+        ...submittedSolution,
         initial_stock: stock,
         total_quantity: stock,
         remaining_quantity: stock,
@@ -355,7 +366,7 @@ const SolutionManagement = () => {
         minimum_reserve: minimumReserve,
         is_active: shouldBeActive
       ,
-        expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null
+        expiration_date: submittedSolution.expiration_date ? new Date(submittedSolution.expiration_date).toISOString() : null
       };
 
       // Do not persist invoice number as a column on `solutions` table
@@ -379,7 +390,7 @@ const SolutionManagement = () => {
         let newRemainingQty;
         let stockDifference;
         
-        if (newSolution.adjustmentType === 'add') {
+        if (submittedSolution.adjustmentType === 'add') {
           // Adăugare: cantitatea introdusă se adaugă la stocul actual
           newRemainingQty = previousRemainingQty + stock;
           stockDifference = stock;
@@ -397,6 +408,9 @@ const SolutionManagement = () => {
         solutionToSave.remaining_quantity = Math.max(0, newRemainingQty);
         // initial_stock rămâne neschimbat la editare - nu îl suprascriu
         delete solutionToSave.initial_stock;
+        if (editingSolution) {
+          solutionToSave.is_active = prevData?.is_active !== false;
+        }
 
         const updateRes = await supabase
           .from('solutions')
@@ -418,10 +432,10 @@ const SolutionManagement = () => {
             previous_stock: previousRemainingQty,
             post_stock: newRemainingQty,
             tip: 'Intrare',
-            lot: newSolution.lot || null,
-            furnizor: newSolution.furnizor || null,
-            numar_factura: newSolution.numar_factura || null,
-            expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
+            lot: submittedSolution.lot || null,
+            furnizor: submittedSolution.furnizor || null,
+            numar_factura: submittedSolution.numar_factura || null,
+            expiration_date: submittedSolution.expiration_date ? new Date(submittedSolution.expiration_date).toISOString() : null,
             created_at: createdAt
           };
           console.log('Preparing intrari_solutie (edit) payload:', intrarePayload);
@@ -531,10 +545,10 @@ const SolutionManagement = () => {
             previous_stock: 0,
             post_stock: stock,
             tip: 'Intrare',
-            lot: newSolution.lot || null,
-            furnizor: newSolution.furnizor || null,
-            numar_factura: newSolution.numar_factura || null,
-            expiration_date: newSolution.expiration_date ? new Date(newSolution.expiration_date).toISOString() : null,
+            lot: submittedSolution.lot || null,
+            furnizor: submittedSolution.furnizor || null,
+            numar_factura: submittedSolution.numar_factura || null,
+            expiration_date: submittedSolution.expiration_date ? new Date(submittedSolution.expiration_date).toISOString() : null,
             created_at: createdAt
           };
           console.log('Preparing intrari_solutie (new) payload:', intrarePayload);
@@ -1075,6 +1089,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Nume substanță *</label>
             <input
+                name="name"
               type="text"
               placeholder="ex. Spinosad, Neem, etc."
               value={newSolution.name}
@@ -1085,6 +1100,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Aviz/Lot *</label>
             <input
+                name="lot"
               type="text"
               placeholder="ex. AVIZ-2024-001, LOT-12345"
               value={newSolution.lot}
@@ -1095,6 +1111,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Furnizor *</label>
             <input
+                name="furnizor"
               type="text"
               placeholder="ex. BASF, Syngenta, etc."
               value={newSolution.furnizor}
@@ -1105,6 +1122,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Număr factură *</label>
             <input
+                name="numar_factura"
               type="text"
               placeholder="ex. FAC-2024-001"
               value={newSolution.numar_factura}
@@ -1115,6 +1133,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Data expirare *</label>
             <input
+                name="expiration_date"
               type="date"
               value={newSolution.expiration_date}
               onChange={(e) => setNewSolution({ ...newSolution, expiration_date: e.target.value })}
@@ -1124,6 +1143,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Concentrație *</label>
             <input
+                name="concentration"
               type="text"
               placeholder="ex. 5%, 10 g/L, etc."
               value={newSolution.concentration}
@@ -1134,6 +1154,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Cantitate rămasă ({newSolution.unit_of_measure}) *</label>
             <input
+                name="stock"
               type="text"
               placeholder="ex. 1000, 500.5, etc."
               value={newSolution.stock}
@@ -1144,6 +1165,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Tip actualizare</label>
             <select
+                name="adjustmentType"
               value={newSolution.adjustmentType}
               onChange={(e) => setNewSolution({ ...newSolution, adjustmentType: e.target.value })}
             >
@@ -1155,6 +1177,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Cantitate pe metru pătrat ({newSolution.unit_of_measure}) *</label>
             <input
+                name="quantity_per_sqm"
               type="text"
               placeholder="ex. 10, 5.5, etc."
               value={newSolution.quantity_per_sqm}
@@ -1165,6 +1188,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Rezervă minimă ({newSolution.unit_of_measure}) *</label>
             <input
+                name="minimum_reserve"
               type="number"
               placeholder="ex. 100"
               value={newSolution.minimum_reserve}
@@ -1178,6 +1202,7 @@ const SolutionManagement = () => {
           <div className="form-group">
             <label>Unitate de măsură *</label>
             <select
+                name="unit_of_measure"
               value={newSolution.unit_of_measure}
               onChange={(e) => setNewSolution({ ...newSolution, unit_of_measure: e.target.value })}
               required
