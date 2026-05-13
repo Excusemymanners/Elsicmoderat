@@ -285,8 +285,10 @@ const SummaryAndSignatureStep = () => {
           const parsed = Number.parseFloat(rawQty);
           const qtyVal = Number.isFinite(parsed) ? parsed : 0;
           const solId = sol ? (sol.id ?? sol.value ?? null) : null;
+          const solLabel = sol ? (sol.label || sol.name || null) : null;
           return {
             solutionId: solId,
+            solutionLabel: solLabel,
             quantity: qtyVal,
             beneficiar: finalData.customer?.name || null,
             lot: sol ? (sol.lot || null) : null,
@@ -294,7 +296,7 @@ const SummaryAndSignatureStep = () => {
             numar_ordine: receptionNumber || finalData.receptionNumber || null,
             created_at: new Date().toISOString()
           };
-        }).filter(op => op.solutionId !== null && op.solutionId !== undefined);
+        });
       }
 
       // Fallback: parse the verbalProcess product fields (product1..product4) if no ops were selected
@@ -328,6 +330,7 @@ const SummaryAndSignatureStep = () => {
             if (solId) {
               opsToUpdate.push({
                 solutionId: solId,
+                solutionLabel: item.name,
                 quantity: item.qty,
                 beneficiar: finalData.customer?.name || null,
                 lot: item.lot || null,
@@ -364,6 +367,7 @@ const SummaryAndSignatureStep = () => {
 
             opsToUpdate.push({
               solutionId: sol.id,
+              solutionLabel: sol.name || sol.label || null,
               quantity: qty,
               beneficiar: finalData.customer?.name || null,
               lot: sol.lot || null,

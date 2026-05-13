@@ -5,8 +5,34 @@ import './SolutionManagement.css';
 export const updateRemainingQuantities = async (operations) => {
   console.log('updateRemainingQuantities called with operations:', operations);
   try {
-    for (const operation of operations) {
-      const { solutionId, quantity, beneficiar, lot, created_at, numar_ordine } = operation;
+    for (const op of operations) {
+      let { solutionId, quantity, beneficiar, lot, created_at, numar_ordine, solutionLabel, name } = op;
+
+      // If solutionId is missing, try to resolve it by matching name/label and lot
+      if (!solutionId) {
+        try {
+          const searchName = (solutionLabel || name || '').trim();
+          if (searchName) {
+            let query = supabase.from('solutions').select('id, remaining_quantity, minimum_reserve, name, lot').ilike('name', `%${searchName}%`);
+            if (lot) query = query.eq('lot', lot);
+            const { data: found, error: foundErr } = await query.limit(1).maybeSingle();
+            if (!foundErr && found && found.id) {
+              solutionId = found.id;
+              console.log(`Resolved solutionId by name/lot lookup: ${solutionId} (searched '${searchName}' lot='${lot}')`);
+            } else {
+              console.warn(`Could not resolve solutionId for '${searchName}' (lot='${lot}').`);
+            }
+          }
+        } catch (e) {
+          console.warn('Error resolving solutionId by name/lot:', e);
+        }
+      }
+
+      // If still no solutionId, skip this operation (cannot update stock without linking to a solution)
+      if (!solutionId) {
+        console.warn('Skipping updateRemainingQuantities: no solutionId for operation', op);
+        continue;
+      }
       // If caller provided a process number (`numar_ordine`), skip any exit
       // that was already recorded for this solution and process to make this
       // operation idempotent per process.
