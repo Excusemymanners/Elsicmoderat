@@ -244,6 +244,13 @@ const compareMovementsByProcessNumber = (left, right) => {
   return leftTime - rightTime;
 };
 
+// Sort intrari_solutie movements by created_at (chronological order)
+const compareIntrariByDate = (left, right) => {
+  const leftTime = left?.created_at ? new Date(left.created_at).getTime() : 0;
+  const rightTime = right?.created_at ? new Date(right.created_at).getTime() : 0;
+  return leftTime - rightTime;
+};
+
 const SolutionManagement = () => {
   const MAX_QTY = 1e9; // safety cap for stock/quantities to prevent constraint violations
   const [solutions, setSolutions] = useState([]);
@@ -772,7 +779,7 @@ const SolutionManagement = () => {
 
       if (intrari && intrari.length > 0) {
         console.log(`[exportSingleSolutionCSV] Found ${intrari.length} intrari for solution ${solution.id}, building CSV rows...`);
-        const orderedIntrari = [...intrari].sort(compareMovementsByProcessNumber);
+        const orderedIntrari = [...intrari].sort(compareIntrariByDate);
 
         // Carry-forward supplier and expiration_date: start from no supplier so we don't retroactively overwrite
         // past exits if `solutions.furnizor` is updated later. We only set supplier when an Intrare provides it.
@@ -994,7 +1001,7 @@ const SolutionManagement = () => {
           continue;
         }
 
-        const orderedIntrari = [...intrari].sort(compareMovementsByProcessNumber);
+        const orderedIntrari = [...intrari].sort(compareIntrariByDate);
         // Carry-forward supplier and expiration_date within each solution block
         // Start from null so we don't retroactively apply solution-level supplier to past movements
         let currentSupplier = null;
