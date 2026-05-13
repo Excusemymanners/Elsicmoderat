@@ -122,7 +122,7 @@ export const updateRemainingQuantities = async (operations) => {
           tip: 'Ieșire',
           beneficiar: beneficiar || null,
           lot: lot || null,
-          numar_ordine: operation?.numar_ordine || null,
+          numar_ordine: numar_ordine || null,
           created_at: created_at || new Date().toISOString()
         };
         
