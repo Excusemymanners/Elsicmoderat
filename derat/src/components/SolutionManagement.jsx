@@ -810,7 +810,7 @@ const SolutionManagement = () => {
           if (intrare.expiration_date) currentExp = new Date(intrare.expiration_date);
 
           const lotDisplay = intrare.lot || solution.lot || '';
-          const supplierDisplay = currentSupplier || '';
+          const supplierDisplay = currentSupplier || intrare.furnizor || '';
           const expirationDisplay = currentExp ? currentExp.toLocaleDateString('ro-RO') : '';
 
           if (idx === 0) {
@@ -1031,7 +1031,7 @@ const SolutionManagement = () => {
           if (intrare.expiration_date) currentExp = new Date(intrare.expiration_date);
 
           const lotDisplay = intrare.lot || solution.lot || '';
-          const supplierDisplay = currentSupplier || '';
+          const supplierDisplay = currentSupplier || intrare.furnizor || '';
           const expirationDisplay = currentExp ? currentExp.toLocaleDateString('ro-RO') : '';
 
           allRows.push([
