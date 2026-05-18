@@ -444,6 +444,125 @@ const SolutionManagement = () => {
         const previousIntrari = prevData ? parseFloat(prevData.total_intrari || 0) : 0;
         const previousRemainingQty = prevData ? parseFloat(prevData.remaining_quantity || 0) : 0;
 
+        // Special signal: if the form was submitted with `lot` === '0' or stock === 0,
+        // treat this as a request to update only the latest `intrari_solutie` record
+        // for this solution: update `furnizor`, `expiration_date` and `lot` if they differ.
+        // If none of these three values changed, do nothing.
+        try {
+          const submittedStockNum = parseFloat(submittedSolution.stock || '0');
+          const shouldPatchLastIntrare = String(submittedSolution.lot) === '0' || Number.isFinite(submittedStockNum) && submittedStockNum === 0;
+          if (shouldPatchLastIntrare) {
+            const { data: lastIntrare, error: lastErr } = await supabase
+              .from('intrari_solutie')
+              .select('*')
+              .eq('solution_id', editingSolution)
+              .eq('tip', 'Intrare')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (!lastErr && lastIntrare && lastIntrare.id) {
+              const newFurnizor = (submittedSolution.furnizor || '').trim() || null;
+              const newExpiration = submittedSolution.expiration_date ? new Date(submittedSolution.expiration_date).toISOString() : null;
+              const newLot = (submittedSolution.lot && String(submittedSolution.lot) !== '0') ? String(submittedSolution.lot).trim() : (lastIntrare.lot || null);
+              const newInvoice = (submittedSolution.numar_factura || '').trim() || null;
+
+              // Determine if any of the three target fields actually changed compared to lastIntrare
+              const furnizorChanged = (lastIntrare.furnizor || null) !== newFurnizor;
+              const expirationChanged = (lastIntrare.expiration_date ? new Date(lastIntrare.expiration_date).toISOString() : null) !== newExpiration;
+              const lotChanged = (lastIntrare.lot || null) !== newLot;
+              const invoiceChanged = (lastIntrare.numar_factura || null) !== newInvoice;
+
+              if (furnizorChanged || expirationChanged || lotChanged) {
+                const patch = {};
+                if (furnizorChanged) patch.furnizor = newFurnizor;
+                if (expirationChanged) patch.expiration_date = newExpiration;
+                if (lotChanged) patch.lot = newLot;
+                if (invoiceChanged) patch.numar_factura = newInvoice;
+
+                // 1) Update the last intrare (most recent Intrare)
+                const upd = await supabase.from('intrari_solutie').update(patch).eq('id', lastIntrare.id);
+                if (upd.error) {
+                  console.error('Eroare la actualizarea ultimei intrări (patch):', upd.error);
+                  alert('Eroare la actualizarea ultimei înregistrări: ' + (upd.error.message || upd.error));
+                } else {
+                  console.log('Ultima intrare actualizată cu:', patch);
+                }
+
+                // 2) Update `solutions` row so the main record shows the new values
+                try {
+                  const solPatch = {};
+                  if (furnizorChanged) solPatch.furnizor = newFurnizor;
+                  if (expirationChanged) solPatch.expiration_date = newExpiration;
+                  if (lotChanged) solPatch.lot = newLot;
+                  if (Object.keys(solPatch).length > 0) {
+                    const solUpd = await supabase.from('solutions').update(solPatch).eq('id', editingSolution);
+                    if (solUpd.error) {
+                      console.error('Eroare la actualizarea solutions:', solUpd.error);
+                      alert('Eroare la actualizarea înregistrării soluției: ' + (solUpd.error.message || solUpd.error));
+                    } else {
+                      console.log('Înregistrare solutions actualizată cu:', solPatch);
+                    }
+                  }
+                } catch (solErr) {
+                  console.error('Eroare la patch solutions:', solErr);
+                }
+
+                // 3) Update all previous exits (`Ieșire`) so CSV shows new supplier/expiration/lot
+                try {
+                  const exitsPatch = {};
+                  if (furnizorChanged) exitsPatch.furnizor = newFurnizor;
+                  if (expirationChanged) exitsPatch.expiration_date = newExpiration;
+                  if (lotChanged) exitsPatch.lot = newLot;
+                  if (invoiceChanged) exitsPatch.numar_factura = newInvoice;
+                  if (Object.keys(exitsPatch).length > 0) {
+                    const exitsUpd = await supabase
+                      .from('intrari_solutie')
+                      .update(exitsPatch)
+                      .eq('solution_id', editingSolution)
+                      .eq('tip', 'Ieșire')
+                      .gte('created_at', lastIntrare.created_at);
+                    if (exitsUpd.error) {
+                      console.error('Eroare la actualizarea iesirilor:', exitsUpd.error);
+                      alert('Eroare la actualizarea ieșirilor: ' + (exitsUpd.error.message || exitsUpd.error));
+                    } else {
+                      console.log(`Actualizate ${exitsUpd.data ? exitsUpd.data.length : 'n'} iesiri cu:`, exitsPatch);
+                    }
+                  }
+                } catch (exErr) {
+                  console.error('Eroare la patch iesiri:', exErr);
+                }
+              } else {
+                console.log('Nicio modificare a furnizorului/expirării/lot; nu se face nimic.');
+              }
+
+              // Refresh data and exit early — this operation was intended only to patch last intrare + related records
+              await fetchSolutions();
+              setNewSolution({
+                name: '',
+                lot: '',
+                furnizor: '',
+                numar_factura: '',
+                expiration_date: todayISO,
+                concentration: '',
+                stock: '',
+                initial_stock: '',
+                total_quantity: '',
+                remaining_quantity: '',
+                quantity_per_sqm: '',
+                unit_of_measure: 'ml',
+                minimum_reserve: ''
+              });
+              setEditingSolution(null);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (patchErr) {
+          console.error('Eroare în fluxul de patch pentru ultima intrare:', patchErr);
+          // fallthrough to normal edit behaviour if patch fails
+        }
+
         // Respectăm alegerea utilizatorului pentru tipul de actualizare
         let newRemainingQty;
         let stockDifference;
@@ -730,51 +849,46 @@ const SolutionManagement = () => {
     rows.push(headers);
 
     try {
-      // Fetch movements by LOT (primary key) — this is more reliable than solution_id
-      // which may not always be set correctly during insert
+      // Fetch movements primarily by solution_id to avoid omitting rows when lot/furnizor change.
       let intrari = null;
-      let error = null;
+      try {
+        if (solution.id) {
+          console.log(`[exportSingleSolutionCSV] Fetching intrari for solution_id=${solution.id}`);
+          const { data: bySolId, error: errSol } = await supabase
+            .from('intrari_solutie')
+            .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
+            .eq('solution_id', solution.id)
+            .order('created_at', { ascending: true });
+          console.log(`[exportSingleSolutionCSV] solution_id query result: ${bySolId?.length || 0} rows, error: ${errSol?.message || 'none'}`);
+          if (!errSol && bySolId && bySolId.length > 0) {
+            intrari = bySolId;
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching by solution_id for export:', e);
+      }
 
-      if (solution.lot) {
-        console.log(`[exportSingleSolutionCSV] Fetching intrari for lot='${solution.lot}'`);
+      // If no results by solution_id, fall back to lot -> furnizor as before
+      if ((!intrari || intrari.length === 0) && solution.lot) {
+        console.log(`[exportSingleSolutionCSV] No results for solution_id; trying lot='${solution.lot}'`);
         const { data: byLot, error: errLot } = await supabase
           .from('intrari_solutie')
           .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
           .eq('lot', solution.lot)
           .order('created_at', { ascending: true });
-        
         console.log(`[exportSingleSolutionCSV] Lot query result: ${byLot?.length || 0} rows, error: ${errLot?.message || 'none'}`);
-        if (!errLot && byLot && byLot.length > 0) {
-          intrari = byLot;
-        } else if (errLot) {
-          error = errLot;
-        }
+        if (!errLot && byLot && byLot.length > 0) intrari = byLot;
       }
 
-      // Fallback 1: try by furnizor if lot didn't yield results
       if ((!intrari || intrari.length === 0) && solution.furnizor) {
-        console.log(`[exportSingleSolutionCSV] No results for lot; trying furnizor='${solution.furnizor}'`);
+        console.log(`[exportSingleSolutionCSV] No results for solution_id/lot; trying furnizor='${solution.furnizor}'`);
         const { data: byFurn, error: errFurn } = await supabase
           .from('intrari_solutie')
           .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
           .ilike('furnizor', `%${solution.furnizor}%`)
           .order('created_at', { ascending: true });
-        
         console.log(`[exportSingleSolutionCSV] Furnizor query result: ${byFurn?.length || 0} rows`);
         if (byFurn && byFurn.length > 0) intrari = byFurn;
-      }
-
-      // Fallback 2: try by solution_id as last resort
-      if ((!intrari || intrari.length === 0) && solution.id) {
-        console.log(`[exportSingleSolutionCSV] No results for lot/furnizor; trying solution_id=${solution.id}`);
-        const { data: bySolId, error: errSol } = await supabase
-          .from('intrari_solutie')
-          .select('quantity, previous_stock, post_stock, created_at, tip, beneficiar, lot, numar_ordine, numar_factura, expiration_date, furnizor')
-          .eq('solution_id', solution.id)
-          .order('created_at', { ascending: true });
-        
-        console.log(`[exportSingleSolutionCSV] solution_id query result: ${bySolId?.length || 0} rows, error: ${errSol?.message || 'none'}`);
-        if (bySolId && bySolId.length > 0) intrari = bySolId;
       }
 
       if (intrari && intrari.length > 0) {
