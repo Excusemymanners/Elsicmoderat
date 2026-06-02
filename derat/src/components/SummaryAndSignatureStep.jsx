@@ -277,6 +277,22 @@ const SummaryAndSignatureStep = () => {
   console.log('receptionNumber (state):', receptionNumber, 'finalData.receptionNumber:', finalData.receptionNumber);
       let opsToUpdate = [];
 
+      // Normalize reception/numar_ordine: treat common placeholders like 'NA' as null
+      const normalizeNumarOrdine = (val) => {
+        if (val === null || val === undefined) return null;
+        try {
+          const s = String(val).trim();
+          if (s === '') return null;
+          const lower = s.toLowerCase();
+          if (lower === 'na' || lower === 'n/a' || lower === 'none' || lower === 'null') return null;
+          return s;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const normalizedNumarOrdine = normalizeNumarOrdine(receptionNumber || finalData.receptionNumber || null);
+
       // Primary source: finalData.operations (selected in the flow)
       if (Array.isArray(finalData.operations) && finalData.operations.length > 0) {
           opsToUpdate = finalData.operations.map(operation => {
@@ -286,14 +302,14 @@ const SummaryAndSignatureStep = () => {
           const qtyVal = Number.isFinite(parsed) ? parsed : 0;
           const solId = sol ? (sol.id ?? sol.value ?? null) : null;
           const solLabel = sol ? (sol.label || sol.name || null) : null;
-          return {
+            return {
             solutionId: solId,
             solutionLabel: solLabel,
             quantity: qtyVal,
             beneficiar: finalData.customer?.name || null,
             lot: sol ? (sol.lot || null) : null,
-            // prefer the live receptionNumber state, fallback to finalData.receptionNumber
-            numar_ordine: receptionNumber || finalData.receptionNumber || null,
+              // prefer normalized numar_ordine (treat 'NA' as null)
+              numar_ordine: normalizedNumarOrdine,
             created_at: new Date().toISOString()
           };
         });
@@ -328,13 +344,13 @@ const SummaryAndSignatureStep = () => {
             }
             const solId = sols && sols.id ? sols.id : null;
             if (solId) {
-              opsToUpdate.push({
+                opsToUpdate.push({
                 solutionId: solId,
                 solutionLabel: item.name,
                 quantity: item.qty,
                 beneficiar: finalData.customer?.name || null,
                 lot: item.lot || null,
-                numar_ordine: receptionNumber || finalData.receptionNumber || null,
+                  numar_ordine: normalizedNumarOrdine,
                 created_at: new Date().toISOString()
               });
             } else {
@@ -371,7 +387,7 @@ const SummaryAndSignatureStep = () => {
               quantity: qty,
               beneficiar: finalData.customer?.name || null,
               lot: sol.lot || null,
-              numar_ordine: receptionNumber || finalData.receptionNumber || null,
+              numar_ordine: normalizedNumarOrdine,
               created_at: new Date().toISOString()
             });
           }
