@@ -1,4 +1,4 @@
-// src/components/receptionNumber.js
+// src/components/verbalProcess.js
 import supabase from '../../supabaseClient';
 
 // Incrementează numărul de recepție

@@ -340,12 +340,12 @@ const SelectOperationStep = () => {
             )}
 
             <div className="navigation-buttons">
-                <button onClick={handleBack}>Back</button>
-                <button 
-                    onClick={handleNext} 
+                <button onClick={handleBack}>Înapoi</button>
+                <button
+                    onClick={handleNext}
                     disabled={selectedOperations.length === 0 || stockErrors.length > 0}
                 >
-                    Next
+                    Continuă
                 </button>
             </div>
         </div>

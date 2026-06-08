@@ -254,7 +254,6 @@ const compareIntrariByDate = (left, right) => {
 const SolutionManagement = () => {
   const MAX_QTY = 1e9; // safety cap for stock/quantities to prevent constraint violations
   const [solutions, setSolutions] = useState([]);
-  const [intrariHistory, setIntrariHistory] = useState({}); // { solutionId: [intrari] }
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const todayISO = new Date().toISOString().split('T')[0];
   const [newSolution, setNewSolution] = useState({
@@ -290,45 +289,8 @@ const SolutionManagement = () => {
       setLoading(false);
       return;
     }
-
-    const { data: updatedData, error: err2 } = await supabase
-      .from('solutions')
-      .select('*');
-    if (err2) {
-      console.error('Error reloading solutions:', err2);
-      setSolutions(data || []);
-    } else {
-      setSolutions(updatedData || []);
-    }
+    setSolutions(data || []);
     setLoading(false);
-  };
-
-  const checkAndDeactivateLowStock = async (solutionsData) => {
-    try {
-      const deactivatePromises = [];
-
-      for (const solution of solutionsData) {
-        const remainingQuantity = solution.remaining_quantity || solution.total_quantity || 0;
-        const minimumReserve = solution.minimum_reserve || 0;
-        const isActive = solution.is_active !== false;
-
-        if (isActive && remainingQuantity <= minimumReserve) {
-          deactivatePromises.push(
-            supabase
-              .from('solutions')
-              .update({ is_active: false })
-              .eq('id', solution.id)
-          );
-        }
-      }
-
-      if (deactivatePromises.length > 0) {
-        await Promise.all(deactivatePromises);
-        console.log(`✅ ${deactivatePromises.length} soluții au fost dezactivate automat.`);
-      }
-    } catch (error) {
-      console.error('Error checking and deactivating low stock:', error);
-    }
   };
 
   useEffect(() => {
@@ -342,21 +304,6 @@ const SolutionManagement = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    const fetchAllIntrari = async () => {
-      const history = {};
-      for (const sol of solutions) {
-        try {
-          history[sol.id] = await fetchIntrariForSolution(sol.id);
-        } catch (e) {
-          history[sol.id] = [];
-        }
-      }
-      setIntrariHistory(history);
-    };
-    if (solutions.length > 0) fetchAllIntrari();
-  }, [solutions]);
 
   const handleToggleForm = () => {
     setShowForm(!showForm);
@@ -1004,6 +951,27 @@ const SolutionManagement = () => {
       headers
     ];
 
+    // Batch fetch latest expiration dates for all solutions in one query
+    const latestExpByIds = {};
+    try {
+      const solutionIds = solutions.map(s => s.id);
+      const { data: allExpDates } = await supabase
+        .from('intrari_solutie')
+        .select('solution_id, expiration_date')
+        .in('solution_id', solutionIds)
+        .not('expiration_date', 'is', null)
+        .order('expiration_date', { ascending: false });
+      if (allExpDates) {
+        for (const row of allExpDates) {
+          if (!latestExpByIds[row.solution_id]) {
+            latestExpByIds[row.solution_id] = row.expiration_date;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error batch-fetching expiration dates for CSV:', e);
+    }
+
     const dataRows = [];
     for (let idx = 0; idx < solutions.length; idx++) {
       const solution = solutions[idx];
@@ -1013,25 +981,8 @@ const SolutionManagement = () => {
       const remainingQuantity = solution.remaining_quantity || 0;
       const availableQuantity = remainingQuantity - minimumReserve;
 
-      // fetch latest expiration_date from intrari_solutie (prefer intrari values)
-      let expirationDisplay = '';
-      try {
-        const { data: intrariDates, error: intrErr } = await supabase
-          .from('intrari_solutie')
-          .select('expiration_date')
-          .eq('solution_id', solution.id)
-          .not('expiration_date', 'is', null)
-          .order('expiration_date', { ascending: false })
-          .limit(1);
-        if (!intrErr && intrariDates && intrariDates.length > 0) {
-          expirationDisplay = new Date(intrariDates[0].expiration_date).toLocaleDateString('ro-RO');
-        } else if (solution.expiration_date) {
-          expirationDisplay = new Date(solution.expiration_date).toLocaleDateString('ro-RO');
-        }
-      } catch (e) {
-        console.error('Error fetching latest expiration for solution summary:', solution.id, e);
-        if (solution.expiration_date) expirationDisplay = new Date(solution.expiration_date).toLocaleDateString('ro-RO');
-      }
+      const expDate = latestExpByIds[solution.id] || solution.expiration_date || null;
+      const expirationDisplay = expDate ? new Date(expDate).toLocaleDateString('ro-RO') : '';
 
       dataRows.push([
         idx + 1,

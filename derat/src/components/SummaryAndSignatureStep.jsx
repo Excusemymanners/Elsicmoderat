@@ -134,10 +134,10 @@ const SummaryAndSignatureStep = () => {
         product3_quantity: finalData.operations[2] ? Number.parseFloat(finalData.quantities[finalData.operations[2]]) || 0 : null,
         concentration3: finalData.operations[2] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.concentration).join(', ') : null, // Add concentration3
         procedure4: finalData.operations[3] || null,
-        product4_name: finalData.operations[3] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.name).join(', ') : null,
-        product4_lot: finalData.operations[3] ? finalData.solutions[finalData.operations[2]]?.map(sol => sol.lot).join(', ') : null,
-        product4_quantity: finalData.operations[3] ? Number.parseFloat(finalData.quantities[finalData.operations[2]]) || 0 : null,
-        concentration4: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.concentration).join(', ') : null // Add concentration4
+        product4_name: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.name).join(', ') : null,
+        product4_lot: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.lot).join(', ') : null,
+        product4_quantity: finalData.operations[3] ? Number.parseFloat(finalData.quantities[finalData.operations[3]]) || 0 : null,
+        concentration4: finalData.operations[3] ? finalData.solutions[finalData.operations[3]]?.map(sol => sol.concentration).join(', ') : null
       };
       // custody items are intentionally kept out of the DB payload
       // They remain available in `pdfRequest` and the UI summary only.
@@ -481,82 +481,6 @@ const SummaryAndSignatureStep = () => {
     return <div className="loading">Se încarcă...</div>;
   }
 
-  const generateAndSendPDF = async (data) => {
-    const request = {
-      receptionNumber: data.receptionNumber,
-      client: {
-        name: data.customer.name,
-        contract_number: data.customer.contract_number,
-        location: data.customer.location,
-        surface: data.clientSurface // Include client surface in request
-      },
-      clientRepresentative: data.clientRepresentative,
-      clientSignature: data.clientSignature,
-      employeeName: data.employeeName,
-      employeeIDSeries: data.employeeIDSeries,
-      employeeSignature: data.employeeSignature,
-      operations: [],
-      observations: data.observations,
-      // Add custody items + statuses to PDF request when available
-      custodyItems: {
-        ultrasuneteRozatoare: data.custodyItems?.ultrasuneteRozatoare || 0,
-        ultrasuneteRozatoare_status: data.custodyStatuses?.ultrasuneteRozatoare ? 'inlocuit' : 'predat',
-        ultrasunetePasari: data.custodyItems?.ultrasunetePasari || 0,
-        ultrasunetePasari_status: data.custodyStatuses?.ultrasunetePasari ? 'inlocuit' : 'predat',
-        antiinsecte: data.custodyItems?.antiinsecte || 0,
-        antiinsecte_status: data.custodyStatuses?.antiinsecte ? 'inlocuit' : 'predat',
-        capturareRozatoare: data.custodyItems?.capturareRozatoare || 0,
-        capturareRozatoare_status: data.custodyStatuses?.capturareRozatoare ? 'inlocuit' : 'predat',
-        statieIntoxicare: data.custodyItems?.statieIntoxicare || 0,
-        statieIntoxicare_status: data.custodyStatuses?.statieIntoxicare ? 'inlocuit' : 'predat'
-      },
-      apparateSgr: data.apparateSgr || false
-    }
-
-    data.operations.forEach(operation => {
-      const jobInfo = data.customer.jobs.find(job => job.value === operation);
-      const surface = jobInfo ? jobInfo.surface : null;
-
-      request.operations.push({
-        name: operation,
-        solution: data.solutions[operation][0].label,
-        solutionId: data.solutions[operation][0].id, // Include solution ID
-        quantity: data.quantities[operation],
-        concentration: data.solutions[operation][0].concentration,
-        lot: data.solutions[operation][0].lot,
-        surface: surface
-      });
-    })
-
-    const pdfBytes = await fillTemplate('/assets/template.pdf', request);
-
-  let customerEmail = data.customer.email;
-
-    try {
-      const response = await fetch('/api/send-email.js', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pdfBytes,
-          customerEmail
-        })
-      });
-
-      const responseData = await response.json();
-      if (!responseData.success) {
-        throw new Error(responseData.error);
-      }
-
-      console.log('Email sent successfully');
-      return responseData;
-    } catch (error) {
-      console.error('Error sending email:', error);
-      throw error;
-    }
-  };
-
   return (
     <div className="summary-step">
       <h3>Pasul 5: Sumarul Procesului Verbal</h3>
@@ -667,7 +591,7 @@ const SummaryAndSignatureStep = () => {
                 <div className="detail-item">
                   <span className="label">Cantitate:</span>
                   <span className="value">
-                    {Number.parseFloat(formData.quantities[operation]).toFixed(4)}
+                    {Number.parseFloat(formData.quantities[operation]).toFixed(2)}
                   </span>
                 </div>
                 <div className="detail-item">

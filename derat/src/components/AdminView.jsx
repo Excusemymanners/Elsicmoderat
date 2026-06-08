@@ -12,7 +12,8 @@ const AdminView = () => {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (password === 'admin123') {
+        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+        if (adminPassword && password === adminPassword) {
             setIsAuthenticated(true);
             setIsAdmin(true);
             localStorage.setItem('adminAuth', 'true');
