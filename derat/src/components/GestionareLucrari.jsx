@@ -173,14 +173,28 @@ const GestionareLucrari = () => {
     };
 
     const exportExcel = async () => {
-        const { data, error } = await supabase
-            .from('lucrari')
-            .select('*');
+        // Supabase/PostgREST limits results to 1000 rows per request by default,
+        // so we must page through everything explicitly or older records get cut off.
+        const pageSize = 1000;
+        let data = [];
+        let from = 0;
 
-        if (error) {
-            console.error('Error fetching lucrari:', error);
-            alert('Eroare la exportul fișierului Excel!');
-            return;
+        while (true) {
+            const { data: pageData, error } = await supabase
+                .from('lucrari')
+                .select('*')
+                .range(from, from + pageSize - 1);
+
+            if (error) {
+                console.error('Error fetching lucrari:', error);
+                alert('Eroare la exportul fișierului Excel!');
+                return;
+            }
+
+            data = data.concat(pageData || []);
+
+            if (!pageData || pageData.length < pageSize) break;
+            from += pageSize;
         }
 
         // Helper function to escape CSV values
