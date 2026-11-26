@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import supabase from '../../supabaseClient';
+import { fetchAllCustomers } from './customers';
 import './CustomerManagement.css';
 
 const CustomerManagement = () => {
@@ -30,9 +31,7 @@ const CustomerManagement = () => {
 
     const fetchCustomers = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('customers')
-            .select('*');
+        const { data, error } = await fetchAllCustomers();
         if (error) {
             console.error('Error fetching customers:', error);
         } else {

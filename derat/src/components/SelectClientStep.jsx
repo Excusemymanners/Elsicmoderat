@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployeeForm } from './EmployeeFormProvider';
-import supabase from '../../supabaseClient';
+import { fetchAllCustomers } from './customers';
 import './SelectClientStep.css';
 
 const SelectClientStep = () => {
@@ -23,7 +23,7 @@ const SelectClientStep = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from('customers').select('*');
+      const { data, error } = await fetchAllCustomers();
       if (error) {
         console.error('Error fetching customers:', error);
       } else {

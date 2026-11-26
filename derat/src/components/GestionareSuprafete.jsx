@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import supabase from '../../supabaseClient';
+import { fetchAllCustomers } from './customers';
 import './GestionareSuprafete.css';
 
 const GestionareSuprafete = () => {
@@ -18,9 +19,7 @@ const GestionareSuprafete = () => {
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*');
+    const { data, error } = await fetchAllCustomers();
     if (error) {
       console.error('Eroare la încărcarea clienților:', error);
       setError('Nu s-au putut încărca clienții');
